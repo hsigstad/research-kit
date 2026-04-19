@@ -34,8 +34,8 @@ parts that aren't tied to specific projects or data.
 
 ## Companion repos
 
-- [`diarios`](https://github.com/hsigstad/diarios) — Brazilian
-  official-diary parsing.
+- [`diarios`](https://github.com/hsigstad/diarios) — toolkit for
+  Brazilian court and administrative data.
 - [`llmkit`](https://github.com/hsigstad/llmkit) — LLM extraction toolkit
   (caching, validation, audit).
 - [`newsbr`](https://github.com/hsigstad/newsbr) — Brazilian news
