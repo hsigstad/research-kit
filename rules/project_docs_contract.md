@@ -76,11 +76,15 @@ repo/
 **source/**
 - Analysis code only
 - Scripts, notebooks, modules
+- Substructure (`source/clean/`, `source/assemble/`, `source/figure/`, etc.)
+  follows `rules/build_layers.md`
 - Tracked by git
 
 **build/**
 - All outputs produced by code in `source/`, except paper tables and figures
 - Includes: cleaned datasets, intermediate files, model outputs, logs
+- Layered into `build/clean/` → `build/assemble/` → `build/analysis/` per
+  `rules/build_layers.md`
 - Typically gitignored (regenerable from source)
 - Must not be treated as authoritative project memory
 
