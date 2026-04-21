@@ -68,8 +68,11 @@ implementation (`source/paper/numbers.py`,
      definitions, one per macro. Included from the paper preamble via
      `\input{numbers}`.
    - `paper/numbers.json` — a sidecar recording, for each
-     macro, its rendered value and its source label
-     (`<script>.py → <json_path>`).
+     macro, its rendered value, its source label
+     (`<script>.py → <json_path>`), and its semantic interpretation
+     (a one-sentence description including the denominator, used by
+     the validation skill to adjudicate prose-vs-semantics alignment
+     without re-reading the source code).
 
 2. The paper source uses `\MacroName{}` (the `{}` ensures correct
    spacing) wherever a structural number appears.
@@ -96,11 +99,21 @@ new section or updating an old one:
    can't be traced.
 
 2. **Add the macro.** In `source/paper/numbers.py`, extend `_defs()`
-   with a `(macro_name, formatted_value, source_label)` triple.
-   Naming convention: TitleCase, grouped by theme prefix (e.g. `Enf*`
-   for enforcement, `Pen*` for penalties, `Sus*` for sustained rates).
-   Formatter choice (`_int`, `_pct`, `_brl`) depends on the number
-   type; see the existing formatters for the exact output shape.
+   with a `(macro_name, formatted_value, source_label, interpretation)`
+   4-tuple. Naming convention: TitleCase, grouped by theme prefix
+   (e.g. `Enf*` for enforcement, `Pen*` for penalties, `Sus*` for
+   sustained rates). Formatter choice (`_int`, `_pct`, `_brl`) depends
+   on the number type; see the existing formatters for the exact
+   output shape.
+
+   The **interpretation** is a one-sentence semantic description
+   answering "what does this number mean, and what's its base
+   population?" Example:
+   `"Share of sustained-irregularity processos (denominator = EnfNSustained) that received at least one monetary penalty."`
+   Missing interpretations are tolerated for backward compatibility
+   but prevent section-level validation: the `validate-section` skill
+   treats a macro with `interpretation: null` as `pending` for the
+   `interpretation_prose_alignment` check.
 
 3. **Cite it in prose.** Replace the literal in `main.tex` with
    `\MacroName{}`. Keep units and narrative phrasing outside the
@@ -183,14 +196,26 @@ redefine a macro to mean something different.
   to the relevant assemble script — don't reach back into
   `build/clean/` from a citation script.
 - **Validation ledger** (`meta/validation_ledger.md`): macros are
-  complementary to the script-level ledger.
+  complementary to the script-level ledger, and the macro's
+  `interpretation` field is what makes prose-vs-code verification
+  cleanly separable.
   - The **ledger** certifies that the script is correct (an AI check
     or a human review) and that its output hasn't drifted since
     review.
-  - **Macros** certify that a specific prose claim references that
-    certified output and has not silently drifted to a different
-    value.
+  - **`interpretation_code_alignment`** certifies that a macro's
+    declared interpretation actually matches what the script
+    computes at the referenced JSON path. Script-side check, once
+    per macro definition.
+  - **`interpretation_prose_alignment`** certifies that the prose
+    around each macro invocation is consistent with the declared
+    interpretation (denominator, direction, qualifier words, claim
+    context). Section-side check, per section.
+  - **Macros themselves** (via `macro_provenance`) certify that the
+    rendered value in the PDF/HTML matches the source JSON field —
+    purely mechanical.
 
   A number can be ledger-certified but still cited incorrectly in
-  prose. A number can be macroized but still trace to a `pending`
-  script. Both gates are needed.
+  prose. A number can be macroized with a correct value but whose
+  interpretation doesn't match what the script computes. A number
+  can be correctly interpreted in the JSON but misquoted by prose.
+  Three independent gates, one each.
