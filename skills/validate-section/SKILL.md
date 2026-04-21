@@ -273,28 +273,70 @@ For each `(target, check_kind)` pair:
   - Cross-number claims: "larger than", "overtake", "crossed over" —
     verify across the two cited values.
   Macros are covered by `interpretation_prose_alignment` instead.
-- **`narrative_claim_check`** — read the section as an argument. Ask:
-  does the conclusion actually follow from the shown data? Flag:
-  - Overstated verbs ("demonstrate", "prove", "establish" when the
-    evidence is descriptive).
-  - Missing caveats — no noted confounds in a causal reading of
-    observational data; no mention of selection when sample is not
-    the target population.
-  - "Therefore" / "thus" bridging steps the data doesn't support.
-  - Ambiguous denominators — every percentage and ratio should have
-    an unambiguous base population. Flag phrases like "X% of cases"
-    where "cases" could mean several things (all / sustained /
-    procurement-related / linked). Require explicit base or confirm
-    from context.
-  - Cross-section consistency — when the section cites a quantity
-    that also appears elsewhere in the paper, check that the two
-    values reconcile (same number, or explicitly different
-    denominators with both named). Bookkeep quantities like
-    "N processos", "% sustained", "N municipalities".
-  - Evidence pointers — phrases like "Figure X shows", "Table Y
-    reports", "as discussed in §Z", "we find". Walk each pointer:
-    does the referenced figure/table/section actually show what
-    the claim attributes to it?
+- **`narrative_claim_check`** — read the section yourself as an
+  argument and apply the criteria below. Do not delegate this to a
+  helper script: the judgment calls (first-person vs third-person
+  voice, theory-section inferences vs empirical overclaims,
+  cross-section bookkeeping) depend on full paper context that
+  prompt-engineered sub-LLM calls handle poorly. Read, check, report.
+
+  Ask: does the conclusion actually follow from the shown data? Flag
+  these failure modes only; use the pass/fail calibration anchors in
+  the notes below before flagging anything.
+
+  - **Overstated verbs** — FIRST-PERSON (paper's own) use of
+    "we demonstrate", "our data prove", "we establish", "we show
+    that X causes Y" when the evidence is descriptive. Do NOT flag
+    third-person attribution of cited work ("Olken shows…",
+    "Chassang demonstrates…"), or modal predictions in theory
+    sections ("should displace…", "the model implies…").
+  - **Missing caveats** — causal reading of observational data
+    without noting selection, confounders, or identifying
+    assumptions. Do NOT flag hedged descriptive phrasings ("we
+    find", "the data are consistent with", "this pattern suggests").
+  - **Unsupported bridge** — "therefore" / "thus" / "hence"
+    connecting two claims where the second does not actually follow
+    from the first. In theory sections, derivations from prior
+    theory to predictions are legitimate and should NOT be flagged
+    unless the derivation itself is broken.
+  - **Ambiguous denominators** — every percentage and ratio should
+    have an unambiguous base population. Flag phrases like "X% of
+    cases" where "cases" could mean several things (all / sustained
+    / procurement-related / linked). Require explicit base or
+    confirm from context.
+  - **Cross-section consistency** — when the section cites a
+    quantity that also appears elsewhere in the paper, check that
+    the two values reconcile (same number, or explicitly different
+    denominators with both named). Bookkeep quantities like "N
+    processos", "% sustained", "N municipalities".
+  - **Bad evidence pointers** — phrases like "Figure X shows",
+    "Table Y reports", "as discussed in §Z", "we find". Walk each
+    pointer: does the referenced figure/table/section actually show
+    what the claim attributes to it?
+
+  Calibration anchors — the following should NOT be flagged:
+    * "Olken 2007 shows that officials shifted corruption to
+      quantities." (third-person attribution of cited empirical
+      finding)
+    * "Lambsdorff argues that corrupt deals face contracting
+      problems." (third-person attribution of cited theoretical work)
+    * "This distinction implies the waterbed effect is strongest
+      when…" (inferential phrasing in a theory section)
+    * "Pregão eletrônico should displace corruption toward
+      post-award margins." (testable prediction with modal)
+    * "The data are consistent with Z." / "This pattern suggests Z."
+      (descriptive, appropriately hedged)
+    * "We argue that complex contracts permit post-award
+      manipulation." (first-person theoretical argument)
+
+  The following SHOULD be flagged:
+    * "We demonstrate that audit intensity causes lower
+      fracionamento." (first-person + causal verb + descriptive
+      evidence → overstated_verb)
+    * "Our estimates show that X causes Y." (explicit causal claim
+      from observational data → missing_caveat)
+    * "X increased, therefore Y is responsible." (causal step
+      unsupported → unsupported_bridge)
 - **`citation_claim_check`** — for each external reference cited in
   the section (new cite or one whose surrounding prose changed),
   open the cited PDF or abstract and verify the attributed claim is
@@ -305,18 +347,32 @@ For each `(target, check_kind)` pair:
 - **`institutional_claim_check`** — for sections that state institutional
   facts (laws, thresholds, dates, modalities, enforcement bodies), run
   the project's institutional-claim checker if present (procure:
-  `python3 -m source.paper.check_institutional_claims --section N`). The
-  script extracts every institutional claim from the section and
-  classifies each as BACKED / UNBACKED / CONTRADICTED against the
-  project's institutional-background reference (`docs/institutions.md`),
-  with a verbatim quote and an anchor sentence from the reference.
-  Output lands in `build/paper/institutional_claims_check.json` and is
-  cached on section + reference content hashes. Severity mapping:
+  `python3 -m source.paper.check_institutional_claims --slug <slug>`).
+  The helper is a legitimate delegate here because the task is
+  mechanical — extract every institutional claim, quote-anchor it,
+  match against a long stable reference doc — and the cache pays back
+  when the reference is unchanged. Unlike `narrative_claim_check`, do
+  NOT re-implement this yourself; the script produces structured JSON
+  with verbatim quotes and reference anchors that is faster and more
+  reliable than a Claude-only scan over `docs/institutions.md`.
+
+  The script classifies each claim as BACKED / UNBACKED / CONTRADICTED
+  against the project's institutional-background reference
+  (`docs/institutions.md`), with a verbatim quote and anchor sentence
+  from the reference. Output in `build/paper/institutional_claims_check.json`,
+  cached on section + reference content hashes.
+
+  Your job is to **adjudicate**, not re-extract: read the JSON, verify
+  the classifications on the UNBACKED / CONTRADICTED rows in context
+  (some "UNBACKED" results are the paper's own predictions or scheme
+  mechanics the LLM misclassified as institutional claims — those are
+  false positives to note, not failings). Severity mapping:
   CONTRADICTED → HIGH (must reconcile paper, reference, or both before
   claiming `ai-verified`); UNBACKED → MEDIUM (add a primary source to
   the institutional reference, or remove/soften the claim). Record a
   one-line `notes:` in the section's `ai_checks:` entry with the counts
-  (e.g. `12 backed, 2 unbacked, 0 contradicted`).
+  (e.g. `12 backed, 2 unbacked, 0 contradicted`) plus any adjudication
+  notes on false positives.
 - **`reproduction_run`** — re-run the script from a clean state and
   diff the output against the committed artifact. For projects using
   SCons (see `research-kit/rules/scons_builds.md`):
