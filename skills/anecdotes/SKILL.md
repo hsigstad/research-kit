@@ -32,7 +32,7 @@ newsbr layout.
    python3 -m newsbr collect \
      --project <project_root> \
      --query "<query>" \
-     --outlets migalhas,folha,estadao,globo \
+     --outlets migalhas,folha,estadao,jota \
      --max-pages 1 \
      --context "/anecdotes for <project>"
    ```
@@ -54,13 +54,17 @@ newsbr layout.
 |--------|----------|-------|
 | `migalhas` | Legal news, free, native search | Default for legal/judicial topics |
 | `folha` | National news, paywalled | Requires Chrome login; native search |
-| `estadao` | National news, JS paywall (text in HTML) | Topic + RSS keyword discovery |
+| `estadao` | National news, JS paywall (text in HTML) | RSS-only search — only finds articles in the live feed, not archives. Low yield. |
+| `jota` | Legal/policy journalism, paywalled (PRO) | Sitemap scan (monthly XMLs at sitemap.jota.info). Free articles extracted via `__NEXT_DATA__` JSON; PRO articles need Chrome cookies (rookiepy). High signal for legal/tax/judicial topics. Use `--max-pages N` to scan N years back. |
 | `globo` | National news, paywalled | Sitemap scan, requires Chrome login |
 | `conjur` | Legal news, free | **fetch-only** (Cloudflare blocks search). Use `newsbr fetch --file references/news/curated_*.txt` for hand-collected URLs |
 | `piaui` | Long-form investigative | Sitemap scan, requires Playwright + Chrome login |
 
-For most legal/judicial projects start with `migalhas,folha,estadao` —
+For most legal/judicial projects start with `migalhas,folha,jota` —
 fast and high signal. Add `globo` for political/economic topics.
+JOTA is especially strong for tax, judicial reform, and STJ/STF coverage.
+Estadão's RSS-only search has returned 0 hits on all queries to date —
+consider dropping it from the default list until a proper search is added.
 
 ## Storage layout
 
