@@ -632,6 +632,74 @@ Rules:
 - Claude should not create reference documents for narrative content (use briefs) or for structured memory (use canonical files)
 - No approval needed to add new files under `docs/reference/` (unlike `docs/` root)
 
+#### docs/reference/key-findings.md (recommended for mature projects)
+
+The curated *directory of conclusions* — what the project considers
+load-bearing for the paper or for downstream interpretation. Distinct
+from `stylized-facts.md` (the dense fact-by-fact ledger) and
+`hypotheses.md` (predictions awaiting test). A finding earns its place
+when it has anchored evidence and a directional reading.
+
+Acceptable locations (discovery order):
+1. `docs/reference/key-findings.md` (preferred)
+2. `docs/key-findings.md`
+3. `docs/findings.md`
+4. Project-specific path declared in `CLAUDE.md` or `docs/summary.md`
+
+Required structure:
+- `## How to read the confidence tags` — copy verbatim the 🟢/🟡/🔴 scheme below
+- `## Findings overview` — scannable index of every entry with one-line summaries and anchor links
+- `## Empirical findings — detail` — descriptive findings, one entry each
+- `## Interpretations — detail` — readings of the evidence; each must name the empirical premises it draws on
+- `## Open items for this page` — known gaps and pending replications
+
+Confidence-tag scheme (used in both empirical and interpretive sections):
+
+**Empirical findings** — the color reflects the *source* of confidence, not the size of the effect:
+- 🟢 **Replicated** — the finding appears in multiple independent samples that agree in direction and rough magnitude
+- 🟡 **Single source** — one solid study, with no independent replication yet
+- 🔴 **Provisional** — parser-dependent, sample-sensitive, or carries a known caveat
+
+**Interpretations** — parallel scheme:
+- 🟢 **Strong** — multiple converging lines of evidence; alternatives considered and rejected
+- 🟡 **Plausible** — consistent with the evidence but other readings remain open
+- 🔴 **Speculative** — suggested by the data but unverified
+
+Entry schema (every entry):
+1. Confidence tag + headline sentence carrying the load-bearing number
+2. Expanded explanation (1–4 paragraphs) with inline anchored citations
+3. Optional dated sub-paragraphs for updates / robustness / caveats
+4. Optional figure embed with italic caption
+5. **Sources footer** (required, four-class — see below)
+6. For interpretations: a Draws-on paragraph naming the empirical premises
+
+Sources footer schema (required, four classes; missing classes appear as `none direct` rather than being omitted — explicit absence is informative):
+
+```markdown
+**Sources.**
+- *Own analysis*: build artifacts (csv/pdf/parquet) and scripts as clickable file paths
+- *Reports*: aggregate-report citations with `#page=N` deep links to PDFs
+- *News anchors*: links to `references/news/texts/NNN.txt` + anchor quote when load-bearing
+- *Cross-refs*: stylized-facts §, briefs/, audits/findings/, related findings
+```
+
+Path conventions when the doc lives at `docs/reference/key-findings.md`:
+- Build artifacts: `[`stem.csv`](../../build/table/stem.csv)`
+- Reports with page anchor: `[CNJ-DEF24 p.205](../../references/cnj/justica_em_numeros_2024.pdf#page=205)`
+- News texts: `[outlet YYYY-MM-DD (topic)](../../references/news/texts/NNN.txt)`
+- Same-dir cross-refs: `[stylized-facts §X](stylized-facts.md#anchor)`
+- Sibling-dir cross-refs: `[briefs/Y §Z](../briefs/Y.md#anchor)`
+
+Maintenance rules:
+- After any pipeline rerun or parser fix, run `/findings --refresh` (or manually re-verify) to catch number drift between entry headlines and current build artifacts. Stale headlines that survived multiple parser fixes are the most common failure mode.
+- Date every update with `(added YYYY-MM-DD)` or `(refreshed YYYY-MM-DD)`. When refreshing, write the new number first and add a brief note: *"(refreshed YYYY-MM-DD; previously stated as X under <pre-fix universe>)"*.
+- Every load-bearing number in the body must be traceable to a build artifact or external source linked in the Sources footer.
+- Every report citation needs a verified `#page=N` anchor; better to write `[REPORT — page tbd]` than to invent.
+- Every news-anchor quote must be an exact substring of the linked text file; paraphrases are not anchor quotes.
+- Honest confidence tags. Do not push 🟡 → 🟢 because the paper needs it; upgrade only when independent replication actually arrives.
+
+The `/findings` skill populates, extends, refreshes, and audits this document. The `/findings-audit` skill (separate) stress-tests the entries against external evidence and produces audit JSONs at `docs/audits/findings/YYYY-MM-DD-targeted.{md,json}` whose corroborations should be folded back into entries via `/findings --extend`.
+
 ---
 
 ### key-findings.md (optional)
