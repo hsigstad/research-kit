@@ -16,7 +16,7 @@ Create and build a static HTML site for a research project.
 ## What the site contains
 
 - **Index page** -- landing page with paper/talk hero cards and docs grouped by category
-- **Doc pages** -- each `docs/*.md` file rendered as HTML with collapsible sections (open by default), image lightbox, anchor linking, Hypothes.is annotation layer
+- **Doc pages** -- each `docs/*.md` file rendered as HTML with a table of contents linking to h2/h3 sections, image lightbox, anchor linking, Hypothes.is annotation layer
 - **Paper page** -- LaTeX paper converted to HTML via make4ht, with inline footnote tooltips, MathJax, Hypothes.is annotation layer
 - **Talk page** -- beamer slides converted to HTML via make4ht
 
