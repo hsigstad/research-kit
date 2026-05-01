@@ -193,6 +193,8 @@ vocabulary. Tooling parses the token that directly precedes the date.
 | `narrative_claim_check`   | AI checks each section's conclusions follow from the cited numbers — flags overstated "demonstrate/prove" language, missing caveats, unsupported "therefore" moves, bad evidence pointers, cross-section inconsistency. | Full draft (stage 8).       |
 | `institutional_claim_check` | AI extracts every institutional claim (laws, thresholds, dates, modalities, enforcement bodies) from a section and classifies each as BACKED / UNBACKED / CONTRADICTED against the project's institutional-background reference (e.g. `docs/institutions.md`). Typically backed by a dedicated project script (procure: `source/paper/check_institutional_claims.py`) rather than a hand-walk. | Sections stating institutional facts (typically Institutional Background). |
 | `spec_grid`               | AI runs the pre-specified multiverse and reports the full distribution.                 | Estimation (p-hacking).     |
+| `style_lint`              | Mechanical style linter (`research-kit/tools/style_lint.py`): AI-tell vocabulary, filler phrases, throat-clearing, editorializing adjectives, naked "this", word-choice table violations, forward references (Shapiro robot-body linearity), passive voice density, sentence length, stacked adjectives, synonym piling, abstract opening. No AI judgment — pure regex/heuristic. Run first; fix violations before the prose-level checks. | Any section prose.          |
+| `style_prose`             | AI checks the semantic style properties that the linter cannot reach: intro ordering (§14), topic sentences (§5), triangular structure (§15), robot-body persuasion vs. stating (§16), table/figure caption self-containment (§10), every-table-number-discussed (§10), coined compounds defined on first use (§4), conclusion brevity (§15). Requires reading full section context. | Any section prose (post-`style_lint`). |
 
 Extensible: add a new row here when a new check earns its keep. Until
 then, use `other:<slug>` in the ledger — existing tooling will treat the
@@ -225,7 +227,7 @@ by script type:
   stale cached entries rather than refreshing them.
 
 For section-level passes (rows marked as section prose rather than a
-single script), the floor is `macro_provenance` +
+single script), the floor is `style_lint` + `macro_provenance` +
 `interpretation_prose_alignment` when the section cites macro-backed
 numbers, plus `narrative_claim_check` once the section is out of first
 draft. Include `qualifier_alignment` when the section has non-macro
@@ -235,7 +237,12 @@ citations rarely re-check themselves. Add `institutional_claim_check`
 when the section states institutional facts (legal thresholds, named
 enforcement bodies, modality rules, statutory dates); these claims
 rarely drift but when they do, they drift silently and legal
-reviewers catch the mismatch.
+reviewers catch the mismatch. Add `style_prose` for sections out of
+first draft — the AI semantic style checks (intro ordering, topic
+sentences, triangular structure, robot-body persuasion) catch
+structural issues the linter cannot reach. `style_lint` always runs
+first; its violations are cheap to fix and often resolve issues that
+`style_prose` would also flag.
 
 Scripts that a section's macros point at carry an extra floor item:
 `interpretation_code_alignment` — the declared interpretation must

@@ -158,6 +158,7 @@ From the check-kind vocabulary in
 | Section prose with non-macro literals     | `text_table_consistency`, `qualifier_alignment` (only for the non-macro literals)                   |
 | Section prose citing external papers      | `citation_claim_check` (only for new or modified citations)                                         |
 | Section prose stating institutional facts | `institutional_claim_check` (laws, thresholds, dates, modalities, enforcement bodies vs. the project's institutional-background reference) |
+| Any section prose (always runs)           | `style_lint` (mechanical linter — run first, before AI checks). Then `style_prose` (AI semantic style checks — intro ordering, topic sentences, triangular structure, robot-body persuasion, caption self-containment, conclusion brevity). |
 
 After scoping: if the union of applicable checks is empty — e.g. a
 two-sentence connective paragraph with no cited data, no macros, no
@@ -391,6 +392,116 @@ For each `(target, check_kind)` pair:
   what differs). Optional for routine validation; use when a previous
   check flags concerns, after editing a helper module, or before
   pushing a refreshed artefact to dropbox.
+
+- **`style_lint`** — mechanical. Run the style linter on the section's
+  source text:
+  ```
+  python3 research-kit/tools/style_lint.py paper/main.tex --format json --severity warning
+  ```
+  Filter the JSON output to violations whose line numbers fall within
+  the section's range. Report each violation with line, rule, and
+  suggestion. This check is deterministic and cheap — always run it
+  first, before `style_prose`. Fix-worthy violations (severity
+  `warning`+) should be resolved before the AI prose checks, since
+  many style_prose findings are downstream of what the linter catches
+  mechanically (e.g. a forward reference flagged by the linter is also
+  a robot-body linearity failure that style_prose would flag with more
+  effort). Record the count in `notes:` (e.g. `3 warnings, 5 info`).
+  Zero warnings → pass; any warning → note them and leave for the
+  author to decide.
+
+- **`style_prose`** — AI semantic style checks that the linter cannot
+  reach.
+
+  **Section-type resolution.** Before checking, identify the section
+  type so the right per-type style guide loads:
+
+  1. Read `section_deps.json[slug].type` if the build maintains it.
+  2. Otherwise parse the LaTeX label (`\label{sec:<type>:...}`) — first
+     segment after `sec:` is the type.
+  3. Otherwise infer from heading text per
+     [`research-kit/rules/section_labels.md`](../../rules/section_labels.md).
+
+  Load the rule files:
+
+  - Always: `research-kit/rules/writing_style.md` (general baseline).
+  - The matching per-type file:
+    `research-kit/rules/writing_style/<type>.md`.
+  - For body-section types (`results`, `methods`, `data`,
+    `institutions`, `discussion`): also load
+    `research-kit/rules/writing_style/body.md`.
+
+  Apply both general and per-type rules.
+
+  **Sub-checks.** The catalog of LLM-only checks:
+
+  1. **Intro ordering**
+     ([`writing_style/intro.md`](../../rules/writing_style/intro.md);
+     intro sections only) — does the intro follow Hook → Question → Why
+     Hard → Setting → Approach → Results → Lit → Roadmap? Does it open
+     with the question or concrete motivation, not the contribution or
+     lit gap?
+  2. **Topic sentences** (`writing_style.md` §5) — does each paragraph
+     lead with its point? Flag paragraphs where the main claim is
+     buried in the middle or end.
+  3. **Triangular structure**
+     ([`writing_style/body.md`](../../rules/writing_style/body.md);
+     body sections only) — is the main result reached quickly? Is there
+     material before the main result that the reader does not need to
+     understand it? Flag long preambles, excessive data description
+     before results, motivation that delays the point.
+  4. **Robot-body persuasion** (`writing_style.md` §14 process,
+     body/discussion sections) — does the body *state* assumptions,
+     methods, and findings, or does it *argue* the reader into believing
+     them? Flag rhetorical moves: "clearly", "it is evident", "one
+     cannot deny", appeals to authority mid-argument, selective emphasis
+     designed to convince rather than inform. Calibration: hedged
+     descriptions ("the data are consistent with", "this pattern
+     suggests") are fine — that is stating, not persuading. Theoretical
+     arguments ("we argue that…") in theory sections are fine. Flag
+     only body-section rhetoric that tries to pre-empt the reader's
+     judgment.
+  5. **Caption self-containment** (`writing_style.md` §10,
+     [`writing_style/results.md`](../../rules/writing_style/results.md)) —
+     can a skimming reader understand each cited table/figure from its
+     caption alone? Are symbols defined, variable names spelled out,
+     column meanings stated?
+  6. **Every number discussed** (`writing_style.md` §10,
+     [`writing_style/results.md`](../../rules/writing_style/results.md)) —
+     is every number in a cited table discussed in the text? Flag
+     tables with unreferenced columns or rows.
+  7. **Coined compounds** (`writing_style.md` §4) — are author-coined
+     hyphenated terms (e.g. "mechanism-labeled") defined inline on
+     first use?
+  8. **Conclusion brevity**
+     ([`writing_style/conclusion.md`](../../rules/writing_style/conclusion.md);
+     conclusion sections only) — does the conclusion restate all
+     findings (bad) or give a short takeaway (good)? Flag "future
+     research" agendas.
+
+  **Type-driven scoping.** Apply only the sub-checks relevant to the
+  resolved section type:
+
+  | Section type    | Sub-checks to run                                  |
+  |-----------------|----------------------------------------------------|
+  | `intro`         | 1, 2, 7                                            |
+  | `abstract`      | use [`abstract.md`](../../rules/writing_style/abstract.md) rules directly; sub-checks 1–8 mostly don't apply |
+  | `results`       | 2, 3, 4, 5, 6, 7                                   |
+  | `methods`       | 2, 3, 4, 7                                          |
+  | `data`          | 2, 3, 5, 6, 7                                       |
+  | `theory`        | 2, 7 (skip 3/4 — formal+informal pairing applies, not triangular structure) |
+  | `institutions`  | 2, 3, 7                                             |
+  | `discussion`    | 2, 3, 4, 7                                          |
+  | `conclusion`    | 2, 8                                                 |
+  | `appendix`      | 2, 5, 6, 7                                          |
+  | (unknown type)  | 2, 7 (general defaults only)                        |
+
+  Plus any additional checks from the per-type file beyond what the
+  catalog covers — read it and flag anything else it specifies.
+
+  Report per sub-check with severity (HIGH = structural ordering
+  violation or persuasion in the body; MEDIUM = topic sentence or
+  coined compound; LOW = minor caption gap).
 
 Don't rubber-stamp. An `ai-verified` check that didn't actually run is
 worse than `pending`.
