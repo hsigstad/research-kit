@@ -19,6 +19,10 @@ Reports contract drift across the research workspace. Two modes:
 | `/lint-docs --fix` | Lint, propose interactive fixes, apply approved fixes, commit per repo. |
 | `/lint-docs <slug> --fix` | Same, scoped to one repo. |
 | `/lint-docs --json` | Report-only mode, JSON output. |
+| `/lint-docs --citations` | Lint `[ns:key]` citation tokens against registry, anchors, and BibTeX. |
+| `/lint-docs <slug> --citations` | Same, scoped to one repo. |
+| `/lint-docs --sync` | Regenerate `docs/refs/manifest.toml` for all projects from registry. |
+| `/lint-docs <slug> --sync` | Same, scoped to one project. |
 | `/lint-docs <slug> --deep` | (Future) LLM cross-doc checks. |
 
 To run report mode:
@@ -176,6 +180,19 @@ move on — don't retry destructively.
 - Each `research/ideas/*.md` has YAML frontmatter with `title`, `status`, `last_updated`.
 - `status` value is one of `idea | exploring | shelved | project`.
 
+### Citation tokens (`--citations`)
+- Every `[ns:key]` token resolves: external via registry, internal via `- id:` anchors or `\label{}`, literature via `.bib`.
+- Malformed tokens (`[Method:foo]`, `[ns:Foo_Bar]`) are flagged.
+- Orphan manifest entries — entries in `docs/refs/manifest.toml` not cited by any doc.
+- Dangling registry entries — `path` in `research/refs/registry.toml` pointing to non-existent files (workspace-level).
+- Skips `docs/emails/` and `docs/whatsapp/` (non-content subdirectories).
+
+### Manifest sync (`--sync`)
+- Walks each project's `docs/` and `paper/` for external `[ns:key]` tokens.
+- Looks up each in `research/refs/registry.toml`.
+- Writes the public-facing subset (title + description only, no path/anchor) to `docs/refs/manifest.toml`.
+- Reports which projects were updated vs already current.
+
 ## What it does NOT check (deferred to `--deep`)
 
 - Theory ↔ hypotheses coverage (every prediction has a matching theory result; every theory result has a matching prediction).
@@ -183,7 +200,7 @@ move on — don't retry destructively.
 - Speculative phrasing in "settled" docs (high false-positive rate, needs LLM judgment).
 - Whether `literature.md` relevance assessments match how each entry is used elsewhere.
 - IAT comment accuracy against actual code behavior.
-- Citation token resolution (`[ns:key]` → registry / anchor) — covered by separate `--citations` mode (TODO).
+- Citation token resolution (`[ns:key]` → registry / anchor) — now covered by `--citations` mode.
 
 ## Output
 

@@ -83,6 +83,51 @@ PAPER_FIGURE_EXTS = (".pdf", ".png", ".svg", ".jpg")
 PAPER_TABLE_EXTS  = (".tex", ".md")
 
 # ---------------------------------------------------------------------------
+# Citation namespaces (from research/rules/citations.md)
+# ---------------------------------------------------------------------------
+
+EXTERNAL_NAMESPACES = {
+    "method", "catalog", "pipeline", "var", "idea", "proj", "inst",
+}
+
+INTERNAL_NAMESPACES = {
+    "sec", "tab", "fig", "eq", "hyp", "decision", "result",
+    "local-inst", "dataset", "local-method",
+}
+
+LITERATURE_NAMESPACE = "cite"
+
+ALL_NAMESPACES = EXTERNAL_NAMESPACES | INTERNAL_NAMESPACES | {LITERATURE_NAMESPACE}
+
+# Internal namespace → (doc file, anchor prefix)
+INTERNAL_ANCHOR_FILES = {
+    "hyp":          "docs/hypotheses.md",
+    "decision":     "docs/decisions.md",
+    "result":       "docs/results.md",
+    "local-inst":   "docs/institutions.md",
+    "dataset":      "docs/data.md",
+    "local-method": "docs/methods.md",
+}
+
+# Token regex: matches [ns:key] but NOT inside backticks or markdown links
+# Captures ns and key separately
+CITATION_TOKEN_RE = re.compile(
+    r"(?<!`)"           # not preceded by backtick
+    r"\[([a-z][a-z0-9-]*):"  # [ns:
+    r"([a-zA-Z0-9_-]+)"      # key
+    r"\]"                     # ]
+    r"(?!`)"            # not followed by backtick
+)
+
+# Malformed token patterns to flag
+MALFORMED_TOKEN_RE = re.compile(
+    r"\[([A-Z][a-zA-Z0-9-]*):"  # uppercase first letter in namespace
+    r"([a-zA-Z0-9_-]+)\]"
+    r"|\[([a-z][a-z0-9-]*):"    # or valid ns but non-kebab key
+    r"([a-zA-Z0-9_]*[A-Z_][a-zA-Z0-9_]*)\]"
+)
+
+# ---------------------------------------------------------------------------
 # Finding model
 # ---------------------------------------------------------------------------
 
@@ -389,18 +434,334 @@ def lint_ideas(workspace: Path, f: Findings):
                    path=str(md.relative_to(workspace)))
 
 # ---------------------------------------------------------------------------
+# Registry TOML parser (stdlib only — simple key=value + [section] format)
+# ---------------------------------------------------------------------------
+
+def parse_registry(path: Path) -> dict[str, dict[str, str]]:
+    """Parse registry.toml into {ns.key: {title, description, path?, anchor?}}."""
+    entries: dict[str, dict[str, str]] = {}
+    if not path.is_file():
+        return entries
+    current_section: str | None = None
+    current: dict[str, str] = {}
+    section_re = re.compile(r"^\[([a-z][a-z0-9_-]*\.[a-zA-Z0-9_-]+)\]\s*$")
+    kv_re = re.compile(r'^(\w+)\s*=\s*"(.*?)"\s*$')
+
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        sm = section_re.match(line)
+        if sm:
+            if current_section and current:
+                entries[current_section] = current
+            current_section = sm.group(1)
+            current = {}
+            continue
+        kvm = kv_re.match(line)
+        if kvm and current_section:
+            current[kvm.group(1)] = kvm.group(2)
+    if current_section and current:
+        entries[current_section] = current
+    return entries
+
+
+def registry_lookup_key(registry: dict[str, dict[str, str]], ns: str, key: str) -> dict[str, str] | None:
+    """Look up ns:key in registry. Registry keys are stored as 'namespace.key'."""
+    # The registry uses singular namespace names that may differ from token ns
+    # e.g., [method.judge-iv] for method:judge-iv, [project.audit] for proj:audit
+    ns_map = {
+        "method": "method", "catalog": "catalog", "pipeline": "pipeline",
+        "var": "var", "idea": "idea", "proj": "project", "inst": "inst",
+    }
+    reg_ns = ns_map.get(ns, ns)
+    return registry.get(f"{reg_ns}.{key}")
+
+
+# ---------------------------------------------------------------------------
+# BibTeX key extractor
+# ---------------------------------------------------------------------------
+
+BIB_KEY_RE = re.compile(r"@\w+\{([^,\s]+),")
+
+def extract_bib_keys(repo: Path) -> set[str]:
+    """Extract all BibTeX keys from .bib files in paper/ and docs/refs/."""
+    keys: set[str] = set()
+    for bib_dir in [repo / "paper", repo / "docs" / "refs"]:
+        if not bib_dir.is_dir():
+            continue
+        for bib in bib_dir.glob("*.bib"):
+            for m in BIB_KEY_RE.finditer(read(bib)):
+                keys.add(m.group(1))
+    return keys
+
+
+# ---------------------------------------------------------------------------
+# Internal anchor scanner
+# ---------------------------------------------------------------------------
+
+ANCHOR_ID_RE = re.compile(r"^\s*-\s*id:\s*(\S+)", re.MULTILINE)
+LATEX_LABEL_RE = re.compile(r"\\label\{([^}]+)\}")
+
+def extract_internal_anchors(repo: Path) -> set[str]:
+    """Extract all internal anchor IDs from project docs and paper."""
+    anchors: set[str] = set()
+
+    # docs/ anchors: lines matching "- id: ns:key"
+    docs = repo / "docs"
+    if docs.is_dir():
+        for md in docs.rglob("*.md"):
+            for m in ANCHOR_ID_RE.finditer(read(md)):
+                anchors.add(m.group(1))
+
+    # paper/ LaTeX labels: \label{sec:foo}, \label{tab:bar}, etc.
+    paper = repo / "paper"
+    if paper.is_dir():
+        for tex in paper.rglob("*.tex"):
+            for m in LATEX_LABEL_RE.finditer(read(tex)):
+                anchors.add(m.group(1))
+
+    return anchors
+
+
+# ---------------------------------------------------------------------------
+# Citation token scanner
+# ---------------------------------------------------------------------------
+
+# Subdirectories to skip when scanning for citation tokens
+SKIP_DOC_SUBDIRS = {"emails", "whatsapp"}
+
+def scan_tokens(repo: Path) -> list[tuple[str, str, str, int]]:
+    """Scan docs/ and paper/ for [ns:key] tokens.
+
+    Returns list of (ns, key, relative_path, line_no).
+    Skips content inside backtick spans and files in emails/whatsapp subdirs.
+    """
+    tokens: list[tuple[str, str, str, int]] = []
+    search_dirs = [repo / "docs", repo / "paper"]
+
+    for d in search_dirs:
+        if not d.is_dir():
+            continue
+        globs = list(d.rglob("*.md")) + list(d.rglob("*.tex"))
+        for f in globs:
+            # Skip files in non-content subdirectories
+            try:
+                parts = f.relative_to(d).parts
+                if parts and parts[0] in SKIP_DOC_SUBDIRS:
+                    continue
+            except ValueError:
+                pass
+            text = read(f)
+            rel = str(f.relative_to(repo))
+            # Remove backtick-wrapped spans to avoid matching legal citations
+            cleaned = re.sub(r"`[^`]+`", "", text)
+            for m in CITATION_TOKEN_RE.finditer(cleaned):
+                line_no = cleaned[:m.start()].count("\n") + 1
+                tokens.append((m.group(1), m.group(2), rel, line_no))
+    return tokens
+
+
+def scan_malformed_tokens(repo: Path) -> list[tuple[str, str, int]]:
+    """Scan for malformed [Ns:key] or [ns:Key_Bar] tokens."""
+    results: list[tuple[str, str, int]] = []
+    search_dirs = [repo / "docs", repo / "paper"]
+
+    for d in search_dirs:
+        if not d.is_dir():
+            continue
+        for f in list(d.rglob("*.md")) + list(d.rglob("*.tex")):
+            try:
+                parts = f.relative_to(d).parts
+                if parts and parts[0] in SKIP_DOC_SUBDIRS:
+                    continue
+            except ValueError:
+                pass
+            text = read(f)
+            rel = str(f.relative_to(repo))
+            cleaned = re.sub(r"`[^`]+`", "", text)
+            for m in MALFORMED_TOKEN_RE.finditer(cleaned):
+                line_no = cleaned[:m.start()].count("\n") + 1
+                token_text = m.group(0)
+                results.append((token_text, rel, line_no))
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Citation lint
+# ---------------------------------------------------------------------------
+
+def lint_citations(repo: Path, f: Findings, kind: str, registry: dict[str, dict[str, str]]):
+    """Validate all [ns:key] citation tokens in a repo."""
+    tokens = scan_tokens(repo)
+    bib_keys = extract_bib_keys(repo)
+    internal_anchors = extract_internal_anchors(repo)
+
+    # Track which external keys are used (for orphan manifest check)
+    used_external: set[tuple[str, str]] = set()
+
+    for ns, key, rel, line_no in tokens:
+        path_ref = f"{rel}:{line_no}"
+
+        if ns in EXTERNAL_NAMESPACES:
+            used_external.add((ns, key))
+            entry = registry_lookup_key(registry, ns, key)
+            if entry is None:
+                f.err("cite.unresolved-external",
+                      f"[{ns}:{key}] not found in workspace registry",
+                      path=path_ref)
+            elif "path" in entry:
+                # Check that the underlying file still exists
+                # (workspace-level check — path is relative to workspace root)
+                pass  # deferred to workspace-level check (rule 3 in spec)
+
+        elif ns == LITERATURE_NAMESPACE:
+            if key not in bib_keys:
+                f.err("cite.unresolved-bib",
+                      f"[cite:{key}] not found in any .bib file",
+                      path=path_ref)
+
+        elif ns in INTERNAL_NAMESPACES:
+            # sec:, tab:, fig:, eq: resolve via LaTeX \label
+            # hyp:, decision:, result:, etc. resolve via "- id: ns:key"
+            full_id = f"{ns}:{key}"
+            if full_id not in internal_anchors:
+                f.err("cite.unresolved-internal",
+                      f"[{ns}:{key}] has no matching anchor (expected '- id: {ns}:{key}' or \\label{{{ns}:{key}}})",
+                      path=path_ref)
+
+        else:
+            f.warn("cite.unknown-namespace",
+                   f"[{ns}:{key}] uses unknown namespace '{ns}'",
+                   path=path_ref)
+
+    # Malformed tokens
+    for token_text, rel, line_no in scan_malformed_tokens(repo):
+        f.warn("cite.malformed",
+               f"malformed citation token {token_text} (namespaces and keys must be lowercase kebab-case)",
+               path=f"{rel}:{line_no}")
+
+    # Orphan manifest entries (only for projects)
+    if kind == "project":
+        manifest_path = repo / "docs" / "refs" / "manifest.toml"
+        if manifest_path.is_file():
+            manifest = parse_registry(manifest_path)
+            for section_key in manifest:
+                # section_key is like "method.judge-iv"
+                parts = section_key.split(".", 1)
+                if len(parts) != 2:
+                    continue
+                reg_ns, entry_key = parts
+                # Reverse the namespace map
+                token_ns_map = {
+                    "method": "method", "catalog": "catalog", "pipeline": "pipeline",
+                    "var": "var", "idea": "idea", "project": "proj", "inst": "inst",
+                }
+                token_ns = token_ns_map.get(reg_ns, reg_ns)
+                if (token_ns, entry_key) not in used_external:
+                    f.warn("cite.orphan-manifest",
+                           f"manifest entry [{section_key}] is not cited in any doc",
+                           path="docs/refs/manifest.toml")
+
+
+def lint_citations_workspace(workspace: Path, registry: dict[str, dict[str, str]], f: Findings):
+    """Workspace-level citation check: every registry entry's file still exists."""
+    for section_key, entry in registry.items():
+        if section_key == "meta.version" or not isinstance(entry, dict):
+            continue
+        file_path = entry.get("path")
+        if file_path and not (workspace / file_path).exists():
+            f.warn("cite.registry-dangling",
+                   f"registry [{section_key}] points to {file_path} which does not exist",
+                   path="research/refs/registry.toml")
+
+
+# ---------------------------------------------------------------------------
+# Manifest sync
+# ---------------------------------------------------------------------------
+
+def sync_manifest(repo: Path, registry: dict[str, dict[str, str]], dry_run: bool = False) -> tuple[Path, bool, str]:
+    """Regenerate docs/refs/manifest.toml for a project.
+
+    Returns (manifest_path, changed, content).
+    """
+    tokens = scan_tokens(repo)
+
+    # Collect unique external references
+    used_external: dict[str, set[str]] = defaultdict(set)
+    for ns, key, _rel, _line in tokens:
+        if ns in EXTERNAL_NAMESPACES:
+            used_external[ns].add(key)
+
+    # Build manifest content
+    lines: list[str] = []
+    lines.append("# Project citation manifest")
+    lines.append("#")
+    lines.append("# Auto-generated by: python check.py --sync")
+    lines.append("# Source of truth: research/refs/registry.toml")
+    lines.append("#")
+    lines.append("# Each entry is a workspace citation used in this project's docs.")
+    lines.append("# Coauthors with project-only access can read titles and descriptions")
+    lines.append("# here without seeing workspace-internal paths.")
+    lines.append("")
+
+    # Group by namespace, sorted
+    ns_order = ["method", "catalog", "pipeline", "var", "idea", "proj", "inst"]
+    ns_to_reg = {
+        "method": "method", "catalog": "catalog", "pipeline": "pipeline",
+        "var": "var", "idea": "idea", "proj": "project", "inst": "inst",
+    }
+
+    entry_count = 0
+    for ns in ns_order:
+        keys = sorted(used_external.get(ns, []))
+        if not keys:
+            continue
+        reg_ns = ns_to_reg[ns]
+        for key in keys:
+            entry = registry.get(f"{reg_ns}.{key}")
+            if entry is None:
+                continue  # unresolved — lint will catch this separately
+            lines.append(f"[{reg_ns}.{key}]")
+            lines.append(f'title = "{entry.get("title", "")}"')
+            lines.append(f'description = "{entry.get("description", "")}"')
+            lines.append("")
+            entry_count += 1
+
+    content = "\n".join(lines) + "\n" if entry_count > 0 else ""
+
+    manifest_path = repo / "docs" / "refs" / "manifest.toml"
+
+    # Check if changed
+    existing = read(manifest_path) if manifest_path.is_file() else ""
+    changed = content != existing
+
+    if not dry_run and changed and content:
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(content, encoding="utf-8")
+
+    return manifest_path, changed, content
+
+
+# ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
 
-def lint_repo(repo: Path, kind: str, workspace: Path) -> Findings:
+def lint_repo(repo: Path, kind: str, workspace: Path,
+              citations: bool = False,
+              registry: dict[str, dict[str, str]] | None = None) -> Findings:
     rel = repo.relative_to(workspace)
     f = Findings(scope=str(rel))
-    lint_docs_root(repo, f, kind)
-    lint_todo_done(repo, f)
-    lint_thinking(repo, f)
-    lint_source_build(repo, f)
-    lint_merge_validate(repo, f)
-    lint_archive_leakage(repo, f)
+    if not citations:
+        lint_docs_root(repo, f, kind)
+        lint_todo_done(repo, f)
+        lint_thinking(repo, f)
+        lint_source_build(repo, f)
+        lint_merge_validate(repo, f)
+        lint_archive_leakage(repo, f)
+    else:
+        if registry is not None:
+            lint_citations(repo, f, kind, registry)
     return f
 
 def find_repos(workspace: Path, slug: str | None) -> list[tuple[Path, str]]:
@@ -472,17 +833,65 @@ def main():
     ap.add_argument("slug", nargs="?", help="optional project or pipeline slug to lint alone")
     ap.add_argument("--json", action="store_true", help="emit JSON instead of markdown")
     ap.add_argument("--full", action="store_true", help="show every instance (default: grouped summary)")
+    ap.add_argument("--citations", action="store_true",
+                    help="lint [ns:key] citation tokens against registry and anchors")
+    ap.add_argument("--sync", action="store_true",
+                    help="regenerate docs/refs/manifest.toml for each project from registry")
     ap.add_argument("--workspace", type=Path, default=WORKSPACE)
     args = ap.parse_args()
 
     workspace = args.workspace.expanduser().resolve()
+
+    # --sync mode: regenerate manifests and exit
+    if args.sync:
+        registry_path = workspace / "research" / "refs" / "registry.toml"
+        registry = parse_registry(registry_path)
+        if not registry:
+            print("ERROR: could not parse registry at", registry_path, file=sys.stderr)
+            sys.exit(1)
+        repos = find_repos(workspace, args.slug)
+        changed_repos: list[str] = []
+        for repo, kind in repos:
+            if kind != "project":
+                continue
+            manifest_path, changed, _content = sync_manifest(repo, registry)
+            rel = repo.relative_to(workspace)
+            if changed:
+                changed_repos.append(str(rel))
+                print(f"  updated  {manifest_path.relative_to(workspace)}")
+            elif manifest_path.is_file():
+                print(f"  current  {manifest_path.relative_to(workspace)}")
+            else:
+                print(f"  (empty)  {rel}/docs/refs/manifest.toml — no external citations")
+        if changed_repos:
+            print(f"\nManifests updated in: {', '.join(changed_repos)}")
+        else:
+            print("\nAll manifests up to date.")
+        sys.exit(0)
+
+    # Load registry if doing citation checks
+    registry = None
+    if args.citations:
+        registry_path = workspace / "research" / "refs" / "registry.toml"
+        registry = parse_registry(registry_path)
+        if not registry:
+            print("ERROR: could not parse registry at", registry_path, file=sys.stderr)
+            sys.exit(1)
+
     repos = find_repos(workspace, args.slug)
 
     workspace_findings = Findings(scope="workspace")
     if not args.slug:
-        lint_ideas(workspace, workspace_findings)
+        if args.citations:
+            if registry:
+                lint_citations_workspace(workspace, registry, workspace_findings)
+        else:
+            lint_ideas(workspace, workspace_findings)
 
-    all_findings = [lint_repo(repo, kind, workspace) for repo, kind in repos]
+    all_findings = [lint_repo(repo, kind, workspace,
+                              citations=args.citations,
+                              registry=registry)
+                    for repo, kind in repos]
 
     if args.json:
         payload = {
