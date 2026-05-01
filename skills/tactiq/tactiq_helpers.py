@@ -1,0 +1,176 @@
+"""Helpers for the /tactiq skill.
+
+Two CLI subcommands:
+  download <file_id> <out_path>   export a Google Doc as text/plain via Drive API
+  parse <txt_path>                parse a Tactiq plaintext export → JSON
+
+The Drive access token is read from rclone's config (~/.config/rclone/rclone.conf,
+section [gdrive]). Run any rclone command first (e.g. `rclone about gdrive:`) so
+rclone refreshes the token before this script reads it.
+
+Tactiq plaintext format (observed 2026-05-01):
+
+    Transcript delivered by Tactiq.io - get it for your Google Meet today!
+    View the full transcript ...
+
+
+    <DD Month YYYY> | <Title>
+    Attendees: <name1>, <name2>
+
+
+    Highlights
+    <highlights or boilerplate>
+
+
+    Transcript
+    <MM:SS or HH:MM> <Speaker>: <text>
+    ...
+"""
+
+import argparse
+import configparser
+import json
+import os
+import re
+import sys
+import urllib.parse
+import urllib.request
+from datetime import datetime
+from pathlib import Path
+
+RCLONE_CONF = Path(os.environ.get("RCLONE_CONFIG", Path.home() / ".config/rclone/rclone.conf"))
+GDRIVE_REMOTE = os.environ.get("TACTIQ_GDRIVE_REMOTE", "gdrive")
+
+
+def access_token() -> str:
+    cp = configparser.ConfigParser()
+    cp.read(RCLONE_CONF)
+    if GDRIVE_REMOTE not in cp:
+        raise SystemExit(f"no [{GDRIVE_REMOTE}] section in {RCLONE_CONF}")
+    tok = json.loads(cp[GDRIVE_REMOTE]["token"])
+    return tok["access_token"]
+
+
+def download(file_id: str, out_path: str) -> None:
+    token = access_token()
+    url = (
+        "https://www.googleapis.com/drive/v3/files/"
+        + urllib.parse.quote(file_id, safe="")
+        + "/export?mimeType=text/plain"
+    )
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+    with urllib.request.urlopen(req) as resp:
+        data = resp.read()
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(out_path).write_bytes(data)
+
+
+_DATE_TITLE_RE = re.compile(r"^(\d{1,2}\s+\w+\s+\d{4})\s*\|\s*(.+?)\s*$")
+_TRANSCRIPT_LINE_RE = re.compile(r"^(\d{1,2}:\d{2}(?::\d{2})?)\s+([^:]+?):\s*(.*)$")
+
+
+def parse(txt_path: str) -> dict:
+    text = Path(txt_path).read_text(encoding="utf-8-sig")
+    lines = text.splitlines()
+
+    title = None
+    date_iso = None
+    attendees: list[str] = []
+    highlights_lines: list[str] = []
+    transcript_lines: list[str] = []
+
+    section = "header"
+    for raw in lines:
+        line = raw.rstrip()
+
+        if section == "header":
+            m = _DATE_TITLE_RE.match(line)
+            if m:
+                date_str, title = m.group(1), m.group(2).strip()
+                try:
+                    date_iso = datetime.strptime(date_str, "%d %B %Y").strftime("%Y-%m-%d")
+                except ValueError:
+                    date_iso = None
+                section = "after_title"
+                continue
+
+        if section == "after_title":
+            if line.startswith("Attendees:"):
+                attendees = [a.strip() for a in line.split(":", 1)[1].split(",") if a.strip()]
+                section = "pre_highlights"
+                continue
+
+        if section in ("pre_highlights", "after_title"):
+            if line.strip() == "Highlights":
+                section = "highlights"
+                continue
+
+        if section == "highlights":
+            if line.strip() == "Transcript":
+                section = "transcript"
+                continue
+            highlights_lines.append(line)
+            continue
+
+        if section == "transcript":
+            transcript_lines.append(line)
+            continue
+
+    highlights = _trim_block(highlights_lines)
+    transcript = _trim_block(transcript_lines)
+
+    default_highlights = (
+        "Use the highlighting tool in Tactiq during the meeting to collect "
+        "all highlights in this section."
+    )
+    if highlights.strip() == default_highlights:
+        highlights = ""
+
+    return {
+        "title": title,
+        "date": date_iso,
+        "attendees": attendees,
+        "highlights": highlights,
+        "transcript": transcript,
+        "transcript_lines": _structured_transcript(transcript_lines),
+    }
+
+
+def _trim_block(lines: list[str]) -> str:
+    while lines and not lines[0].strip():
+        lines.pop(0)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    return "\n".join(lines)
+
+
+def _structured_transcript(lines: list[str]) -> list[dict]:
+    out = []
+    for line in lines:
+        m = _TRANSCRIPT_LINE_RE.match(line.strip())
+        if m:
+            out.append({"timestamp": m.group(1), "speaker": m.group(2).strip(), "text": m.group(3).strip()})
+    return out
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    d = sub.add_parser("download")
+    d.add_argument("file_id")
+    d.add_argument("out_path")
+
+    p = sub.add_parser("parse")
+    p.add_argument("txt_path")
+
+    args = ap.parse_args()
+    if args.cmd == "download":
+        download(args.file_id, args.out_path)
+    elif args.cmd == "parse":
+        json.dump(parse(args.txt_path), sys.stdout, ensure_ascii=False, indent=2)
+        sys.stdout.write("\n")
+
+
+if __name__ == "__main__":
+    main()
