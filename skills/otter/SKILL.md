@@ -66,7 +66,19 @@ For each unprocessed email, extract:
 - **otter_url**: link to the Otter conversation page (usually one prominent link in the body).
 - **body**: the email body text (Otter usually includes summary, action items, and sometimes a transcript snippet — keep all of it raw).
 
-Note: Otter emails often include a **summary** and a **link to the full transcript** rather than the entire transcript inline. Save what's in the email as-is. Do not try to fetch the full transcript from Otter's web UI — that's out of scope.
+Note: Otter emails often include a **summary** and a **link to the full transcript** rather than the entire transcript inline.
+
+### Fetching the full transcript
+
+After extracting the `otter_url` from the email, use Playwright to fetch the full transcript:
+
+1. Navigate to the `otter_url` using `mcp__playwright__browser_navigate`.
+2. Wait for the page to load, then take a snapshot with `mcp__playwright__browser_snapshot` to understand the page structure.
+3. The transcript is typically in the main content area. Look for the transcript text elements and extract them.
+4. If Otter requires login or the page doesn't load the transcript (e.g., paywall, auth wall), fall back to the email summary and note in the output that the full transcript could not be fetched.
+5. Include the full transcript in the saved file under a `## Transcript` section, after the email summary.
+
+If Playwright is unavailable or the fetch fails, save the email summary as-is (graceful degradation).
 
 ## Step 4 — route to a project
 
