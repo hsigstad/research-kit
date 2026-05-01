@@ -202,6 +202,9 @@ docs/
   outline.md
   archive.md
   results.md
+  key-findings.md
+  anecdotes.md
+  qa.md
 ```
 
 ---
@@ -628,6 +631,61 @@ Rules:
 - Claude may create reference documents when producing structured lookup material
 - Claude should not create reference documents for narrative content (use briefs) or for structured memory (use canonical files)
 - No approval needed to add new files under `docs/reference/` (unlike `docs/` root)
+
+---
+
+### key-findings.md (optional)
+
+Settled top-line findings — the TLDR a paper reader gets in the first 30 seconds.
+
+Contains:
+- 3-10 bullet points naming the project's headline results
+- one-line takeaways for each, with reference to the relevant table/figure or `result:<key>`
+- minimum prose
+
+Differs from `summary.md` (which describes the project, not its findings) and `results.md` (which catalogs all stabilized findings, headline and minor).
+
+This file is not a paper draft. It is a quick-reference summary.
+
+Rules:
+- Only add findings that are stable enough to share externally.
+- Speculative or tentative findings belong in `thinking.md`.
+- Each entry should reference the underlying result (`result:<key>`, table path, or figure path).
+
+---
+
+### anecdotes.md (optional)
+
+Structured catalog of anecdotal evidence (cases, stories, news incidents) used to motivate or illustrate the research.
+
+Contains:
+- one entry per case/anecdote
+- short factual description
+- which hypothesis or theoretical claim it bears on
+- citation to source (news article, court decision, etc.)
+
+Parallel to `literature.md` but for stories rather than papers. Useful in projects where qualitative evidence informs the design (`scheme`, `procure`, `decompose`).
+
+Rules:
+- Keep entries concise and factual; no narrative prose.
+- Cite sources; no unattributed anecdotes.
+- Speculative interpretation belongs in `thinking.md`.
+
+---
+
+### qa.md (optional)
+
+Q&A reference for the project — frequently-asked questions and their concise answers.
+
+Useful for projects with many open questions where the same things get asked across meetings or by coauthors.
+
+Contains:
+- `## Question` headings followed by short answers
+- pointers to canonical files for detail (e.g., "see `methods.md`")
+
+Rules:
+- Each question should have a settled answer; open questions belong in `thinking.md`.
+- Keep answers terse — link to canonical files for elaboration.
 
 ---
 
