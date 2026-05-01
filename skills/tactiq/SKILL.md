@@ -8,9 +8,9 @@ user_invocable: true
 
 On-demand sync of Tactiq.io meeting transcripts into per-project meeting archives.
 
-Tactiq is a Chrome extension that auto-records Google Meet sessions and saves transcripts to a Google Drive folder named `Tactiq Transcription/` as Google Docs. This skill exists because Otter cannot transcribe Portuguese; Tactiq can.
+Tactiq is a Chrome extension that auto-records Google Meet sessions and saves transcripts to a Google Drive folder named `Tactiq Transcription/` as Google Docs.
 
-This skill is the Tactiq counterpart to `/otter`. They are independent and write to different dedup files (`.tactiq_processed.json` vs `.otter_processed.json`); both produce files under `projects/<slug>/docs/meetings/`. Use whichever matches the tool that recorded the meeting.
+The skill writes processed-file IDs to `.tactiq_processed.json` and saves transcripts under `projects/<slug>/docs/meetings/`.
 
 ## What this skill does
 
@@ -132,7 +132,7 @@ match:
 Matching rules:
 
 - `title_contains` — case-insensitive substring against the meeting title.
-- `attendee_name` — case-insensitive match against any attendee display name. (Tactiq does not provide emails, so the otter-style `attendee:` rule will never match a Tactiq export.)
+- `attendee_name` — case-insensitive match against any attendee display name. (Tactiq does not provide emails, so email-based `attendee:` rules will never match a Tactiq export.)
 - A project matches if **any** rule matches.
 - If multiple projects match, ask the user.
 - If the user passed project slugs (e.g., `/tactiq procure`), restrict routing to those.
@@ -199,7 +199,7 @@ If the user asks to "set up tactiq routing for procure" or similar, add a `## Me
 - The first run after a long gap may pull many transcripts. Confirm with the user before processing more than ~10.
 - The Drive access token in `rclone.conf` is short-lived (~1 hour). Run `rclone about gdrive: > /dev/null 2>&1` before reading the token to trigger an rclone-managed refresh.
 - Drive API quota errors (`RATE_LIMIT_EXCEEDED`) happen surprisingly often with rclone's app credentials. Sleep ~60s and retry.
-- Tactiq exports do not include attendee emails. Routing rules that use `attendee:` (the email-based rule from `/otter`) will never match a Tactiq export — use `attendee_name:` instead.
+- Tactiq exports do not include attendee emails. Email-based `attendee:` routing rules will never match a Tactiq export — use `attendee_name:` instead.
 - Tactiq sometimes uses the literal title `Meeting Transcription` when the Meet event had no name. The slugged filename will collide if multiple such meetings happen on the same day; the `-2`, `-3` suffix logic handles it, but flag the user so they set Meet titles up front.
 - The skill does NOT delete or move docs in Drive. Files stay in `Tactiq Transcription/` indefinitely.
 - If `.tactiq_processed.json` is missing or corrupt, treat as empty and warn the user before reprocessing.
