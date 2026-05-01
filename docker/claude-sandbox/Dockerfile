@@ -24,7 +24,19 @@ RUN pip install --no-cache-dir \
     numpy scipy statsmodels matplotlib \
     PyMuPDF mistune \
     linearmodels pydantic python-dotenv html2text \
-    openai anthropic
+    openai anthropic \
+    git+https://github.com/DarrenZal/otter-mcp.git
+
+# Install uv at the same path the host uses, so .mcp.json works as-is
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Pre-build the whatsapp-mcp-server uv environment at a container-local path
+# so the host's .venv (with absolute symlinks into ~/.local/share/uv/python)
+# isn't reused. Source is bind-mounted at runtime; deps are pinned via uv.lock.
+RUN git clone --depth 1 https://github.com/lharries/whatsapp-mcp.git /tmp/wamcp \
+ && UV_PROJECT_ENVIRONMENT=/home/henrik/.cache/uv-envs/whatsapp \
+    /home/henrik/.local/bin/uv sync --project /tmp/wamcp/whatsapp-mcp-server --frozen \
+ && rm -rf /tmp/wamcp
 
 # Memory monitor
 COPY monitor_memory.sh /usr/local/bin/monitor_memory.sh

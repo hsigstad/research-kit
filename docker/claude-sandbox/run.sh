@@ -39,15 +39,23 @@ if [ "$RUNTIME" = "docker" ]; then
         docker build -t "$IMAGE_NAME" "$SCRIPT_DIR"
     fi
 
+    WHATSAPP_MOUNT=()
+    if [ -d "$HOME/whatsapp-mcp" ]; then
+        WHATSAPP_MOUNT=(-v "$HOME/whatsapp-mcp":/home/henrik/whatsapp-mcp)
+    fi
+
     exec docker run --rm -it \
         -v "$(pwd)":/workspace \
         -v "$HOME/Dropbox":/home/henrik/Dropbox:ro \
         -v "$HOME/.claude":/home/henrik/.claude \
         -v "$HOME/.claude.json":/home/henrik/.claude.json \
+        "${WHATSAPP_MOUNT[@]}" \
         -e TERM=xterm-256color \
         -e COLORTERM=truecolor \
         -e DATA_DIR=/workspace/data \
+        -e UV_PROJECT_ENVIRONMENT=/home/henrik/.cache/uv-envs/whatsapp \
         -w /workspace \
+        --network host \
         --memory=16g \
         --cpus=2 \
         "$IMAGE_NAME" \
