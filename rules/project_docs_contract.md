@@ -50,18 +50,18 @@ repo/
     notes/           # optional; miscellaneous working documents
 
   source/          # analysis code
-  build/           # all code outputs except paper tables/figures
+  build/           # all code outputs; build/table/ and build/figure/ tracked
 
   paper/           # paper-facing materials (version controlled)
     paper.tex
     appendix.tex
     references.bib
-    tables/
-    figures/
+    tables/          # optional; hand-authored tables only
+    figures/         # optional; hand-authored figures only
 
   talk/            # presentation slides (optional, version controlled)
     talk.tex
-    figures/
+    figures/         # optional; hand-authored slide-only figures
 
   references/      # optional; primary source documents (legislation, news, case files)
 ```
@@ -81,21 +81,70 @@ repo/
 - Tracked by git
 
 **build/**
-- All outputs produced by code in `source/`, except paper tables and figures
-- Includes: cleaned datasets, intermediate files, model outputs, logs
+- All outputs produced by code in `source/`, including the tables and
+  figures cited by the paper
+- Includes: cleaned datasets, intermediate files, model outputs, logs,
+  analysis tables, analysis figures
 - Layered into `build/clean/` → `build/assemble/` → `build/analysis/` per
   `rules/build_layers.md`
-- Typically gitignored (regenerable from source)
-- Must not be treated as authoritative project memory
+- **`build/table/` and `build/figure/` are tracked by git by default.**
+  These are the analysis outputs that back claims in `docs/` (especially
+  `docs/reference/key-findings.md` and `docs/reference/stylized-facts.md`).
+  Tracking them means: (a) doc citations into `build/table/*.csv` resolve
+  on a fresh clone, (b) magnitude drift after a re-run shows up in `git
+  diff` and serves as an early warning for parser/data regressions, and
+  (c) each artifact shares its git history with the script that produced
+  it. Everything else under `build/` is gitignored by default (regenerable
+  from source).
+- Recommended `.gitignore` snippet for projects:
+  ```
+  build/*
+  !build/table/
+  !build/figure/
+  ```
+- Escape hatches:
+  - **Large outputs.** When a single file exceeds ~5 MB, route it to
+    `build/table/large/` (or `build/figure/large/`) and add that subdir
+    to `.gitignore`. Track the summary CSV that docs/paper cite; leave
+    the long-form artifact out.
+  - **Binary figures.** PDF/PNG diffs are opaque — use the diff as a
+    "this changed in commit X" marker, not for inspecting what changed.
+    If the underlying numbers matter, also write the CSV that produced
+    the figure so it diffs as text.
+  - **Re-run noise.** Re-running an analysis produces a CSV diff even
+    when the script didn't change. This is a feature (the diff records
+    that the run happened) but expect "regenerate X" commits to
+    accumulate; squash or batch them per propagation round.
+- Must not be treated as authoritative project memory — `docs/` remains
+  the source of truth; tracked build artifacts are *evidence* for docs,
+  not docs themselves.
 
 **paper/**
-- Manuscript and all materials referenced in the paper
-- Tables and figures used in the paper
+- Manuscript sources: `.tex`, `.bib`, `.sty`, and any hand-authored
+  supporting content
+- Scripted tables and figures live in `build/table/` and `build/figure/`,
+  not in `paper/`. The paper references them by path — e.g.
+  `\graphicspath{{../build/figure/}}` for figures and
+  `\input{../build/table/foo.tex}` (or a `TEXINPUTS` setting) for
+  tables. To answer "what's in the paper?" use
+  `grep -E 'includegraphics|\\input' paper/*.tex`, not `ls`.
+- `paper/tables/` and `paper/figures/` are **optional** and reserved for
+  **hand-authored** content only (custom-formatted tables, illustrator
+  diagrams, etc.). If a project has none — the common case — these
+  directories don't need to exist. Polish that could be a script should
+  be a script: write `source/table/foo_paper.py` → `build/table/foo_paper.tex`
+  rather than hand-editing in `paper/`.
+- For arxiv / journal submission, generate a flat bundle with a small
+  `paper/flatten.sh` (or equivalent) that follows the `\includegraphics`
+  and `\input` references and copies the cited build artifacts into the
+  submission directory. One-shot, run at submission time only.
 - Tracked by git
 
 **talk/** (optional)
-- Presentation slides and talk-specific figures
-- May reference figures from `paper/figures/` or keep its own in `talk/figures/`
+- Presentation slides
+- References figures from `build/figure/` by the same `\graphicspath`
+  convention; `talk/figures/` is reserved for hand-authored slide-only
+  content (architecture diagrams, screenshots) and is optional
 - Tracked by git
 
 **references/** (optional)
@@ -109,11 +158,25 @@ repo/
 
 ### Output paths for tables and figures
 
-Analysis code should write:
-- Tables and figures for the paper directly to `paper/tables/` and `paper/figures/`
-- All other outputs to `build/`
+Analysis code should write **all** scripted tables and figures to
+`build/table/` and `build/figure/` — including those cited by the paper.
+These directories are tracked by git (see the `build/` section above),
+so paper-facing artifacts are still version controlled and recoverable
+on a fresh clone; they just live alongside the script that produced
+them rather than next to the manuscript.
 
-This ensures paper-facing outputs are version controlled and co-located with the manuscript, while intermediate and regenerable outputs remain outside version control.
+`paper/tables/` and `paper/figures/` are reserved for hand-authored
+content only (see the `paper/` section). Don't write script output
+there. If a polished version of a scripted artifact is needed for the
+paper, write it as a separate script (e.g. `source/table/foo_paper.py`
+→ `build/table/foo_paper.tex`) rather than maintaining a hand-edited
+copy.
+
+This convention gives every artifact a single canonical location,
+removes the drift risk between `build/` and `paper/` copies, and lets
+`source/X.py → build/X.{csv,tex,pdf}` remain the universal naming rule
+(see §"Source and build naming convention" in the workspace
+instructions).
 
 ### Behavioral guidance
 
@@ -164,7 +227,11 @@ repo/
 
 **build/**
 - Cleaned datasets and processing outputs
-- Typically gitignored or written to external storage
+- Gitignored by default or written to external storage
+- Pipelines do **not** have the `build/table/` / `build/figure/` tracked-
+  by-default carve-out that projects have — pipeline outputs are
+  typically large parquets, not the KB–MB aggregation artifacts that
+  back doc claims
 - Must be regenerable from source
 
 ---
