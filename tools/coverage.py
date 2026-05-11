@@ -391,6 +391,110 @@ def check_artifacts_cited_in_docs(root: Path, report: Report) -> None:
         [f"{p}  ←  {','.join(where[p][:2])}" for p in unindexed],
     ))
 
+    # Reverse direction: artifacts.yaml says X is cited in foo.md, but
+    # foo.md doesn't actually mention X (citation removed without yaml
+    # update). For each entry's cited_in list, read the doc and grep
+    # for the artifact path or its basename.
+    stale_citations: list[str] = []
+    for e in doc.get("artifacts", []):
+        path = e.get("path", "")
+        if not path:
+            continue
+        base = Path(path).name
+        stem = Path(path).stem
+        for cited_doc in e.get("cited_in") or []:
+            # Allow doc#anchor fragments in the cited_in list.
+            doc_path = cited_doc.split("#", 1)[0]
+            doc_file = root / doc_path
+            if not doc_file.exists():
+                stale_citations.append(f"{path}  ⇏  {cited_doc} (doc missing)")
+                continue
+            try:
+                text = doc_file.read_text(errors="replace")
+            except OSError:
+                continue
+            # The doc should mention either the full path, the basename, or
+            # the stem. Use the stem (most common case in fisc, where
+            # entries are linked as `[stem.csv](../../build/table/stem.csv)`).
+            if path in text or base in text or stem in text:
+                continue
+            stale_citations.append(f"{path}  ⇏  {cited_doc}")
+
+    report.add(section, Check(
+        "artifacts.yaml cited_in pointing at doc that no longer mentions it",
+        "✓" if not stale_citations else "⚠",
+        f"{len(stale_citations)} stale citations",
+        stale_citations,
+    ))
+
+
+def check_indexed_artifact_sidecars(root: Path, report: Report) -> None:
+    """For each artifact indexed in artifacts.yaml, verify a .run.json
+    sidecar exists. Unindexed long-tail artifacts are ignored (sidecars
+    are only required for citable outputs)."""
+    section = "PROVENANCE (.run.json)"
+    yaml_path = root / "docs" / "reference" / "artifacts.yaml"
+    if not yaml_path.exists():
+        return
+
+    doc = _try_load_yaml(yaml_path) or {}
+    missing_sidecar: list[str] = []
+    for e in doc.get("artifacts", []):
+        p = e.get("path", "")
+        if not p:
+            continue
+        art = root / p
+        if not art.exists():
+            # already flagged in ARTIFACTS section
+            continue
+        sidecar = art.with_suffix(art.suffix + ".run.json")
+        if not sidecar.exists():
+            missing_sidecar.append(p)
+
+    n_indexed = sum(1 for e in doc.get("artifacts", [])
+                    if (root / e.get("path", "")).exists())
+    if not missing_sidecar:
+        report.add(section, Check(
+            "indexed artifacts with .run.json sidecar",
+            "✓",
+            f"all {n_indexed} present",
+        ))
+    else:
+        # Distinguish three cases:
+        #   (a) helper not present at all → user needs to deploy
+        #       source/_run_json.py and call write_run_json.
+        #   (b) helper present but indexed artifacts predate it →
+        #       sidecars will appear as scripts are re-run.
+        #   (c) helper present, some indexed artifacts have sidecars,
+        #       others don't → individual misses worth flagging.
+        helper_present = (root / "source" / "_run_json.py").exists()
+        pct_missing = (100 * len(missing_sidecar) / n_indexed) if n_indexed else 0
+        if not helper_present:
+            status = "—"
+            note = (
+                f"{len(missing_sidecar)}/{n_indexed} lack a sidecar — "
+                "deploy source/_run_json.py and wire write_run_json() "
+                "into the central output helpers"
+            )
+        elif pct_missing >= 80:
+            status = "—"
+            note = (
+                f"{len(missing_sidecar)}/{n_indexed} lack a sidecar — "
+                "helper deployed; sidecars will appear as scripts re-run"
+            )
+        else:
+            status = "⚠"
+            note = (
+                f"{len(missing_sidecar)}/{n_indexed} indexed artifacts "
+                "lack a sidecar despite the helper being deployed"
+            )
+        report.add(section, Check(
+            "indexed artifacts with .run.json sidecar",
+            status,
+            note,
+            missing_sidecar,
+        ))
+
 
 # ─── output ─────────────────────────────────────────────────────────────────
 
@@ -452,6 +556,7 @@ def main() -> int:
     check_scripts(root, report)
     check_validation(root, report)
     check_sidecars(root, report)
+    check_indexed_artifact_sidecars(root, report)
     check_artifacts_cited_in_docs(root, report)
 
     if args.json:

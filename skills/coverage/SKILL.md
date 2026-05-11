@@ -11,7 +11,7 @@ propose surgical fixes for each gap. Thin wrapper around
 `research-kit/tools/coverage.py` — the Python tool emits the raw
 report; this skill turns it into an interaction by surfacing only the
 actionable items and routing each gap to the right follow-up
-(`/findings --update`, `/hypothesis --status`, `/iat-check`, etc.).
+(`/findings --update`, `/hypothesis --update`, `/iat-check`, etc.).
 
 ## Arguments
 
@@ -69,7 +69,7 @@ Do not propose to run anything; this mode is purely informational.
 | Gap | Suggested follow-up |
 |---|---|
 | `entries with missing artifact on disk` | The artifact was deleted or renamed. Either delete the entry, or fix its `path` if the artifact moved. |
-| `entries with missing producing script` | The script was renamed/deleted. Fix the entry's `script` field, or `/rename-script` if the move is consistent across the project. |
+| `entries with missing producing script` | The script was renamed/deleted. Fix the entry's `script` field (and search-and-replace across `validation.yaml`, `done.md`, briefs, etc.). |
 | `entries with empty cited_in` (produced but uncited) | If the artifact is load-bearing, run `/findings --extend` or `/hypothesis --extend` to add a citation. Otherwise mark the entry with a comment. |
 | `entries with empty tags` | Tag from the filename prefix (d-/h-series) and the substantive theme. A `/next` `--update` may add tags as a side effect. |
 | `build/{table,figure} files not indexed` | Long-tail descriptive artifacts not cited from any doc. Add to `artifacts.yaml` only when first cited; otherwise leave. |

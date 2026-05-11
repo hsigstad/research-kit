@@ -50,3 +50,14 @@ public surface.
   provenance sidecar (`research-kit/rules/run_json.md`). Each project
   copies this verbatim into `source/_run_json.py` and imports
   `write_run_json` from there.
+
+- **`skill_links.py`** — research-kit-wide cross-reference checker.
+  Walks every `research-kit/skills/**/SKILL.md` and verifies every
+  `/skill`, `/skill --flag`, and `research-kit/{rules,tools,meta}/...`
+  reference resolves. Catches the "I added `--status` but `/next`
+  still references `--update`" drift class. Exits non-zero on broken
+  refs (CI-friendly).
+
+  ```bash
+  python3 research-kit/tools/skill_links.py [--root PATH] [--detail] [--json]
+  ```
