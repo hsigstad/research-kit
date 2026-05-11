@@ -192,6 +192,19 @@ def lint_thinking(repo: Path, f: Findings):
 
 PRIVATE_PY = re.compile(r"^_|^__init__\.py$|^__pycache__$")
 
+# Script types recognized as producers. .R / .r added so R scripts in
+# clean/intermediate/assemble/analysis layers don't trigger orphan
+# warnings on their build folders.
+SCRIPT_GLOBS = ("*.py", "*.R", "*.r")
+
+def iter_scripts(d: Path, recursive: bool = False):
+    """Yield non-private scripts (.py / .R / .r) under d."""
+    iter_fn = d.rglob if recursive else d.glob
+    for pat in SCRIPT_GLOBS:
+        for p in iter_fn(pat):
+            if not PRIVATE_PY.match(p.name):
+                yield p
+
 def lint_source_build(repo: Path, f: Findings):
     src = repo / "source"
     build = repo / "build"
@@ -212,11 +225,9 @@ def lint_source_build(repo: Path, f: Findings):
                    f"source/{layer_name}/ is project-specific (canonical layers: {', '.join(sorted(CANONICAL_SOURCE_DIRS))})",
                    path=f"source/{layer_name}")
 
-        for script in layer.rglob("*.py"):
+        for script in iter_scripts(layer, recursive=True):
             rel = script.relative_to(repo)
             base = script.stem
-            if PRIVATE_PY.match(script.name):
-                continue
             if layer_name == "figure":
                 check_data_output(repo, rel, base, build / "figure", "figure", f,
                                   exts=PAPER_FIGURE_EXTS)
@@ -238,7 +249,7 @@ def check_build_orphans(repo: Path, f: Findings):
         d = src / layer
         if not d.is_dir():
             return set()
-        return {p.stem for p in d.glob("*.py") if not PRIVATE_PY.match(p.name)}
+        return {p.stem for p in iter_scripts(d)}
 
     def lint_dir(out_dir: Path, layer: str, exts: tuple, code_prefix: str):
         if not out_dir.is_dir():
