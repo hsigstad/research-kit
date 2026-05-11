@@ -158,6 +158,7 @@ Every entry's footer is structured into four bulleted classes. Missing classes a
 - *Reports*: <aggregate-report citations with `#page=N` deep links>
 - *News anchors*: <`texts/NNN.txt` links + anchor quote when load-bearing>
 - *Cross-refs*: <stylized-facts §, briefs/, audits/, related findings>
+- *Validation*: <verification status per backing script>   <!-- only when project has validation.yaml -->
 ```
 
 Path conventions (when the doc lives at `docs/reference/key-findings.md`):
@@ -169,6 +170,42 @@ Path conventions (when the doc lives at `docs/reference/key-findings.md`):
 
 For news anchors that carry a load-bearing quote, append the quote inline:
 > [Folha 2026-03 (Cucolo, Pesquisa Patrimonial CNJ)](../../references/news/texts/070.txt) — anchor: *"a execução de sentenças judiciais que determinam o pagamento de dívidas seja hoje um dos principais gargalos do Judiciário"*
+
+### Validation badge (only when project has a validation ledger)
+
+The *Validation* line renders per-script status from
+`docs/validation.yaml` (or legacy `paper/validation.yaml`). Skip the
+line entirely if neither location exists — the project hasn't opted
+into the ledger. Schema: `research-kit/meta/validation_ledger.md`.
+
+Format — one line per backing script cited in *Own analysis*:
+
+```markdown
+- *Validation*:
+  - `h4_pgfn_filtering_break.py` — 🛡 ai-verified (2026-05-08, hash f311796)
+  - `h4_cross_exequente_did.py` — ⏳ pending
+  - `cnpj_firm_descriptives.py` — ⚠ stale (hash drift since 2026-04-29 sign-off)
+```
+
+Status glyph vocabulary (matches `validation.yaml::status`):
+
+- 🛡 **`ai-verified`** — at least one AI check recorded; required-method floor met.
+- ✅ **`human-verified`** — human reviewer signed off; hash matches reviewed bytes.
+- ⏳ **`pending`** — row exists but no checks have run yet.
+- ⚠ **`stale`** — script hash (or closure hash) has drifted since the recorded check date.
+
+**Don't fabricate.** If a backing script isn't in `validation.yaml`,
+omit it from the *Validation* block rather than guessing. Missing
+script in the ledger means /next step 5d didn't add it, which is
+itself a flag — log it in the entry's body, not as a fake validation
+status.
+
+**Confidence tag vs validation status are different axes** —
+*confidence* (🟢/🟡/🔴) is about source robustness (replicated vs
+single-source vs provisional); *validation* (🛡/✅/⏳/⚠) is about
+verification of the analysis code. A finding can be 🟢 single-source
+ai-verified, 🟡 single-source pending, or 🟢 replicated stale —
+all meaningful.
 
 ## Draft protocol
 

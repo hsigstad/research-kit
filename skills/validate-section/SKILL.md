@@ -105,8 +105,11 @@ use it; the per-invocation walk below is the fallback.
   `paper/numbers.json` and read the `source` field. That is the
   direct script for that macro.
 - For each `\ref{tab:…}`, `\ref{fig:…}`, `\includegraphics{…}`, or
-  `\input{…}`, grep `source/figure/` and `source/analysis/` for the
-  script that produces the referenced artefact.
+  `\input{…}`: prefer **`docs/reference/artifacts.yaml`** as the
+  script-resolution source (canonical script↔artifact map; schema:
+  `research-kit/rules/artifacts_yaml.md`). Fall back to grepping
+  `source/figure/` and `source/analysis/` only if `artifacts.yaml`
+  is missing or doesn't have the referenced artifact yet.
 - The union of those scripts is this section's `backing_scripts`.
 - If `paper/validation_sections.yaml` already has an entry with
   `backing_scripts`, start from that list and only add newly-

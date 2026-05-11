@@ -138,6 +138,43 @@ This is what makes the doc-propagation step robust to surprise
 re-runs — the index does the bookkeeping you would otherwise do from
 memory.
 
+## Relation to other indices
+
+The workspace has three indices over the script ↔ artifact ↔ consumer
+graph, each at a different layer. `artifacts.yaml` is the **source of
+truth**; the other two derive from it where they overlap:
+
+| Index | Owns | Granularity | Audience |
+|---|---|---|---|
+| `docs/reference/artifacts.yaml` | script ↔ artifact path ↔ docs that cite it | path-level | Tooling: `/next`, `/findings --refresh`, audits |
+| `build/<X>.run.json` (sidecar) | provenance of one specific run (commit, params, ran_at) | per-run | Tooling: drift detection, audit recovery |
+| `build/paper/section_deps.json` (when present) | paper section ↔ macros ↔ figures ↔ backing_scripts | paper-section-level | `/validate-section`, paper-build gate |
+
+### Layering rule
+
+- `artifacts.yaml` is the canonical script↔artifact↔doc map. Other
+  indices that need this mapping should **consume** it rather than
+  re-derive.
+- `section_deps.json` is a paper-specific view that **adds** the
+  `paper.tex → macros → figures/tables` parse to `artifacts.yaml`'s
+  data — it does not re-implement the script lookup. A typical
+  `section_deps.json` builder:
+  1. Parse `paper.tex` for `\MacroName{}`, `\input{}`,
+     `\includegraphics{}` calls per section.
+  2. Resolve macros via `paper/numbers.json` (paper-specific) and
+     figures/tables via `artifacts.yaml` (canonical).
+  3. Emit `{section: {macros, figures, backing_scripts}}` where
+     `backing_scripts` is the union of `artifacts.yaml[...].script`
+     for each cited artifact, plus the macro `source` fields.
+- `.run.json` sidecars are emitted by the script itself at run time
+  and don't overlap with the static indices — they record what
+  happened during one specific invocation.
+
+If a project's `section_deps.json` builder currently re-greps
+`source/` to find producers of figures/tables, that's a refactor
+target: replace the grep with an `artifacts.yaml` lookup. One source
+of truth means one place to maintain.
+
 ## Auditing the file
 
 `/findings --audit` should flag:
