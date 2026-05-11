@@ -1,27 +1,53 @@
 # Validation Ledger Spec
 
 The mechanics of the validation ledger referenced in stage 8 of
-`ai_research_workflow.md`. This is the spec the `/validate-section` skill
-follows, and the format every project's `paper/validation.yaml` should
-conform to. (Historical note: before 2026-04-21 the script ledger was
-markdown at `paper/validation.md`; that file now holds only the prose
-narrative ledgers, with the structured state in YAML.)
+`ai_research_workflow.md`. This is the spec the `/validate-section`
+skill follows. (Historical notes: before 2026-04-21 the script ledger
+was markdown at `paper/validation.md`; that file now holds only the
+prose narrative ledgers, with the structured state in YAML. Before
+2026-05-11 the script ledger lived at `paper/validation.yaml`; the
+canonical location is now `docs/validation.yaml` — see "File
+locations" below.)
 
-Companion format: a **section-level** state file
-(`paper/validation_sections.yaml`) tracks human sign-off at subsection
-granularity. It's optional — use it when a project renders a site view of
-the paper with per-section stripes. See the bottom of this doc.
+## File locations
+
+The validation ledger is **project memory** (which scripts have been
+verified — true regardless of paper structure) and belongs in `docs/`
+alongside `key-findings.md`, `hypotheses.md`, etc. Paper-build
+artifacts stay in `paper/` and `build/paper/`.
+
+| File | Canonical | Legacy fallback |
+|---|---|---|
+| Script ledger (structured) | `docs/validation.yaml` | `paper/validation.yaml` |
+| Narrative companions (prose) | `docs/validation.md` | `paper/validation.md` |
+| Section state (optional, paper-specific) | `paper/validation_sections.yaml` | (stays in `paper/`) |
+
+Tooling (the `/validate-section` skill, the pre-submission checker,
+`/next` step 5c, the `/findings` Sources-footer badge) should:
+
+1. Read from the canonical path first; fall back to legacy if the
+   canonical file doesn't exist.
+2. Write back to whichever location currently has the file — do not
+   silently migrate.
+
+To migrate a project from legacy → canonical, run `git mv
+paper/validation.yaml docs/validation.yaml` (and the `.md` companion)
+as a single deliberate step.
+
+If neither location has a `validation.yaml`, the project has not
+opted in to the validation ledger and tools should skip the
+validation-aware behavior cleanly.
 
 ---
 
-## Script ledger: `paper/validation.yaml`
+## Script ledger: `docs/validation.yaml`
 
 YAML file, one top-level `scripts:` list with one entry per script. A
 parallel `hand_coded:` list tracks paper elements without generating
 scripts (TikZ figures, LaTeX tables, appendix prose).
 
 Narrative companions (the "AI checks performed" running log, the
-draft-reading ledger) live in `paper/validation.md` as prose markdown.
+draft-reading ledger) live in `docs/validation.md` as prose markdown.
 The structured ledger (this file) is what tooling reads.
 
 ### Script entry schema
@@ -93,7 +119,8 @@ pending ──(ai check recorded)──▶ ai-verified ──(human sign-off)─
 
 A script that:
 
-1. Reads every entry under `scripts:` in `paper/validation.yaml`.
+1. Reads every entry under `scripts:` in the script ledger
+   (`docs/validation.yaml` or legacy `paper/validation.yaml`).
 2. Recomputes each script's current closure hash (see
    [Closure hash](#closure-hash-drift-detector)) at HEAD.
 3. If the current closure hash differs from the row's `closure_hash`,

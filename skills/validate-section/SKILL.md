@@ -32,6 +32,34 @@ Flags:
   no figures, no tables) are skipped — recording nothing for them
   keeps the ledger uncluttered.
 
+## File locations
+
+The validation ledger is **project memory** (which scripts have been
+verified) and lives in `docs/` alongside `key-findings.md`,
+`hypotheses.md`, and the rest of project state. Paper-build outputs
+stay in `paper/` and `build/paper/`.
+
+Discovery order — first hit wins, with backward compatibility for the
+historical `paper/` location:
+
+| File | Canonical | Legacy fallback |
+|---|---|---|
+| Script ledger | `docs/validation.yaml` | `paper/validation.yaml` |
+| Narrative companion | `docs/validation.md` | `paper/validation.md` |
+| Section state | `paper/validation_sections.yaml` | (paper-build state — stays in `paper/`) |
+| Paper macro source | `paper/numbers.json` | (paper-specific) |
+| Section deps index | `build/paper/section_deps.json` | (paper-build output) |
+
+For all read operations below, check the canonical path first; fall back
+to the legacy path if the canonical doesn't exist. For write operations,
+write to whichever location currently has the file — do not silently
+migrate. To migrate a project to the canonical location, `git mv
+paper/validation.yaml docs/validation.yaml` as a single deliberate step.
+
+If neither location has a `validation.yaml`, the project hasn't opted
+in to the validation ledger. Tell the user and exit; do not bootstrap
+one mid-pass.
+
 ## Procedure
 
 ### 1. Locate the section
@@ -93,7 +121,7 @@ section at `pending` (or back-fill interpretations in
 `source/paper/numbers.py::_defs()` first, then re-run).
 
 **Rely on the ledger for upstream.** Each backing script has its own
-entry in `paper/validation.yaml` with its own `ai_checks` and `status`.
+entry in the script ledger (`docs/validation.yaml` or legacy `paper/validation.yaml`) with its own `ai_checks` and `status`.
 The pre-submission checker propagates `stale` and `pending` upstream
 via the `depends_on` column — a section whose direct backing script
 is fine but whose grandparent clean-layer script is `stale` cannot
@@ -117,7 +145,7 @@ requires.
    the section (between its `\subsection{…}` and the next one).
 3. **Script drift.** For each backing script, compare its current
    closure hash (e.g. `python3 scripts/closure_hash.py <path>`) to
-   the entry's `closure_hash:` in `paper/validation.yaml`. A drifted
+   the entry's `closure_hash:` in the script ledger. A drifted
    closure catches both leaf edits and helper-module edits; the
    plain git `hash` column is the audit anchor, not the drift
    detector. Collect the drifted scripts.
@@ -508,8 +536,9 @@ worse than `pending`.
 
 ### 5. Record results
 
-**`paper/validation.yaml`** — for each script touched, find its entry
-under `scripts:` and:
+**`docs/validation.yaml`** (or `paper/validation.yaml` — see File
+locations) — for each script touched, find its entry under `scripts:`
+and:
 
 1. Compute the current short git hash: `git log -n 1 --format=%h <path>`.
    If the entry's `hash:` differs, update it.
