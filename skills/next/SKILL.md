@@ -30,6 +30,16 @@ not the writing of any one doc.
   Useful for planning a session.
 - `/next --no-run` — write the script and stop. Useful when you want to
   inspect the script before it touches data.
+- `/next --auto` — **fully autonomous**. No stop-gates. If no description
+  is given, propose internally, pick the top-ranked candidate, run it,
+  propagate, close out. Use when you trust the proposal ranking and the
+  doc-propagation defaults and want to leave it running. See "Auto modes"
+  below for safety semantics.
+- `/next --auto-after-pick` — **autonomous after task selection**.
+  Proposes (or accepts your description), stops once for your pick (or
+  to confirm the specified task), then runs the rest of the loop without
+  further gates. Use when you want to keep judgment over *what* to run
+  but trust the propagation step.
 
 ## Finding the workspace root
 
@@ -228,11 +238,59 @@ The bar is: future-you, six months from now, needs to know why the
 project looks this way. If a future reader could reconstruct it from
 `done.md` + git log, it doesn't belong here.
 
+## Auto modes
+
+Two flags bypass the stop-gates for unattended runs:
+
+- **`--auto`** — both gates off. If no description is given, propose
+  internally and pick the top-ranked candidate; otherwise accept the
+  given description. Then write, run, propagate, close out without
+  asking.
+- **`--auto-after-pick`** — pick gate on, results gate off. Proposes
+  (or accepts the description) and stops once. After your pick,
+  run / inspect / propagate / close out without further confirmation.
+
+Auto-mode semantics:
+
+- **Errors are not gates.** A script that errors in step 4 still halts
+  the loop and surfaces the traceback; auto means "no confirmation
+  prompts at well-defined gates," not "ignore failures." After fixing
+  the script, re-invoke `/next --auto`.
+- **Auto-pick threshold.** In `--auto` with no description: only
+  proceed if the top-ranked candidate has no risk flag (no "needs
+  raw data we don't have", no "duplicates existing artifact", no
+  "depends on unshipped parser fix"). If the top candidate is flagged,
+  bail with the proposal list and require manual pick.
+- **Doc propagation runs by the same checklist** keyed to run type;
+  no shortcuts. The propagation skills (`/findings --extend`,
+  `/hypothesis --extend`, etc.) are invoked exactly as in attended mode.
+- **`decisions.md` writes in auto mode** when the promotion bar is
+  met (hypothesis demoted, design dropped, etc.) — the bar is policy,
+  not a gate. The entry is flagged in the closing report so you can
+  review next session and revert if you disagree.
+- **End-of-iteration report is the audit trail.** In auto mode, the
+  closing report enumerates: the script written, the headline result,
+  every doc edited, any `decisions.md` entry created, and any
+  surprises that would have been a gate prompt in attended mode.
+  Read it; it's where you regain control.
+
+When to use:
+
+- `--auto` for batch / overnight runs where the proposal ranking is
+  trustworthy and the cost of a wrong analysis is low (cheap reruns,
+  exploratory descriptive cuts).
+- `--auto-after-pick` when you know which analyses are next but
+  don't want to babysit the inspection-and-propagation cycle for
+  each.
+- Default (both gates) for anything load-bearing for the paper or
+  involving a sample-definition / parser change.
+
 ## Guardrails
 
-- **Stop at greenlight gates.** Step 1 → step 2 (researcher picks),
-  step 4 → step 5 (researcher confirms results). Do not chain past
-  these without explicit go-ahead.
+- **Stop at greenlight gates** (unless `--auto` or `--auto-after-pick`).
+  Step 1 → step 2 (researcher picks), step 4 → step 5 (researcher
+  confirms results). Do not chain past these without an explicit
+  go-ahead or an auto-mode flag.
 - **Don't propagate doubt.** If step 4 inspection shows something
   surprising or off, surface it before touching docs. Walking back a
   finding is more expensive than running a sanity check.
