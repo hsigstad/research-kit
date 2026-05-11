@@ -57,6 +57,14 @@ artifacts:
 - **`script`** — the producing script, relative to the project root.
   Use the actual `__main__` script that writes the output; not a
   helper imported by it.
+  Per workspace.md's "Source and build naming convention", `script` is
+  now mechanically **derivable** from `path`:
+  - `build/<layer>/X.<ext>` → `source/<layer>/X.py`
+  - `build/<layer>/X/<name>.<ext>` → `source/<layer>/X.py`
+  We still record it explicitly: it's the canonical citation field
+  (referenced by `/findings`, `/validate-section`, `section_deps.json`)
+  and survives renames more gracefully than a derived value. Future
+  tooling may auto-fill it; the schema stays unchanged.
 - **`description`** — one line, plain prose. Goal: someone reading this
   line knows whether the artifact is relevant to their question without
   opening the CSV.
@@ -88,9 +96,12 @@ artifacts:
 
 ### One artifact, one entry
 
-If a script writes four outputs, write four entries — all sharing the
-same `script` field. This keeps the reverse-lookup simple: given a path,
-exactly one entry resolves.
+If a script writes four outputs of the same suffix, those outputs live
+in a script-named folder per workspace.md
+(`build/figure/X/<name>.png`, not `build/figure/X_a.png` siblings) —
+write four entries, one per file, all sharing the same `script` field.
+This keeps the reverse-lookup simple: given a path, exactly one entry
+resolves.
 
 ### Multi-format triples are one entry
 
@@ -177,14 +188,20 @@ of truth means one place to maintain.
 
 ## Auditing the file
 
-`/findings --audit` should flag:
+`/check` flags:
 
 - Entries whose `path` no longer exists on disk → stale (script was
   renamed or deleted).
+- Entries whose `script` doesn't match the path-derived script
+  (`build/.../X.<ext>` or `build/.../X/<name>.<ext>` → `source/.../X.py`)
+  → naming-convention violation; fix the script location or the entry.
 - Entries whose `cited_in` doc no longer mentions the artifact → stale
   citation (doc was rewritten without updating yaml).
 - Docs that cite a `build/{table,figure}/X` not present in `cited_in`
   for the matching artifact → missing entry.
+- Sibling outputs of the same suffix at the top of `build/<layer>/`
+  (e.g. `build/figure/X_a.png` + `build/figure/X_b.png`) → multi-output
+  scripts must use a script-named folder per workspace.md.
 
 ## Example (excerpt from a fisc-style project)
 
@@ -239,8 +256,10 @@ For a project that already has many findings citing many artifacts:
 
 1. Grep `docs/` for references to `build/table/` and `build/figure/`.
 2. Group by artifact path.
-3. Look up each artifact's producing script via the
-   `source/X.py → build/X.*` naming convention.
+3. Look up each artifact's producing script via the naming convention:
+   `build/<layer>/X.<ext>` → `source/<layer>/X.py`, or
+   `build/<layer>/X/<name>.<ext>` → `source/<layer>/X.py` for
+   multi-output scripts.
 4. Take the description from the script's IAT `INTENT` line.
 5. Tag by inspection.
 

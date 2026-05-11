@@ -140,7 +140,7 @@ section.
   AI can draft entries; the point is that the *why* exists to audit
   later. This is the only defense against "no one remembers why the
   sample is restricted to X" showing up at submission.
-- **IAT convention** (`/iat-check`) for per-script documentation: INTENT,
+- **IAT convention** (`/iat`) for per-script documentation: INTENT,
   REASONING, ASSUMES, SOURCE comments plus validation guards after joins
   and filters.
 - **Sanity checks** on summary stats, distributions, and pre/post-join
@@ -289,7 +289,7 @@ Not "read everything" — a targeted, time-boxed pass with a checklist.
    filter logic, join keys, sign conventions, sample construction,
    variable definitions match `data.md`.
 3. **Spot-check** non-critical-path scripts — read 2-3 randomly, plus
-   anything flagged by `/iat-check`.
+   anything flagged by `/iat`.
 4. **Record in the ledger.** Human-reviewed scripts get a `human_check`
    date, flipping status to `human-verified`.
 5. **Calibration** (occasional, not every paper). Deliberately inject a

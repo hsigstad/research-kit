@@ -1,7 +1,8 @@
 # Fix templates per finding code
 
-Reference for the `/lint-docs --fix` interactive flow. For each finding code,
-this lists the default fix and any alternatives. "Default" = alternative `a`.
+Reference for the `/check docs --fix` (and `/check --fix`) interactive flow.
+For each finding code, this lists the default fix and any alternatives.
+"Default" = alternative `a`.
 
 If a finding's fix is "manual" (no auto-fix), do not include it in the numbered
 proposal list — surface separately as "manual review" at the end.
@@ -53,7 +54,7 @@ Subfolder under `docs/` is not in the canonical allowlist.
   `briefs/`) — pick based on content.
 - **b**: Move all files inside up one level into a canonical folder.
 - **c**: Add the subfolder name to the allowed list in
-  `research-kit/skills/lint-docs/check.py` (`ALLOWED_DOC_SUBFOLDERS`).
+  `research-kit/tools/check_docs.py` (`ALLOWED_DOC_SUBFOLDERS`).
 
 ## todo.completed
 

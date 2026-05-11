@@ -126,7 +126,8 @@ appear as slash commands.
 | `/new-pipeline` | Same for data processing pipelines |
 | `/handoff` | End-of-session: commits and pushes all changes, updates todo/done docs |
 | `/idea` | Records a research idea with YAML frontmatter and adds to index |
-| `/iat-check` | Audits Python scripts for documentation quality (Inline Audit Trail convention) |
+| `/check` | Fast audits of a project against workspace conventions — docs contract, source/build naming, artifacts/validation ledgers, citation tokens. Modes: `/check docs`, `/check ledgers`, `/check cite`, or default-all |
+| `/iat` | LLM scan of `source/*.py` for Inline Audit Trail compliance (INTENT / REASONING / ASSUMES / SOURCE). Slower than `/check`; kept separate |
 | `/data` | Searches across a data catalog, variable dictionary, and linkage docs |
 | `/whatsapp` | Send/read WhatsApp messages to coauthors via MCP bridge |
 | `/zoom` | Creates Zoom meetings as Google Calendar events, looks up contacts |
@@ -228,7 +229,7 @@ information a reader can't recover from the code:
 - `# SOURCE:` -- external data inputs
 - Validation guards (asserts after joins/filters)
 
-The `/iat-check` skill audits scripts against this convention.
+`/iat` audits scripts against this convention.
 
 **Files:** `rules/inline_audit_trail.md`
 

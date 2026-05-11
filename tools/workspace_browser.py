@@ -496,7 +496,7 @@ def render_nav_tree(tree: dict, depth: int = 0) -> str:
         display = name.replace(".md", "")
         # For SKILL.md files, show parent directory name instead
         if display.upper() == "SKILL":
-            # Extract skill name from href path (e.g., research-kit/skills/lint-docs/SKILL.html → lint-docs)
+            # Extract skill name from href path (e.g., research-kit/skills/check/SKILL.html → check)
             parts = href.split("/")
             if len(parts) >= 2:
                 display = parts[-2]

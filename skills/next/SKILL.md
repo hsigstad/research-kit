@@ -13,7 +13,7 @@ under `source/{table,figure}/`, inspect the build output, update the
 relevant docs."
 
 This is a *thin orchestrator*. Doc-writing steps invoke existing skills
-(`/findings`, `/hypothesis`, `/institutions`, `/iat-check`, `/handoff`).
+(`/findings`, `/hypothesis`, `/institutions`, `/check`, `/handoff`).
 The skill's job is the **sequence** and the **doc-propagation checklist**,
 not the writing of any one doc.
 
@@ -147,6 +147,11 @@ Location and naming (per workspace.md "Source and build naming convention"):
 
 - Table outputs → `source/table/X.py` → `build/table/X.{csv,parquet,tex}`
 - Figure outputs → `source/figure/X.py` → `build/figure/X.{pdf,png}`
+- **Multi-output scripts** (more than one output of the same suffix) must
+  write into a folder named after the script:
+  `source/figure/X.py` → `build/figure/X/<name>.png`, not sibling files like
+  `build/figure/X_a.png` + `build/figure/X_b.png`. The script-to-output
+  mapping must be recoverable from the path alone.
 - Underscore-prefix (`source/table/_foo_check.py`) for one-shot
   exploratory checks kept for reproducibility but not part of the
   pipeline. Use sparingly — most scripts should not need it.
@@ -166,7 +171,7 @@ Code style (per workspace.md):
 - `errors='coerce'` on numeric conversions of messy input.
 - `diarios` for shared parsing — do not duplicate.
 
-After writing, invoke `/iat-check` on the new script (or note that it
+After writing, invoke `/iat <script>` on the new script (or note that it
 should be run).
 
 If `--no-run` was passed: **stop here**.
