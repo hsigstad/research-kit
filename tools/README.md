@@ -35,4 +35,18 @@ public surface.
 
 ## Other tools in this directory
 
-(Add a one-line summary as new tools land.)
+- **`coverage.py`** — workspace-conventions health dashboard for a
+  project. Read-only audit emitting a single-screen report on
+  `artifacts.yaml` coverage and integrity, IAT presence in scripts,
+  `validation.yaml` ageing, and `.run.json` dirty-commit flags. Pass
+  `--detail` to list offending items, `--json` for machine output.
+  Run before each `/next` session or on a schedule to catch drift.
+
+  ```bash
+  python3 research-kit/tools/coverage.py [--project PATH] [--detail] [--json]
+  ```
+
+- **`run_json.py`** — reference implementation of the per-artifact
+  provenance sidecar (`research-kit/rules/run_json.md`). Each project
+  copies this verbatim into `source/_run_json.py` and imports
+  `write_run_json` from there.
