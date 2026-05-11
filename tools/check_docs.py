@@ -217,8 +217,9 @@ def lint_source_build(repo: Path, f: Findings):
             base = script.stem
             if PRIVATE_PY.match(script.name):
                 continue
-            if layer_name in ("figure",):
-                check_paper_output(repo, rel, base, paper / "figures", PAPER_FIGURE_EXTS, "figure", f)
+            if layer_name == "figure":
+                check_data_output(repo, rel, base, build / "figure", "figure", f,
+                                  exts=PAPER_FIGURE_EXTS)
             elif layer_name == "table":
                 check_data_output(repo, rel, base, build / "table", "table", f,
                                   exts=PAPER_TABLE_EXTS + DATA_OUTPUT_EXTS)
@@ -273,10 +274,9 @@ def check_build_orphans(repo: Path, f: Findings):
     paper = repo / "paper"
     for layer in ("clean", "intermediate", "assemble", "analysis"):
         lint_dir(build / layer, layer, DATA_OUTPUT_EXTS, "build")
-    lint_dir(paper / "figures", "figure", PAPER_FIGURE_EXTS, "paper.figure")
-    # paper/tables/ is reserved for hand-authored content only (per
-    # project_docs_contract.md) — script outputs always land in
-    # build/table/. So no orphan check on paper/tables/.
+    # paper/figures/ and paper/tables/ are reserved for hand-authored content
+    # only (per project_docs_contract.md) — script outputs always land in
+    # build/figure/ and build/table/. So no orphan check on paper/{figures,tables}/.
     lint_dir(build / "figure", "figure", PAPER_FIGURE_EXTS, "build.figure")
     lint_dir(build / "table", "table", PAPER_TABLE_EXTS + DATA_OUTPUT_EXTS, "build.table")
 
@@ -302,29 +302,6 @@ def check_data_output(repo: Path, script_rel: Path, base: str, expected_dir: Pat
             f.note("build.csv-preferred-parquet",
                    f"{csv_path.relative_to(repo)} is .csv (prefer .parquet for {layer}-layer outputs)",
                    path=str(csv_path.relative_to(repo)))
-
-def check_paper_output(repo: Path, script_rel: Path, base: str, expected_dir: Path, exts: tuple, kind: str, f: Findings):
-    if expected_dir.exists():
-        folder = expected_dir / base
-        if folder.is_dir() and any(p.suffix.lower() in exts for p in folder.iterdir() if p.is_file()):
-            return
-        matches = list(expected_dir.glob(f"{base}.*"))
-        matches = [m for m in matches if m.suffix.lower() in exts]
-        if matches:
-            return
-    build_dir = repo / "build" / kind
-    if build_dir.exists():
-        misplaced = list(build_dir.glob(f"{base}.*"))
-        if any(m.suffix.lower() in exts for m in misplaced):
-            target = next(m for m in misplaced if m.suffix.lower() in exts)
-            f.warn("paper.misplaced-output",
-                   f"{kind} {target.name} is in build/{kind}/ but should be in paper/{kind}s/",
-                   path=str(script_rel))
-            return
-    f.warn("source.no-output",
-           f"no paper {kind} found for {script_rel} (expected paper/{kind}s/{base}.* or paper/{kind}s/{base}/<name>.*)",
-           path=str(script_rel))
-
 
 # ---------------------------------------------------------------------------
 # pandas merge() validate=
