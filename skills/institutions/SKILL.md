@@ -18,6 +18,17 @@ citations against `artigos.db`.
   reference; add new sections for topics not yet covered
 - `/institutions audit` — verify citations resolve, flag stale claims,
   check coverage against shared reference without adding content
+- `/institutions --update <section> [--artifact <build/path>]` —
+  **surgical single-section edit**. Update one section of
+  `institutions.md` (e.g. after a new law, portaria, or court ruling
+  changes the rule it documents). Reads only `CLAUDE.md`,
+  `institutions.md`, and the optional triggering artifact. Does not
+  re-derive other sections, does not re-walk the full shared
+  reference. Use from `/next` step 5 when a run surfaced an
+  institutional fact that belongs in one existing section. The
+  `<section>` argument is a heading slug from the current file.
+  Distinct from `update` (which re-checks the whole file against the
+  shared reference for missing sections).
 
 If no project slug is given, infer from the current working directory.
 
@@ -168,6 +179,39 @@ reference that the project context suggests is relevant:
 - If the section exists but the shared reference has newer information
   (check `Snapshot as of` dates): add a note
   `**[shared reference updated YYYY — check for changes]**`
+
+#### Mode: surgical update (`--update <section> [--artifact <path>]`)
+
+Use when one section of `institutions.md` needs to change after a new
+law / portaria / court ruling surfaced — typically from a `/next`
+iteration that ran an analysis revealing an institutional fact.
+
+**Minimal read set:**
+
+1. `$PROJ/CLAUDE.md` — current focus and naming conventions.
+2. `$PROJ/docs/institutions.md` — locate the target section, respect
+   the file's existing structure.
+3. The `--artifact` build path (if given) — the table/figure whose
+   IAT or output triggered the update.
+4. The relevant shared-reference topic file *only if* the target
+   section directly mirrors it.
+
+Do **not** re-walk the full shared reference, re-derive other
+sections, or rerun citation resolution across the whole file. Run
+`$CITE` on the *new* citations only.
+
+**What to edit:** only the named section. Preserve heading structure,
+citation style, `**NEEDS PRIMARY SOURCE**` conventions.
+
+**What not to touch:** other sections, the file's domain inventory,
+the cross-reference index (if present), or the document header.
+
+**Output:** edited `institutions.md` plus a one-paragraph summary
+(which section, what changed, citations added). The summary belongs
+in the `/next` end-of-iteration report.
+
+Distinct from `update` (full re-check against shared reference for
+*missing* sections) and `audit` (read-only citation/coverage check).
 
 #### Mode: audit (`--audit`)
 

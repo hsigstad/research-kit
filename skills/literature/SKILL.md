@@ -15,6 +15,7 @@ Search academic databases, curate relevant papers, and populate a project's
 - `/literature [project-slug] --refresh` — re-run searches, merge with existing candidates
 - `/literature [project-slug] --fetch-pdfs` — only download PDFs for already-curated papers
 - `/literature [project-slug] --cite-graph DOI` — expand candidates via citation graph of a specific paper
+- `/literature [project-slug] --update <citekey> [--artifact <build/path>]` — **surgical single-entry edit**. Update one literature entry's annotation (key findings, relevance note, supersession marker) when a `/next` iteration produced a result that connects to or contradicts that paper. Reads only `CLAUDE.md`, `literature.md`, `paper/*.bib`, and the optional triggering artifact. Does not re-run searches, does not re-walk the bibliography, does not re-curate. Use from `/next` step 5 when a single citation needs a note added or revised. The `<citekey>` is the BibTeX key as used in `literature.md` and `paper/*.bib`.
 
 If no project slug is given, infer from the current working directory.
 
@@ -270,6 +271,37 @@ And in Dropbox:
 The naming chain: `literature.md` → `file: avis2018government.pdf` → bib key
 `@article{avis2018government, ...}` → PDF `avis2018government.pdf`. One identifier
 across all three locations.
+
+## Update mode (`--update <citekey>`)
+
+Surgical single-entry edit. Use when one citation in `literature.md`
+needs a note refreshed after a `/next` iteration — typically because
+the run produced a result that connects to or contradicts the paper.
+
+**Minimal read set:**
+
+1. `$PROJ/CLAUDE.md` — current focus.
+2. `$PROJ/docs/literature.md` — locate the entry under its topic heading.
+3. `$PROJ/paper/*.bib` — verify the citekey exists and the metadata is
+   consistent.
+4. The `--artifact` build path (if given) — the result that motivated
+   the update.
+
+Do **not** re-run searches, re-walk citation graphs, re-curate the
+candidate list, or re-fetch PDFs. The update touches one annotation,
+not the bibliography pipeline.
+
+**What to edit:** only the target citekey's entry — typically its
+relevance note ("Tests prediction X on data Y", "Superseded by Z 2024"),
+not its bibliographic metadata. If metadata is wrong, fix it in
+`paper/*.bib` and note in the report.
+
+**What not to touch:** other entries, the topic heading structure,
+the citekey convention.
+
+**Output:** edited `literature.md` plus a one-paragraph summary of
+what changed. The summary belongs in the `/next` end-of-iteration
+report.
 
 ## Gotchas
 

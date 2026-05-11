@@ -26,6 +26,7 @@ stress-test the entries you've written.
 - `/findings --refresh` — recompute the load-bearing numbers in entries against current build artifacts; flag entries whose headline numbers don't match the current data. Critical for catching staleness after pipeline reruns or parser fixes.
 - `/findings --audit` — do not write; report completeness gaps (missing source classes, missing confidence tags, dangling cross-refs, sources without page anchors).
 - `/findings --footer <slug-or-heading>` — re-format only the Sources footer of one specified entry to the standardized 4-class schema (used to roll out the schema across an existing doc).
+- `/findings --update <slug-or-heading> [--artifact <build/path>]` — **surgical single-entry edit**. Update one finding's body (headline, magnitude, caveat, confidence tag) after a new analysis result. Reads only `CLAUDE.md`, `key-findings.md`, and the optional triggering build artifact. Does not re-derive other findings, does not re-read `stylized-facts.md`/briefs/audits. Use from `/next` step 5 when a run affects exactly one existing finding (re-run with revised magnitude, parser fix that shifts a number, confidence promotion/demotion after replication). Distinct from `--refresh` (which walks all findings) and `--footer` (which touches only the Sources block).
 
 ## Finding the workspace root
 
@@ -184,6 +185,49 @@ For news anchors that carry a load-bearing quote, append the quote inline:
    - Sources footer in the four-class format with all four classes (use `none direct` if a class has no entries).
 4. Aim for **20–50 entries** in mature projects, **5–15** in early-stage. More than 60 means insufficient curation — split into a separate page or move some to `stylized-facts.md`.
 5. The `## Findings overview` index must include every entry with a one-line summary and an anchor link. This is the doc's table of contents and is critical for navigability.
+
+## Update mode (`--update <slug-or-heading>`)
+
+Surgical single-entry edit. Use when one finding's content changed
+(magnitude revised, caveat added, confidence tag moved, parser-fix
+walk-back) and the rest of `key-findings.md` should remain untouched.
+
+**Minimal read set** — do not re-read the full briefing pack:
+
+1. `$PROJ/CLAUDE.md` — for current focus and naming conventions.
+2. `$PROJ/docs/reference/key-findings.md` — to locate the target entry
+   and respect its template exactly.
+3. The `--artifact` build path (if given) — the CSV/figure that
+   triggered the update. Re-read it to derive the new magnitude.
+4. The triggering script's IAT docstring (via the `source/X.py →
+   build/X.*` convention) — for context.
+
+Do **not** re-read `stylized-facts.md`, briefs, audits, or paper.tex
+unless the target finding's Sources footer explicitly cites them and
+the update would change those citations.
+
+**What to edit:** only the target finding's entry. Preserve the
+template (headline, expanded prose, Sources footer four-class schema).
+Update only the fields affected — typically the magnitude in the
+headline + the prose explanation, optionally the confidence tag.
+
+**What not to touch:** other findings, the `## Findings overview`
+table of contents (unless the headline changed materially), the
+confidence-tag scheme section, or any cross-cutting structure.
+
+**`@claim` registry:** if the entry uses `@claim` tokens, update the
+token values rather than free-text edits where possible. That keeps
+`--refresh` cycles cheap on subsequent re-runs.
+
+**Output:** the edited `key-findings.md` plus a one-paragraph summary
+(which entry, before → after, what artifact was cited). The summary
+belongs in the `/next` end-of-iteration report.
+
+Distinct from:
+- `--refresh` (walks **all** findings, recomputes from artifacts,
+  flags drift — for post-pipeline-rerun bulk verification).
+- `--footer` (touches only the Sources footer schema, no body edits).
+- `--extend` (appends new findings; doesn't edit existing ones).
 
 ## Refresh mode (`--refresh`)
 

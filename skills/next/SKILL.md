@@ -68,15 +68,29 @@ Always read 1–3. Read 4+ only in propose mode.
 
 ## Step 1 — Propose (propose mode only)
 
-Produce 3–5 ranked candidates. For each:
+Produce 3–5 ranked candidates. For each, output the following fields:
 
-- One-sentence description.
-- Which outline section / hypothesis / finding it would advance.
-- Required inputs (existing build artifacts or pipeline outputs).
-- Rough effort (single descriptive cut / multi-script empirical battery /
-  new data linkage).
-- Risk flag if any ("needs raw data we don't have", "duplicates existing
-  `build/table/X`", "depends on a parser fix not yet shipped").
+- **Description**: one sentence.
+- **Primary target**: one of —
+  - `hypotheses.md:H<#>` — updates an existing hypothesis status block.
+  - `key-findings.md:<slug>` — updates an existing finding entry.
+  - `institutions.md:<section>` — updates an institutional section.
+  - `theory.md:<framework-id>` — refines a theoretical framework.
+  - `literature.md:<citekey>` — annotates a literature entry.
+  - `(new entry, no current target)` — exploratory, will produce a new
+    finding via `--extend` rather than a `--update`.
+- **Secondary targets** (optional): any other docs the run will touch
+  per the propagation checklist (briefs, stylized-facts, outline).
+- **Required inputs**: existing build artifacts or pipeline outputs.
+- **Effort**: single descriptive cut / multi-script empirical battery /
+  new data linkage.
+- **Risk flag** if any: "needs raw data we don't have", "duplicates
+  existing `build/table/X`", "depends on a parser fix not yet shipped".
+
+The primary target is what drives step 5's `--update <ID>` invocation.
+If you can't name a target, that's a signal to talk through what the
+run is for *before* writing the script — usually it means the candidate
+is too vague or genuinely exploratory (in which case `(new entry)`).
 
 Ranking criteria, in order:
 
@@ -84,6 +98,20 @@ Ranking criteria, in order:
 2. Tests a hypothesis that's been pending for >2 sessions.
 3. Cheaply confirms or refutes a finding currently tagged 🟡 or 🔴.
 4. Resolves an explicit todo from the most recent handoff.
+
+Candidate format example:
+
+```
+Candidate 2: H6 vara-FE × foro stratification (cross-jurisdictional follow-up)
+  Description: refit H6 fixed effects with foro dummies to test whether
+    the productivity axis collapses to between-foro composition.
+  Primary target: hypotheses.md:H6 (status block)
+  Secondary: key-findings.md:vara-productivity-axis,
+             briefs/vara-productivity.md
+  Required inputs: build/table/h6_vara_fe_by_foro.csv (existing)
+  Effort: medium — refit + new cut.
+  Risk: none.
+```
 
 **Then stop.** Wait for the researcher to pick one — or to specify
 something different. Do not write any script.
@@ -93,16 +121,25 @@ something different. Do not write any script.
 In one short paragraph, confirm:
 
 - The **question** the analysis answers.
+- The **primary target** (carried over from step 1, or asked here in
+  specify mode): the single doc entry that will receive a `--update`
+  in step 5. Format: `hypotheses.md:H<#>` / `key-findings.md:<slug>` /
+  `institutions.md:<section>` / `theory.md:<framework-id>` /
+  `literature.md:<citekey>` / `(new entry)`.
 - The **unit of observation**, sample, and time window.
 - The **outcome variable(s)** and the cut(s).
 - The **output**: which `build/table/X.{csv,parquet,tex}` and/or
-  `build/figure/X.{pdf,png}`. Follow the project's existing layout
-  (some projects use sub-pages like `build/figure/d1_*`; respect it).
-- The **docs that will be updated** after the run (preview the
-  propagation list from step 5).
+  `build/figure/X.{pdf,png}`. Follow the project's existing layout.
+- The **secondary targets** (briefs, outline section, stylized-facts)
+  the run will also touch.
 
-If anything is unclear — sample definition, denominator, which
-hypothesis it maps to — **ask before proceeding**. Cheaper than redoing.
+If anything is unclear — sample definition, denominator, primary
+target — **ask before proceeding**. Cheaper than redoing.
+
+In **specify mode** (`/next <description>` with no proposal step), if
+the researcher's description didn't name a primary target, the restate
+must derive one or ask. A run with no nameable target is rare and
+usually a sign the work is too unfocused.
 
 ## Step 3 — Write the script
 
@@ -163,33 +200,72 @@ edits are harder to reverse than re-running a script.
 
 ## Step 5 — Propagate to docs
 
-Use this checklist, keyed by run type. Only update docs the run actually
-affects. Don't touch a doc just because it exists.
+### 5a. Update the primary target
 
-| Run type | Docs to update |
+The primary target declared in step 1/2 receives a **surgical
+`--update`** call, scoped to one entry, with the triggering artifact
+attached so the skill has the build context without re-reading the
+project:
+
+| Primary target | Invocation |
 |---|---|
-| Descriptive table or figure | `reference/key-findings.md` + `reference/stylized-facts.md` + relevant `briefs/*.md` |
-| Identification-design run (D-series) | `hypotheses.md` status block + `methods.md` + `key-findings.md` + the affected `outline*.md` |
-| Institutional/legal finding | `institutions.md` + (sometimes) `literature.md` |
-| Null result on a candidate hypothesis | `hypotheses.md` status block; propose a `decisions.md` entry if it demotes the hypothesis from the paper |
-| Re-run with new data/parser | walk every cited number; flag drift in `key-findings.md` and `stylized-facts.md` (run `/findings --refresh` if available) |
+| `hypotheses.md:H<#>` | `/hypothesis --update H<#> --artifact build/<path>` |
+| `key-findings.md:<slug>` | `/findings --update <slug> --artifact build/<path>` |
+| `institutions.md:<section>` | `/institutions --update <section> --artifact build/<path>` |
+| `theory.md:<framework-id>` | `/theory --update <framework-id> --artifact build/<path>` |
+| `literature.md:<citekey>` | `/literature --update <citekey> --artifact build/<path>` |
+| `(new entry, no current target)` | `/findings --extend` (or `/hypothesis --extend` if the run introduced a new testable claim) |
 
-For each affected doc, invoke the relevant skill rather than hand-editing:
+`--update` modes are surgical: they read only the project CLAUDE.md,
+the target doc, and the artifact. They do not re-derive other entries.
+This is what makes the propagation step cheap enough to run every
+iteration.
 
-- `/findings --extend` — append a new finding.
-- `/findings --refresh` — recheck cited numbers against current build.
-- `/hypothesis --extend` — append a status block or new hypothesis.
-- `/institutions` — institutional fact.
-- `/findings-audit` — when an external corroboration/contradiction surfaces.
+### 5b. Secondary docs by run type
 
-Conventions to follow:
+After the primary target is updated, walk this checklist for *secondary*
+docs. Only update those the run actually affects.
 
-- **Confidence tags**: default new findings to 🟡 (single source). Promote
-  to 🟢 only on independent replication. Use 🔴 for parser-dependent or
-  sample-sensitive results.
-- **@claim registry**: for load-bearing inline numbers, wrap with the
-  `@claim` tokens used elsewhere in the project. Lets `/findings --refresh`
-  recheck mechanically after a re-run.
+| Run type | Secondary docs |
+|---|---|
+| Descriptive table or figure | `reference/stylized-facts.md` + relevant `briefs/*.md` |
+| Identification-design run (D-series) | `methods.md` + the affected `outline*.md` |
+| Institutional/legal finding | (sometimes) `literature.md` |
+| Null result on a candidate hypothesis | propose a `decisions.md` entry if it demotes the hypothesis from the paper |
+| Re-run with new data/parser | walk every cited number; run `/findings --refresh` to flag drift in `key-findings.md` and `stylized-facts.md` |
+
+For each secondary doc, invoke the appropriate mode of its skill — never
+hand-edit when a skill exists:
+
+- `/findings --extend` — append a new finding (when a run produces an
+  observation distinct from the primary target).
+- `/findings --refresh` — recheck cited numbers against current build
+  after a re-run.
+- `/hypothesis --extend` — append a new hypothesis (when a run surfaces
+  a testable claim that wasn't a prior hypothesis).
+- `/findings-audit` — when an external corroboration/contradiction
+  surfaces during step 4 inspection.
+
+### 5c. `artifacts.yaml` maintenance
+
+If the run produced a new artifact (not already in
+`docs/reference/artifacts.yaml`), append an entry:
+
+- `path`, `script`, one-line `description` (from the IAT title),
+  `cited_in` (the docs you edited in 5a and 5b), and `tags`.
+- If the run modified an existing artifact's set of citing docs, update
+  the entry's `cited_in` list.
+
+Schema: `research-kit/rules/artifacts_yaml.md`.
+
+### Conventions
+
+- **Confidence tags**: default new findings to 🟡 (single source).
+  Promote to 🟢 only on independent replication. Use 🔴 for
+  parser-dependent or sample-sensitive results.
+- **`@claim` registry**: for load-bearing inline numbers, wrap with
+  the `@claim` tokens used elsewhere in the project. Lets
+  `/findings --refresh` recheck mechanically after a re-run.
 
 ## Step 6 — Close out
 
@@ -257,13 +333,19 @@ Auto-mode semantics:
   prompts at well-defined gates," not "ignore failures." After fixing
   the script, re-invoke `/next --auto`.
 - **Auto-pick threshold.** In `--auto` with no description: only
-  proceed if the top-ranked candidate has no risk flag (no "needs
+  proceed if the top-ranked candidate (a) has no risk flag (no "needs
   raw data we don't have", no "duplicates existing artifact", no
-  "depends on unshipped parser fix"). If the top candidate is flagged,
-  bail with the proposal list and require manual pick.
+  "depends on unshipped parser fix") AND (b) has a named primary
+  target — `hypotheses.md:H<#>`, `key-findings.md:<slug>`, etc. A
+  candidate that declared `(new entry, no current target)` is too
+  exploratory for auto mode; bail and require manual pick.
+- **Primary target drives propagation.** The candidate's declared
+  primary target tells auto mode which `--update <ID>` call to make
+  in step 5. No guessing. If the target is `(new entry)`, route to
+  `--extend` instead.
 - **Doc propagation runs by the same checklist** keyed to run type;
-  no shortcuts. The propagation skills (`/findings --extend`,
-  `/hypothesis --extend`, etc.) are invoked exactly as in attended mode.
+  no shortcuts. The propagation skills (`/findings --update`,
+  `/hypothesis --update`, etc.) are invoked exactly as in attended mode.
 - **`decisions.md` writes in auto mode** when the promotion bar is
   met (hypothesis demoted, design dropped, etc.) — the bar is policy,
   not a gate. The entry is flagged in the closing report so you can

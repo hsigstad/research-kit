@@ -18,6 +18,7 @@ out.
 - `/hypothesis <project-slug>` — run against a specific project under `projects/`.
 - `/hypothesis --audit` — do not write; report gaps, dangling refs, and orphan theories.
 - `/hypothesis --extend` — preserve existing entries; only append new hypotheses suggested by current evidence/literature.
+- `/hypothesis --update <H#> [--artifact <build/path>]` — **surgical single-entry edit**. Update the status block (or evidence/test fields) of one existing hypothesis after a new analysis result. Reads only `CLAUDE.md`, `hypotheses.md`, and the optional triggering build artifact. Does not re-derive other hypotheses, does not re-read `theory.md`/`literature.md`/etc. Use from `/next` step 5 when a run affects exactly one hypothesis (demotion after null, strengthening after a confirming test, status-block refresh). The `--artifact` argument lets the skill cite the specific build output that triggered the update.
 
 ## Finding the workspace root
 
@@ -91,6 +92,42 @@ For early-stage projects (summary.md says "research question not yet fixed" or e
 3. Wait for confirmation unless the user said "go ahead."
 4. Write `docs/hypotheses.md`. Read first if it exists; merge by appending, never rewriting.
 5. Report back: number of hypotheses drafted, number of placeholders, path to the file. Cross-reference theory.md (which frameworks were used, which were orphaned).
+
+## Update mode (`--update <H#>`)
+
+Surgical single-entry edit. Use when one hypothesis's status changed
+(demoted after a null, strengthened after a confirming test, evidence
+list refreshed, priority retiered) and the rest of `hypotheses.md`
+should remain untouched.
+
+**Minimal read set** — do not re-read the full briefing pack:
+
+1. `$PROJ/CLAUDE.md` — for current focus and naming conventions.
+2. `$PROJ/docs/hypotheses.md` — to locate the target entry and respect
+   its template exactly.
+3. The `--artifact` build path (if given) — the CSV/figure that
+   triggered the update; cite it in the new status text.
+4. The triggering script's IAT docstring (derived from the artifact
+   path via the `source/X.py → build/X.*` convention) — for context.
+
+Do **not** re-read `theory.md`, `literature.md`, `institutions.md`,
+`data.md`, or any other context unless the target hypothesis's text
+explicitly cites them and the update would change those citations.
+
+**What to edit:** only the target hypothesis's entry. Preserve the
+template (fields, order, prose style) inferred from neighboring
+entries. Add or update only the fields the new result affects —
+typically the status block, the evidence list, or the priority tag.
+
+**What not to touch:** other hypotheses, the document header, the
+summary table (if present), or any cross-cutting structure.
+
+**Numbering is sacred:** never renumber. Paper cross-refs depend on
+H<#> stability.
+
+**Output:** the edited `hypotheses.md` plus a one-paragraph summary
+of what changed (which fields, before → after, what artifact was
+cited). The summary belongs in the `/next` end-of-iteration report.
 
 ## Audit mode (`--audit`)
 

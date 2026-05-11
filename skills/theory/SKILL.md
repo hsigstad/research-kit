@@ -16,6 +16,7 @@ project's empirical design can adjudicate.
 - `/theory <project-slug>` — run against a specific project under `projects/`.
 - `/theory --audit` — do not write; report coverage, dangling refs, and missing sections.
 - `/theory --extend` — preserve existing entries; only append new frameworks suggested by current evidence/literature.
+- `/theory --update <framework-id> [--artifact <build/path>]` — **surgical single-framework edit**. Update one framework entry (prediction, scope, references) when a new analysis result or literature touchpoint changes how it applies to the project. Reads only `CLAUDE.md`, `theory.md`, and the optional triggering artifact. Does not re-derive other frameworks, does not re-walk `literature.md`/`hypotheses.md`. Use from `/next` step 5 when a run refines a single framework's empirical content. The `<framework-id>` argument is the entry number or name as used in `theory.md`. Numbering is sacred — never renumber (paper and hypothesis cross-refs depend on it).
 
 ## Finding the workspace root
 
@@ -77,6 +78,39 @@ For early-stage projects (summary.md says "research question not yet fixed" or e
 2. Wait for user confirmation unless they said "go ahead" up front.
 3. Write `docs/theory.md`. If the file exists, read it first; merge by appending new entries, never rewriting existing ones.
 4. Report back: number of frameworks drafted, number of placeholders that need manual resolution, path to the file. Suggest running `/hypothesis` next if `docs/hypotheses.md` is thin or missing.
+
+## Update mode (`--update <framework-id>`)
+
+Surgical single-framework edit. Use when one framework's prediction,
+scope, or reference list needs refinement after a `/next` iteration
+surfaced something specific (a new test sharpens the prediction, a
+result narrows the framework's domain, a citation needs adding).
+
+**Minimal read set:**
+
+1. `$PROJ/CLAUDE.md` — current focus.
+2. `$PROJ/docs/theory.md` — locate the target framework, respect its
+   template exactly.
+3. The `--artifact` build path (if given) — the result that triggered
+   the update.
+4. The triggering script's IAT docstring — for context.
+
+Do **not** re-read `literature.md`, `hypotheses.md`, or any external
+literature unless the target framework's citation list would change.
+
+**What to edit:** only the target framework's entry. Preserve the
+template (Core result, Testable predictions, Connection to our
+design). Update only the field affected by the new result.
+
+**What not to touch:** other frameworks, the document header, the
+cross-link to hypotheses.md (unless adding a new hypothesis ref to
+the target framework).
+
+**Numbering is sacred:** never renumber. Paper and `hypotheses.md`
+cross-refs depend on framework-ID stability.
+
+**Output:** edited `theory.md` plus a one-paragraph summary of what
+changed. The summary belongs in the `/next` end-of-iteration report.
 
 ## Audit mode (`--audit`)
 
