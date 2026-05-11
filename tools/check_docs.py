@@ -60,6 +60,10 @@ ALLOWED_PIPELINE_DOCS = REQUIRED_PIPELINE_DOCS | OPTIONAL_PIPELINE_DOCS
 ALLOWED_DOC_SUBFOLDERS = {
     "briefs", "reference", "notes", "literature", "anecdotes",
     "emails", "reviews", "specs", "whatsapp", "feedback",
+    # Canonical-by-tooling locations:
+    #   audits/ — output of the /findings-audit skill (docs/audits/findings/<date>.md)
+    #   refs/   — citation manifest written by /cite-sync (docs/refs/manifest.toml)
+    "audits", "refs",
 }
 
 THINKING_REQUIRED_SECTIONS = [
@@ -258,6 +262,17 @@ def check_build_orphans(repo: Path, f: Findings):
         for item in out_dir.iterdir():
             if item.name.startswith("."):
                 continue
+            # .run.json provenance sidecars are paired with their main
+            # artifact (e.g. X.csv ↔ X.csv.run.json) — not standalone
+            # outputs. Skip them in the orphan check.
+            if item.name.endswith(".run.json"):
+                continue
+            # Outputs prefixed with _ are opt-out by convention (mirrors
+            # the script-side rule that source/<layer>/_X.py is exempt
+            # from the producer set). One-off manual artifacts, audit
+            # CSVs, scratch files.
+            if item.name.startswith("_"):
+                continue
             if item.is_dir():
                 if item.name not in stems:
                     f.warn(f"{code_prefix}.orphan-folder",
@@ -416,8 +431,16 @@ def lint_gitignore_build(repo: Path, f: Findings):
                path=".gitignore")
         return
     text = read(gi)
+    # Accept any of:
+    #   build/        — exclude the whole build/ tree
+    #   build         — same (no trailing slash)
+    #   /build/       — anchored to repo root
+    #   build/*       — exclude all build/ contents (commonly paired with
+    #                   `!build/<layer>/` exception lines to selectively
+    #                   git-track paper-facing artifacts; semantically still
+    #                   "build/ is ignored by default")
     has_build = any(
-        re.match(r"^\s*/?build/?\s*$", line)
+        re.match(r"^\s*/?build/?(\*)?\s*$", line)
         for line in text.splitlines()
         if not line.lstrip().startswith("#")
     )
@@ -478,6 +501,35 @@ def lint_handoffs(repo: Path, f: Findings):
 # Underscore-prefixed scripts shouldn't be cited from docs
 # ---------------------------------------------------------------------------
 
+def _find_imported_modules(src: Path, underscore_scripts: list[Path]) -> set[str]:
+    """Return stems of underscore scripts that are imported by other source
+    files. Detected via grep for `from <pkg>._<stem> import ...` or
+    `import _<stem>` patterns in any non-private .py file under src/."""
+    stems = {p.stem for p in underscore_scripts}
+    if not stems:
+        return set()
+    # Build a regex of any of the candidate stems as importable modules
+    stem_alt = "|".join(re.escape(s) for s in stems)
+    pattern = re.compile(
+        rf"^(?:from\s+\S+\.|from\s+|import\s+)({stem_alt})\b",
+        re.MULTILINE,
+    )
+    imported: set[str] = set()
+    for py in src.rglob("*.py"):
+        if PRIVATE_PY.match(py.name) or "__pycache__" in py.parts:
+            # Don't consider underscore scripts themselves as importers
+            # (they could import each other; we want only "is X imported
+            # by a non-private peer?").
+            continue
+        try:
+            text = py.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for m in pattern.finditer(text):
+            imported.add(m.group(1))
+    return imported
+
+
 def lint_underscore_cited(repo: Path, f: Findings):
     src = repo / "source"
     docs = repo / "docs"
@@ -493,6 +545,16 @@ def lint_underscore_cited(repo: Path, f: Findings):
             if script.name == "__init__.py" or "__pycache__" in script.parts:
                 continue
             underscore_scripts.append(script.relative_to(repo))
+
+    if not underscore_scripts:
+        return
+
+    # Exempt shared library modules — scripts imported by other source files.
+    # The lint rule targets stale citations to scratch/exploratory scripts;
+    # docs may legitimately reference where shared logic lives (e.g.
+    # `Shared SA infrastructure in source/table/_d1_sa.py`).
+    imported_modules = _find_imported_modules(src, underscore_scripts)
+    underscore_scripts = [s for s in underscore_scripts if s.stem not in imported_modules]
 
     if not underscore_scripts:
         return
