@@ -220,7 +220,8 @@ def lint_source_build(repo: Path, f: Findings):
             if layer_name in ("figure",):
                 check_paper_output(repo, rel, base, paper / "figures", PAPER_FIGURE_EXTS, "figure", f)
             elif layer_name == "table":
-                check_paper_output(repo, rel, base, paper / "tables", PAPER_TABLE_EXTS, "table", f)
+                check_data_output(repo, rel, base, build / "table", "table", f,
+                                  exts=PAPER_TABLE_EXTS + DATA_OUTPUT_EXTS)
             elif layer_name in ("clean", "intermediate", "assemble", "analysis"):
                 check_data_output(repo, rel, base, build / layer_name, layer_name, f)
 
@@ -273,21 +274,23 @@ def check_build_orphans(repo: Path, f: Findings):
     for layer in ("clean", "intermediate", "assemble", "analysis"):
         lint_dir(build / layer, layer, DATA_OUTPUT_EXTS, "build")
     lint_dir(paper / "figures", "figure", PAPER_FIGURE_EXTS, "paper.figure")
-    lint_dir(paper / "tables", "table", PAPER_TABLE_EXTS, "paper.table")
+    # paper/tables/ is reserved for hand-authored content only (per
+    # project_docs_contract.md) — script outputs always land in
+    # build/table/. So no orphan check on paper/tables/.
     lint_dir(build / "figure", "figure", PAPER_FIGURE_EXTS, "build.figure")
     lint_dir(build / "table", "table", PAPER_TABLE_EXTS + DATA_OUTPUT_EXTS, "build.table")
 
-def check_data_output(repo: Path, script_rel: Path, base: str, expected_dir: Path, layer: str, f: Findings):
+def check_data_output(repo: Path, script_rel: Path, base: str, expected_dir: Path, layer: str, f: Findings, exts: tuple = DATA_OUTPUT_EXTS):
     if not expected_dir.exists():
         f.note("source.no-build-dir",
                f"source/{layer}/ has scripts but no matching build/{layer}/ directory (build may be unbuilt)",
                path=str(script_rel))
         return
     folder = expected_dir / base
-    if folder.is_dir() and any(p.suffix.lower() in DATA_OUTPUT_EXTS or p.name.endswith(".csv.gz") for p in folder.iterdir() if p.is_file()):
+    if folder.is_dir() and any(p.suffix.lower() in exts or p.name.endswith(".csv.gz") for p in folder.iterdir() if p.is_file()):
         return
     matches = list(expected_dir.glob(f"{base}.*"))
-    matches = [m for m in matches if m.suffix.lower() in DATA_OUTPUT_EXTS or m.name.endswith(".csv.gz")]
+    matches = [m for m in matches if m.suffix.lower() in exts or m.name.endswith(".csv.gz")]
     if not matches:
         f.note("source.no-output",
                f"no build artifact for {script_rel} (expected build/{layer}/{base}.{{parquet,csv,json,...}} or build/{layer}/{base}/<name>.*) — build may be unbuilt",

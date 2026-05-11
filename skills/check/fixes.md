@@ -86,10 +86,12 @@ No alternatives.
 
 ## paper.misplaced-output
 
-A figure or table is in `build/<dir>/` instead of `paper/<dir>s/`.
+A figure is in `build/figure/` instead of `paper/figures/`. (Tables no
+longer fire this code — `source/table/*.py` writes to `build/table/` by
+convention; see workspace.md §"Paper and outputs".)
 
-- **a (default)**: `git mv build/<dir>/<file>` to `paper/<dir>s/<file>`, AND
-  edit the generating script to write to the new location.
+- **a (default)**: `git mv build/figure/<file>` to `paper/figures/<file>`,
+  AND edit the generating script to write to the new location.
 - **b**: Move the file only (don't edit the script — assumes script will be
   fixed in next run).
 - **c**: Update the script only (delete the misplaced output, will regenerate).
@@ -98,13 +100,14 @@ Default `a` because both halves of the fix are needed and the user said
 "by default, commit changes" — so we want the next build to also land in the
 right place.
 
-## source.no-output (paper figure/table)
+## source.no-output (paper figure)
 
-A `source/figure/X.py` or `source/table/X.py` has no corresponding
-`paper/figures/X.*` or `paper/tables/X.*`.
+A `source/figure/X.py` has no corresponding `paper/figures/X.*`.
 
 This is **manual** — we can't auto-generate the output. Surface as manual
-review with a note: "run the script, then re-lint".
+review with a note: "run the script, then re-lint". (Tables: see
+`source.no-output (build artifact)` below — table outputs live in
+`build/table/`.)
 
 ## source.no-output (build artifact)
 

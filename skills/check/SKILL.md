@@ -101,7 +101,7 @@ before any edit lands. On approval, execute the file ops (renames, moves,
 new files, merge `validate=` insertions) and commit per repo with the
 message format in `fixes.md`. Findings without a templated fix
 (`.merge() validate=` value choice, `archive.leakage`, `source.no-output`
-for missing paper artifacts) go in a **Manual review** section at the end
+for missing paper figures) go in a **Manual review** section at the end
 of the plan — surfaced but not auto-applied. Common fixes:
 
 | Gap | Default fix |
