@@ -24,8 +24,8 @@ canonical directories below keep their role when present.
 | `source/intermediate/` | `build/intermediate/*.parquet`| Cache expensive shared precomputations (see trigger below)          | Optional — add only when needed |
 | `source/assemble/`     | `build/assemble/*.parquet`    | Analysis-ready wide tables keyed by a unit of observation           | Always, once any assembling happens |
 | `source/analysis/`     | `build/analysis/*.{parquet,csv,json}` | Derived statistics, regressions, linked records              | As needed |
-| `source/figure/`       | `paper/figures/*.{pdf,png}` (or `build/figure/*`) | Figure-generating scripts                          | If the paper has figures |
-| `source/table/`        | `paper/tables/*.tex`          | Table-generating scripts                                            | If the paper has computed tables |
+| `source/figure/`       | `build/figure/*.{pdf,png}`    | Figure-generating scripts                                           | If the paper has figures |
+| `source/table/`        | `build/table/*.tex`           | Table-generating scripts                                            | If the paper has computed tables |
 | `source/paper/`        | `paper/numbers.{tex,json}`    | Paper numeric macros (see `rules/paper_macros.md`)                  | If the paper cites structural numbers |
 
 Claude may freely add any other subfolder the project needs
@@ -182,8 +182,13 @@ Every script's primary output shares the script's base name.
 - `source/intermediate/edges.py` → `build/intermediate/edges.parquet`
 - `source/assemble/muni_year.py` → `build/assemble/muni_year.parquet`
 - `source/analysis/overruns.py` → `build/analysis/overruns.parquet`
-- `source/figure/overruns.py` → `paper/figures/overruns.pdf`
-- `source/table/summary_stats.py` → `paper/tables/summary_stats.tex`
+- `source/figure/overruns.py` → `build/figure/overruns.pdf`
+- `source/table/summary_stats.py` → `build/table/summary_stats.tex`
+
+Paper LaTeX references these via `\input{../build/table/X.tex}` and
+`\includegraphics{../build/figure/X.pdf}`. `paper/tables/` and
+`paper/figures/` are reserved for *hand-authored* content only
+(typically empty).
 
 Secondary outputs (diagnostic CSVs, auxiliary tables) use the base
 name as a prefix: `overruns_unmatched.csv`, `overruns_diagnostics.csv`.
