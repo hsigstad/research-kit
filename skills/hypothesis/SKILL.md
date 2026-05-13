@@ -59,7 +59,7 @@ For early-stage projects (summary.md says "research question not yet fixed" or e
 
 1. Build a **hypothesis candidate list**. For each framework in theory.md (or each mechanism in the relevant literature if theory.md is missing), enumerate the directional predictions that the project's data could adjudicate. For each candidate, record: short name, theory ref, prediction (1 sentence), variable(s) it touches.
 2. Filter aggressively. Drop candidates where (a) no variation in the project's data can identify the prediction, (b) the prediction is already established well enough in the literature that another test adds nothing, or (c) two candidates collapse into the same empirical spec — keep the tighter framing.
-3. For each surviving hypothesis, draft the entry matching the chosen template. For each field:
+3. For each surviving hypothesis, draft the entry matching the chosen template. If the project's existing entries have a `**Slug:**` field, assign a slug to each new entry (lowercase, hyphenated, 2-4 words, e.g., `value-interaction`, `recusal-selective`). Slugs must be unique and stable — they are used as identifiers in analysis tracking systems. For each field:
    - **Theory / Theoretical motivation**: name the framework from theory.md (by number or name). If the theory isn't in theory.md, either add a stub there or write `[theory: {author year} — not yet in theory.md]`.
    - **Prediction / Statement**: directional and specific. "Higher X causes higher Y in subgroup Z" beats "X is related to Y."
    - **Pre-existing evidence / Case evidence**: every bullet must cite a specific source. Sources can be:
@@ -93,12 +93,18 @@ For early-stage projects (summary.md says "research question not yet fixed" or e
 4. Write `docs/hypotheses.md`. Read first if it exists; merge by appending, never rewriting.
 5. Report back: number of hypotheses drafted, number of placeholders, path to the file. Cross-reference theory.md (which frameworks were used, which were orphaned).
 
-## Update mode (`--update <H#>`)
+## Update mode (`--update <identifier>`)
 
-Surgical single-entry edit. Use when one hypothesis's status changed
-(demoted after a null, strengthened after a confirming test, evidence
-list refreshed, priority retiered) and the rest of `hypotheses.md`
-should remain untouched.
+Surgical single-entry edit. The identifier can be a **slug**
+(e.g., `value-interaction`) or a legacy H-number (e.g., `H13`).
+Slugs are preferred — they are stable across reordering. If the
+project's hypotheses.md has a `**Slug:**` field, always match on
+that. Fall back to H-number only if no slugs exist.
+
+Use when one hypothesis's status changed (demoted after a null,
+strengthened after a confirming test, evidence list refreshed,
+priority retiered) and the rest of `hypotheses.md` should remain
+untouched.
 
 **Minimal read set** — do not re-read the full briefing pack:
 
@@ -122,8 +128,8 @@ typically the status block, the evidence list, or the priority tag.
 **What not to touch:** other hypotheses, the document header, the
 summary table (if present), or any cross-cutting structure.
 
-**Numbering is sacred:** never renumber. Paper cross-refs depend on
-H<#> stability.
+**Identifiers are sacred:** never renumber or rename slugs. Paper
+cross-refs and analysis-index.yaml tags depend on their stability.
 
 **Output:** the edited `hypotheses.md` plus a one-paragraph summary
 of what changed (which fields, before → after, what artifact was
@@ -145,7 +151,7 @@ Report findings as a bulleted list of gaps. Do not fix them automatically.
 
 - If `docs/theory.md` is missing or has fewer than 3 entries, stop and suggest running `/theory` first. Do not draft hypotheses against an empty theoretical frame.
 - If new frameworks emerge while drafting hypotheses (an implied theory that isn't in theory.md yet), collect them and emit a final note recommending the user run `/theory --extend` with those framework names.
-- Preserve the existing numbering of hypotheses when extending. Never renumber — it will break paper cross-refs.
+- Preserve existing identifiers when extending. Never renumber H-numbers or rename slugs — analysis-index.yaml tags and paper cross-refs depend on their stability.
 
 ## Early-stage projects
 
