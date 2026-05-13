@@ -190,12 +190,28 @@ Paper LaTeX references these via `\input{../build/table/X.tex}` and
 `paper/figures/` are reserved for *hand-authored* content only
 (typically empty).
 
-Secondary outputs (diagnostic CSVs, auxiliary tables) use the base
-name as a prefix: `overruns_unmatched.csv`, `overruns_diagnostics.csv`.
+Secondary outputs of a *different* suffix may sit alongside the
+primary at the top level — the suffix disambiguates. For example, the
+same script may legitimately emit both `build/table/X.csv` and
+`build/table/X.tex`.
 
 One script per primary output. Multi-output scripts are allowed only
 when the outputs genuinely share computation — not as an organizing
 convenience.
+
+### Multiple outputs of the same suffix
+
+When a script produces **more than one output of the same suffix**, it
+must write them into a folder named after the script, not as sibling
+files:
+
+- One output: `source/figure/fe_test.py` → `build/figure/fe_test.png`
+- Many outputs: `source/figure/fe_test.py` → `build/figure/fe_test/<name>.png`
+
+This preserves the bijection between script path and output location:
+given any build path, the generating script is recoverable from the
+path alone, with no registry lookup. Mixing siblings
+(`fe_test_a.png`, `fe_test_b.png`) breaks this and is disallowed.
 
 ---
 
