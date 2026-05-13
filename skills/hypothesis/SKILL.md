@@ -101,6 +101,12 @@ Slugs are preferred — they are stable across reordering. If the
 project's hypotheses.md has a `**Slug:**` field, always match on
 that. Fall back to H-number only if no slugs exist.
 
+**Citation convention:** Cross-references to hypotheses in any doc
+use the `H:<slug>` notation (e.g., `H:plaintiff-awards`,
+`H:value-interaction`). This is greppable, unambiguous, and stable.
+When writing or updating any document that references a hypothesis,
+use this notation instead of bare H-numbers.
+
 Use when one hypothesis's status changed (demoted after a null,
 strengthened after a confirming test, evidence list refreshed,
 priority retiered) and the rest of `hypotheses.md` should remain
