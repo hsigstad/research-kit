@@ -4,11 +4,11 @@
 project's scripted outputs. For each artifact in `build/table/` or
 `build/figure/`, it records the script that produces it and the docs
 that cite it. It is the machine-readable companion to the prose
-`docs/reference/key-findings.md` and `docs/reference/stylized-facts.md`.
+`docs/findings.md` and `docs/reference/stylized-facts.md`.
 
 ## What problem it solves
 
-You can already go from a finding to its source: open `key-findings.md`,
+You can already go from a finding to its source: open `findings.md`,
 read the Sources footer, follow the link to `build/table/X.csv`. The
 **reverse** direction has no support today — given a script, which
 findings depend on it? — and that's exactly the question you need to
@@ -43,7 +43,7 @@ artifacts:
     script: source/table/<name>.py        # required; producing script
     description: <one short line>         # required; what the artifact shows
     cited_in:                             # required; list of doc paths
-      - docs/reference/key-findings.md
+      - docs/findings.md
       - docs/briefs/<topic>.md
       - paper/main.tex
     tags: [<tag>, <tag>]                  # optional; for filtering
@@ -70,7 +70,7 @@ artifacts:
   opening the CSV.
 - **`cited_in`** — list of doc paths. Paths are relative to the project
   root. May include `#anchor` fragments for section-level pointers
-  (`docs/reference/key-findings.md#three-exequente-lanes-operate-...`).
+  (`docs/findings.md#anchor` or `docs/findings/three-exequente-lanes.md`).
   An empty list is valid and means "produced but not yet cited" — still
   worth tracking, because it surfaces unused work.
 - **`tags`** — optional; free-form short labels for filtering. Common
@@ -90,7 +90,7 @@ artifacts:
   need recency, derive from `git log -- <path>`.
 - **Confidence tags** — those are finding-level attributes. The same
   artifact may back a 🟢 claim in one doc and a 🟡 caveat in another.
-  Confidence belongs in `key-findings.md`, not here.
+  Confidence belongs in `findings.md`, not here.
 
 ## Conventions
 
@@ -220,7 +220,7 @@ artifacts:
       PGFN inscrição-level cohort break test at Portaria 33/2018 —
       annual share_ajuizado pre vs post, by inscrição year.
     cited_in:
-      - docs/reference/key-findings.md
+      - docs/findings.md
       - docs/outline-companion.md
       - docs/briefs/cross-jurisdictional-reform.md
       - paper/companion.tex
@@ -232,7 +232,7 @@ artifacts:
       D1 phoenix focal event study — log(employment) at the focal CNPJ
       around the exfis filing event, Sun–Abraham heterogeneity-robust.
     cited_in:
-      - docs/reference/key-findings.md
+      - docs/findings.md
       - docs/briefs/phoenix-state-of-evidence.md
       - docs/outline-phoenix.md
     tags: [d1, h1, phoenix]
@@ -244,7 +244,7 @@ artifacts:
       Foundational evidence for the "vara productivity is non-collinear"
       claim in the H14 paper.
     cited_in:
-      - docs/reference/key-findings.md
+      - docs/findings.md
       - docs/briefs/vara-productivity.md
       - docs/outline.md
     tags: [h6, vara, tjsp]
@@ -264,5 +264,5 @@ For a project that already has many findings citing many artifacts:
 5. Tag by inspection.
 
 Don't try to be exhaustive on the first pass. Cover the load-bearing
-artifacts (those cited from `key-findings.md` and the active outlines);
+artifacts (those cited from `findings.md` and the active outlines);
 the long tail can fill in as `/next` runs add to the file naturally.

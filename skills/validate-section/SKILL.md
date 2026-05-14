@@ -35,7 +35,7 @@ Flags:
 ## File locations
 
 The validation ledger is **project memory** (which scripts have been
-verified) and lives in `docs/` alongside `key-findings.md`,
+verified) and lives in `docs/` alongside `findings.md`,
 `hypotheses.md`, and the rest of project state. Paper-build outputs
 stay in `paper/` and `build/paper/`.
 

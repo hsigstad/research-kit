@@ -109,7 +109,13 @@ Then customize what you copied:
 - **`build_all.py`**: update `PROJECT_TITLE`, `PAPER_TITLE`, `DOC_REGISTRY`,
   and the `.tex` filenames if they differ. Drop archetype-specific scaffolding
   the new project doesn't need (e.g. `AREA_MAP` / `TOPIC_MAP` / `cases.html`
-  if you copied bind into an empirical project).
+  if you copied bind into an empirical project). Also make sure it: wipes
+  `SITE_DIR` at the start of each build (so renamed/removed sources don't
+  linger as stale files); does **not** copy `paper.pdf` / `talk.pdf` into the
+  site (staticrypt encrypts only HTML — a shipped PDF would be readable by
+  direct URL; the make4ht HTML render is the paper page); and contains **no
+  deployment logic** of its own (no `DEPLOY_DIR`, no rsync to
+  `~/hsigstad.github.io` — deployment is `build.sh`'s job, see step 6).
 - **Templates**: update `<title>` tags and any paper/talk `<h1>` to use the
   new project's title. Keep all CSS in `:root` and surface colors as-is —
   they are part of the contract below.
@@ -222,37 +228,69 @@ cd $PROJECT_ROOT && python3 -m source.site.build_all
 
 Report what was generated (number of doc pages, whether paper/talk were built).
 
-### 6. Deploy to project GitHub Pages
+### 6. Deploy: staticrypt-encrypted, to the project's gh-pages branch
 
-If the project has a `build.sh` with a `deploy_site` function, run:
+This is the canonical deployment for **every** project: the site is
+staticrypt-encrypted and pushed to the project's own `gh-pages` branch. One
+self-contained command, a readable repo-name URL
+(`https://hsigstad.github.io/{repo}/`), and a password gate so the private
+research content isn't readable by anyone who stumbles on the URL. There is no
+separate plaintext push or `~/hsigstad.github.io/{slug}/` personal-website
+step — that legacy approach is retired.
+
+The reference implementation is **`/home/henrik/research/projects/serasa/build.sh`**.
+Port it (adjusting `PROJECT_TITLE` and the paper/talk `.tex` names) to any
+project that doesn't have it yet — including projects still on the old
+plaintext `gh-pages` push or the legacy `~/hsigstad.github.io/{slug}/` rsync.
+`build.sh` wires three functions into a `deploy` mode:
+
+- **`build_site`** — make4ht for paper/talk, then `python3 -m source.site.build_all` → `build/site/` (plaintext).
+- **`encrypt_site`** — staticrypt over `build/site/` → `build/site-encrypted/`:
+  ```bash
+  STATICRYPT_PASSWORD="$pw" npx --yes staticrypt build/site \
+      --recursive --directory build/site-encrypted \
+      --config build/.staticrypt.json \
+      --short --template-title "<PROJECT_TITLE>" \
+      --template-instructions "Enter the shared password to access the site." \
+      --remember 30
+  ```
+  staticrypt keeps the input dir's basename, so flatten `build/site-encrypted/site/`
+  up one level afterward. `--config build/.staticrypt.json` keeps the salt
+  artifact out of the repo root.
+- **`deploy_site`** — clone the `gh-pages` branch to a tmpdir (orphan-init it if
+  absent), `rsync -a --delete` from **`build/site-encrypted/`** (not `build/site/`),
+  write `robots.txt` with `Disallow: /`, commit, push.
+
+`deploy` mode chains them: `build_site; encrypt_site; deploy_site`. Run with:
 ```bash
-cd $PROJECT_ROOT && bash build.sh site
+cd $PROJECT_ROOT && bash build.sh deploy
 ```
-This pushes to the project's own `gh-pages` branch (e.g. `hsigstad/deterrence` gh-pages).
+Requirements: `npx` (for staticrypt) and git push access to the project repo.
 
-If `build.sh` doesn't have a deploy step yet, create one following the pattern in
-`/home/henrik/research/projects/bind/build.sh` or `fisc/build.sh` (clone
-gh-pages branch to tmpdir, rsync build/site/, commit, push).
+**The site password.** Each project gets its own, stored in a gitignored
+`.site-password` at the project root (also read from `$STATICRYPT_PASSWORD`).
+Pick a memorable phrase tied to the project's *topic*, in three-word
+hyphen-slug form (`aaa-bbb-ccc`) — for Brazil law/economics projects, a
+Portuguese legal term or a phrase from the subject matter. Example: serasa uses
+`dano-moral-presumido` (the "presumed moral damage" doctrine central to its
+cases). When setting up a new site, propose a password in this style, write it
+to `.site-password`, and tell the user what it is — it is not secret *from* the
+user, they need it to view the site. Add both `.site-password` and
+`.staticrypt.json` to the project `.gitignore`.
 
-### 7. Optionally publish to personal website
+### 7. Verify
 
-**Ask the user** whether they also want the site published on `https://hsigstad.github.io/{slug}/`.
-Do NOT publish automatically — only if the user confirms.
-
-If yes:
-```bash
-rsync -a --delete "$PROJECT_ROOT/build/site/" ~/hsigstad.github.io/{slug}/
-cd ~/hsigstad.github.io && git add {slug}/ && git commit -m "Update {slug} site" && git push
-```
-
-### 8. Verify
-
-Check that `build/site/index.html` exists and list the generated files.
+Check that `build/site/index.html` exists and list the generated files. After a
+deploy, confirm `https://hsigstad.github.io/{repo}/` serves the staticrypt
+password gate (look for `class="staticrypt-html"` / "Enter the shared password")
+— on a sub-page too, not just the index.
 
 ## Important rules
 
 - **Never modify templates in other projects** -- each project gets its own copy.
 - **The design system (CSS, nav bar, JS) must be identical** across all projects for visual consistency.
 - **All sites include `robots.txt` with `Disallow: /`** and `<meta name="robots" content="noindex, nofollow">` -- these are private research sites.
+- **The deployed site is staticrypt-encrypted and pushed to the project's `gh-pages` branch** -- see step 6. `bash build.sh deploy` is the one canonical deploy path; there is no plaintext or personal-website publish step.
+- **Never ship sensitive non-HTML assets into `build/site/`** -- staticrypt encrypts only HTML, so PDFs/CSVs/images would be readable by direct URL. The only non-HTML file in a deployed site should be `robots.txt`.
 - **Paper/talk pages are optional** -- if `build/make4ht/` doesn't exist, the build skips them gracefully and shows a placeholder card on the index.
 - **Don't add data portal features** (dataset cards, Chart.js) unless the user explicitly asks. The default is the docs-only pattern.

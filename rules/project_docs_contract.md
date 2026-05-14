@@ -89,7 +89,7 @@ repo/
   `rules/build_layers.md`
 - **`build/table/` and `build/figure/` are tracked by git by default.**
   These are the analysis outputs that back claims in `docs/` (especially
-  `docs/reference/key-findings.md` and `docs/reference/stylized-facts.md`).
+  `docs/findings.md` and `docs/reference/stylized-facts.md`).
   Tracking them means: (a) doc citations into `build/table/*.csv` resolve
   on a fresh clone, (b) magnitude drift after a re-run shows up in `git
   diff` and serves as an early warning for parser/data regressions, and
@@ -269,7 +269,7 @@ docs/
   outline.md
   archive.md
   results.md
-  key-findings.md
+  findings.md
   anecdotes.md
   qa.md
 ```
@@ -515,6 +515,10 @@ In empirical projects, this file documents the specific hypotheses being tested,
 the theories that generate them, the pre-existing evidence for or against each,
 and the empirical strategy for adjudication.
 
+Acceptable locations (discovery order):
+1. `docs/hypotheses.md` (flat file — preferred for <15 hypotheses)
+2. `docs/hypotheses/index.md` (folder mode — for 15+ or individually long entries)
+
 Contains:
 - hypotheses with the generating theory identified
 - predictions: what the theory says should happen
@@ -528,6 +532,28 @@ This file is not a paper draft. It is a machine-readable reference document.
 
 Cross-references `theory.md` for theoretical frameworks, `literature.md` for
 sources, and `data.md` for data availability.
+
+**Folder mode** (`docs/hypotheses/`): When the flat file exceeds ~15
+hypotheses or individual entries grow long (each accumulating evidence
+blocks, robustness notes, etc.), promote to a folder:
+
+```
+docs/hypotheses/
+  index.md           # intro + field schema + cluster index + summary table
+  <slug>.md          # one file per hypothesis, named by slug field
+```
+
+- `index.md` carries the intro, "How to read" section, cluster headings
+  with bulleted links to individual files (e.g. `[H1: Headline](slug.md)`),
+  and the summary table.
+- Each `<slug>.md` carries one hypothesis: `# H<N>: Title`, then all
+  fields (Slug, Theory, Prediction, Competing prediction, Pre-existing
+  evidence, Evidence strength, Empirical test, Data requirements).
+- File naming uses the Slug field value (e.g. `plaintiff-awards.md`,
+  not `h01-plaintiff-awards.md`). Ordering lives in the index, not filenames.
+- Cross-refs between hypotheses use `[H<N>](other-slug.md)`.
+- Relative paths from `docs/hypotheses/<slug>.md`: `../theory.md`,
+  `../reference/mechanisms.md`, `../../build/table/foo.csv`.
 
 Rules:
 - Each hypothesis should identify which theory generates the prediction.
@@ -699,7 +725,7 @@ Rules:
 - Claude should not create reference documents for narrative content (use briefs) or for structured memory (use canonical files)
 - No approval needed to add new files under `docs/reference/` (unlike `docs/` root)
 
-#### docs/reference/key-findings.md (recommended for mature projects)
+#### docs/findings.md (recommended for mature projects)
 
 The curated *directory of conclusions* — what the project considers
 load-bearing for the paper or for downstream interpretation. Distinct
@@ -708,9 +734,9 @@ from `stylized-facts.md` (the dense fact-by-fact ledger) and
 when it has anchored evidence and a directional reading.
 
 Acceptable locations (discovery order):
-1. `docs/reference/key-findings.md` (preferred)
-2. `docs/key-findings.md`
-3. `docs/findings.md`
+1. `docs/findings.md` (preferred)
+2. `docs/findings/index.md` (folder mode — see `/findings` skill)
+3. `docs/reference/key-findings.md` (legacy)
 4. Project-specific path declared in `CLAUDE.md` or `docs/summary.md`
 
 Required structure:
@@ -750,12 +776,34 @@ Sources footer schema (required, four classes; missing classes appear as `none d
 - *Cross-refs*: stylized-facts §, briefs/, audits/findings/, related findings
 ```
 
-Path conventions when the doc lives at `docs/reference/key-findings.md`:
-- Build artifacts: `[`stem.csv`](../../build/table/stem.csv)`
-- Reports with page anchor: `[CNJ-DEF24 p.205](../../references/cnj/justica_em_numeros_2024.pdf#page=205)`
-- News texts: `[outlet YYYY-MM-DD (topic)](../../references/news/texts/NNN.txt)`
-- Same-dir cross-refs: `[stylized-facts §X](stylized-facts.md#anchor)`
-- Sibling-dir cross-refs: `[briefs/Y §Z](../briefs/Y.md#anchor)`
+Path conventions when the doc lives at `docs/findings.md`:
+- Build artifacts: `[`stem.csv`](../build/table/stem.csv)`
+- Reports with page anchor: `[CNJ-DEF24 p.205](../references/cnj/justica_em_numeros_2024.pdf#page=205)`
+- News texts: `[outlet YYYY-MM-DD (topic)](../references/news/texts/NNN.txt)`
+- Same-dir cross-refs: `[reference/stylized-facts §X](reference/stylized-facts.md#anchor)`
+- Sibling-dir cross-refs: `[briefs/Y §Z](briefs/Y.md#anchor)`
+
+**Folder mode** (`docs/findings/`): When the single-file format exceeds
+~20 entries and becomes unwieldy, promote to a folder:
+
+```
+docs/findings/
+  index.md           # overview + confidence scheme + linked entry index + open items
+  <slug>.md          # one file per finding (short slug, ≤40 chars)
+```
+
+- `index.md` carries the intro, confidence-tag scheme, `## Findings overview`
+  (with bullets linking to individual files, e.g. `[headline](slug.md)`),
+  and `## Open items`.
+- Each `<slug>.md` carries one finding: `# Headline`, confidence tag + body,
+  Sources footer. Heading is `#` (top-level) since the file is standalone.
+- Entry schema and Sources footer are identical to flat-file mode.
+- Path conventions: since files live at `docs/findings/slug.md`, relative
+  paths use `../../build/`, `../../source/`, `../../references/`, and
+  `../reference/stylized-facts.md` for sibling-dir docs.
+- Cross-refs between findings use `[other headline](other-slug.md)`.
+- Use flat file (`docs/findings.md`) for projects with <20 entries; folder
+  mode for 20+.
 
 Maintenance rules:
 - After any pipeline rerun or parser fix, run `/findings --refresh` (or manually re-verify) to catch number drift between entry headlines and current build artifacts. Stale headlines that survived multiple parser fixes are the most common failure mode.
@@ -769,7 +817,7 @@ The `/findings` skill populates, extends, refreshes, and audits this document. T
 
 ---
 
-### key-findings.md (optional)
+### findings.md (optional)
 
 Settled top-line findings — the TLDR a paper reader gets in the first 30 seconds.
 

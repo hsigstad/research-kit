@@ -45,7 +45,7 @@ The workspace root contains `CLAUDE.md` alongside `projects/`, `pipelines/`,
 2. `$PROJ/docs/summary.md` — the main research question (required)
 3. `$PROJ/docs/questions.md` — existing questions (if any; match template)
 4. `$PROJ/docs/hypotheses.md` — all hypotheses with evidence strengths
-5. `$PROJ/docs/reference/key-findings.md` — empirical results (if exists)
+5. `$PROJ/docs/findings.md` — empirical results (if exists)
 6. `$PROJ/docs/reference/analysis-index.yaml` — what's been tested (if exists)
 
 Do NOT read theory.md, literature.md, institutions.md unless a specific
@@ -110,7 +110,7 @@ Each question has a stable slug prefixed with `Q:` (e.g.,
   questions.md decomposes it into answerable sub-questions.
 - **hypotheses.md** contains the testable predictions. questions.md
   groups them and synthesizes their answers.
-- **key-findings.md** records individual empirical results.
+- **findings.md** records individual empirical results.
   questions.md interprets what they mean collectively.
 - **thinking.md** holds open-ended speculation. When a thinking.md
   note matures into something the project can answer, it may become

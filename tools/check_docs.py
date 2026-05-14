@@ -41,7 +41,7 @@ REQUIRED_PROJECT_DOCS = {
 
 OPTIONAL_PROJECT_DOCS = {
     "theory.md", "hypotheses.md", "desiderata.md", "outline.md",
-    "archive.md", "results.md", "key-findings.md", "anecdotes.md",
+    "archive.md", "results.md", "findings.md", "anecdotes.md",
     "qa.md", "README.md", "CONVENTIONS.md",
 }
 

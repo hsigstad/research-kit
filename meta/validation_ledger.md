@@ -13,7 +13,7 @@ locations" below.)
 
 The validation ledger is **project memory** (which scripts have been
 verified — true regardless of paper structure) and belongs in `docs/`
-alongside `key-findings.md`, `hypotheses.md`, etc. Paper-build
+alongside `findings.md`, `hypotheses.md`, etc. Paper-build
 artifacts stay in `paper/` and `build/paper/`.
 
 | File | Canonical | Legacy fallback |

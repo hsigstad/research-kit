@@ -56,8 +56,8 @@ Always read 1–3. Read 4+ only in propose mode.
    `## Session handoff — YYYY-MM-DD` block at the top.
 3. The active **paper outline** (`outline.md` or whichever the project's
    CLAUDE.md points at) — to know what section a result would feed.
-4. `$PROJ/docs/hypotheses.md` — pending tests, status blocks.
-5. `$PROJ/docs/reference/key-findings.md` — what's already established and
+4. `$PROJ/docs/hypotheses.md` (or `docs/hypotheses/index.md`) — pending tests, status blocks.
+5. `$PROJ/docs/findings.md` (or `docs/findings/index.md`) — what's already established and
    at what confidence.
 6. `$PROJ/docs/thinking.md` — candidate angles.
 7. `git log --oneline -10` — what was just done; don't propose something
@@ -73,7 +73,7 @@ Produce 3–5 ranked candidates. For each, output the following fields:
 - **Description**: one sentence.
 - **Primary target**: one of —
   - `hypotheses.md:H<#>` — updates an existing hypothesis status block.
-  - `key-findings.md:<slug>` — updates an existing finding entry.
+  - `findings.md:<slug>` — updates an existing finding entry.
   - `institutions.md:<section>` — updates an institutional section.
   - `theory.md:<framework-id>` — refines a theoretical framework.
   - `literature.md:<citekey>` — annotates a literature entry.
@@ -108,7 +108,7 @@ Candidate 2: H6 vara-FE × foro stratification (cross-jurisdictional follow-up)
   Description: refit H6 fixed effects with foro dummies to test whether
     the productivity axis collapses to between-foro composition.
   Primary target: hypotheses.md:H6 (status block)
-  Secondary: key-findings.md:vara-productivity-axis,
+  Secondary: findings.md:vara-productivity-axis,
              briefs/vara-productivity.md
   Required inputs: build/table/h6_vara_fe_by_foro.csv (existing)
   Effort: medium — refit + new cut.
@@ -125,7 +125,7 @@ In one short paragraph, confirm:
 - The **question** the analysis answers.
 - The **primary target** (carried over from step 1, or asked here in
   specify mode): the single doc entry that will receive a `--update`
-  in step 5. Format: `hypotheses.md:H<#>` / `key-findings.md:<slug>` /
+  in step 5. Format: `hypotheses.md:H<#>` / `findings.md:<slug>` /
   `institutions.md:<section>` / `theory.md:<framework-id>` /
   `literature.md:<citekey>` / `(new entry)`.
 - The **unit of observation**, sample, and time window.
@@ -191,7 +191,7 @@ If it succeeds:
 - Open the output. Print head/tail, summary stats, and any column with
   surprising values.
 - For figures: dimensions, axis ranges, no clipped labels.
-- **Sanity-check against prior magnitudes** in `key-findings.md` or
+- **Sanity-check against prior magnitudes** in `findings.md` or
   `stylized-facts.md`. This catches sign flips, unit confusions, sample
   mismatches.
 
@@ -217,7 +217,7 @@ project:
 | Primary target | Invocation |
 |---|---|
 | `hypotheses.md:H<#>` | `/hypothesis --update H<#> --artifact build/<path>` |
-| `key-findings.md:<slug>` | `/findings --update <slug> --artifact build/<path>` |
+| `findings.md:<slug>` | `/findings --update <slug> --artifact build/<path>` |
 | `institutions.md:<section>` | `/institutions --update <section> --artifact build/<path>` |
 | `theory.md:<framework-id>` | `/theory --update <framework-id> --artifact build/<path>` |
 | `literature.md:<citekey>` | `/literature --update <citekey> --artifact build/<path>` |
@@ -239,7 +239,7 @@ docs. Only update those the run actually affects.
 | Identification-design run (D-series) | `methods.md` + the affected `outline*.md` |
 | Institutional/legal finding | (sometimes) `literature.md` |
 | Null result on a candidate hypothesis | propose a `decisions.md` entry if it demotes the hypothesis from the paper |
-| Re-run with new data/parser | walk every cited number; run `/findings --refresh` to flag drift in `key-findings.md` and `stylized-facts.md` |
+| Re-run with new data/parser | walk every cited number; run `/findings --refresh` to flag drift in `findings.md` and `stylized-facts.md` |
 
 For each secondary doc, invoke the appropriate mode of its skill — never
 hand-edit when a skill exists:
@@ -390,7 +390,7 @@ Auto-mode semantics:
   proceed if the top-ranked candidate (a) has no risk flag (no "needs
   raw data we don't have", no "duplicates existing artifact", no
   "depends on unshipped parser fix") AND (b) has a named primary
-  target — `hypotheses.md:H<#>`, `key-findings.md:<slug>`, etc. A
+  target — `hypotheses.md:H<#>`, `findings.md:<slug>`, etc. A
   candidate that declared `(new entry, no current target)` is too
   exploratory for auto mode; bail and require manual pick.
 - **Primary target drives propagation.** The candidate's declared

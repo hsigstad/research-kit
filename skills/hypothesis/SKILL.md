@@ -1,16 +1,26 @@
 ---
 name: hypothesis
-description: "Populate or expand a project's docs/hypotheses.md — testable predictions linking theory (docs/theory.md or docs/literature.md) to evidence and the project's empirical design. Use when the user wants to draft, update, or audit hypotheses.md."
+description: "Populate or expand a project's docs/hypotheses.md (or docs/hypotheses/ folder) — testable predictions linking theory (docs/theory.md or docs/literature.md) to evidence and the project's empirical design. Use when the user wants to draft, update, or audit hypotheses."
 user_invocable: true
 ---
 
 # /hypothesis — Populate docs/hypotheses.md
 
-Draft or extend a project's `docs/hypotheses.md`: a structured mapping of
-theoretical predictions to pre-existing evidence and concrete empirical
-tests the project can run. Each hypothesis is a single testable claim
-with its theory, evidence, specification, and data requirement spelled
-out.
+Draft or extend a project's `docs/hypotheses.md` (or `docs/hypotheses/`
+folder): a structured mapping of theoretical predictions to pre-existing
+evidence and concrete empirical tests the project can run. Each
+hypothesis is a single testable claim with its theory, evidence,
+specification, and data requirement spelled out.
+
+## Locating the hypotheses doc
+
+Discovery order, first hit wins:
+
+1. `$PROJ/docs/hypotheses.md` (flat file)
+2. `$PROJ/docs/hypotheses/index.md` (folder mode)
+
+If neither exists, ask the user which to create. Default to flat file for
+<15 hypotheses, folder for 15+.
 
 ## Arguments
 
@@ -36,7 +46,7 @@ Read these files to build context. If one is missing, note it and move on; never
 6. `$PROJ/docs/institutions.md` — institutional facts (rules, actors, timelines)
 7. `$PROJ/docs/data.md` — what variation/outcomes are available. Hypotheses without a data home get cut or flagged.
 8. `$PROJ/docs/methods.md` (if exists) — identification strategy details
-9. `$PROJ/docs/hypotheses.md` (if exists) — existing hypotheses; match their template exactly and preserve content
+9. `$PROJ/docs/hypotheses.md` or `$PROJ/docs/hypotheses/index.md` (if exists) — existing hypotheses; match their template exactly and preserve content
 10. `$PROJ/paper/main.tex` §introduction, §hypotheses, §empirical if present
 11. `$PROJ/paper/*.bib` — existing bibliography
 12. `$PROJ/references/reports/**`, `$PROJ/references/pdfs/**` — technical/policy reports (scan titles; read the 3–5 most relevant in full)
@@ -74,6 +84,63 @@ For early-stage projects (summary.md says "research question not yet fixed" or e
    - **Priority** (if template includes it): rank by (evidence strength) × (testability with current data) × (distinctiveness — does this test something no one else can?).
 4. Aim for **8–14 hypotheses**. More means insufficient filtering. Fewer than 6 means the project is under-developed or the filtering was too aggressive.
 5. If the template includes a summary table, write it after all entries. It should make the whole hypothesis space scannable in one screen.
+
+## Folder mode (`docs/hypotheses/`)
+
+When the project has 15+ hypotheses or individual entries grow long
+(accumulating evidence blocks, robustness notes, status updates),
+promote to a folder:
+
+```
+docs/hypotheses/
+  index.md           # intro + field schema + cluster index + summary table
+  <slug>.md          # one file per hypothesis, named by slug field
+```
+
+### index.md structure
+
+- Title and intro paragraph
+- "How to read this document" field descriptions
+- Cluster sections with brief descriptions and bulleted links to
+  individual files: `- [H1: Headline](slug.md)`
+- Cross-cluster notes (e.g., mechanisms taxonomy references)
+- Summary table at the end
+
+### Per-hypothesis file (`<slug>.md`)
+
+```markdown
+# H<N>: <Title>
+
+- **Slug:** <slug>
+- **Theory:** ...
+- **Prediction:** ...
+- **Competing prediction:** ...
+- **Pre-existing evidence:** ...
+- **Evidence strength:** ...
+- **Empirical test:** ...
+- **Data requirements:** ...
+```
+
+### File naming
+
+Use the **Slug** field as the filename (e.g., `plaintiff-awards.md`).
+No numeric prefixes — ordering lives in `index.md`, not filenames.
+
+### Path conventions
+
+Since files live at `docs/hypotheses/<slug>.md`:
+- Theory: `[theory.md](../theory.md)`
+- Mechanisms: `[mechanisms.md](../reference/mechanisms.md)`
+- Build artifacts: `[stem.csv](../../build/table/stem.csv)`
+- Cross-refs between hypotheses: `[H<N>](other-slug.md)`
+
+### Skill behavior in folder mode
+
+- `/hypothesis` (populate): creates `index.md` + one file per hypothesis.
+- `/hypothesis --update <slug>`: edits only `docs/hypotheses/<slug>.md`.
+- `/hypothesis --extend`: appends new files and adds entries to index.
+- `/hypothesis --audit`: checks each file for schema compliance and
+  verifies index links resolve.
 
 ## Guardrails (these are the quality bar — do not relax)
 
@@ -115,8 +182,8 @@ untouched.
 **Minimal read set** — do not re-read the full briefing pack:
 
 1. `$PROJ/CLAUDE.md` — for current focus and naming conventions.
-2. `$PROJ/docs/hypotheses.md` — to locate the target entry and respect
-   its template exactly.
+2. `$PROJ/docs/hypotheses.md` or `$PROJ/docs/hypotheses/<slug>.md` — to
+   locate the target entry and respect its template exactly.
 3. The `--artifact` build path (if given) — the CSV/figure that
    triggered the update; cite it in the new status text.
 4. The triggering script's IAT docstring (derived from the artifact
