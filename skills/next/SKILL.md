@@ -98,6 +98,8 @@ Ranking criteria, in order:
 2. Tests a hypothesis that's been pending for >2 sessions.
 3. Cheaply confirms or refutes a finding currently tagged 🟡 or 🔴.
 4. Resolves an explicit todo from the most recent handoff.
+5. Picks up a high-value lead from a prior `/next` iteration
+   (the `## Leads from …` blocks in `todo.md`).
 
 Candidate format example:
 
@@ -314,6 +316,15 @@ cleanly — the project hasn't opted in.
 
 - Append a one-line entry to `docs/done.md` under today's date with the
   script path and the headline number.
+- **Capture tangential leads in `todo.md`.** If steps 3–5 surfaced
+  high-value tangential questions — a surprising coefficient, an
+  unexplained pattern, a natural follow-up cut, a data quality issue
+  worth investigating — append them as new tasks under a
+  `## Leads from <script-name> — YYYY-MM-DD` heading in `todo.md`.
+  Keep each item to one line; include enough context that a future
+  `/next` proposal can pick it up without re-reading the build output.
+  Only record genuinely useful leads — not every minor observation.
+  Do not act on them in this iteration (one question per script).
 - If the run **materially changed the paper outline** (added or removed a
   finding from a section, changed a load-bearing number, demoted a
   hypothesis), **propose a `decisions.md` entry** and ask before writing.
