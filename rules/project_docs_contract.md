@@ -519,14 +519,14 @@ Acceptable locations (discovery order):
 1. `docs/hypotheses.md` (flat file — preferred for <15 hypotheses)
 2. `docs/hypotheses/index.md` (folder mode — for 15+ or individually long entries)
 
-Contains:
-- hypotheses with the generating theory identified
-- predictions: what the theory says should happen
-- pre-existing evidence: what is already known (with sources)
-- competing predictions: what alternative theories predict differently
-- empirical test or evidence strategy
-- data requirements and availability
-- priority ranking
+Contains, for each hypothesis:
+- the generating theory
+- the prediction, and competing predictions from alternative theories
+- prior research: what the external literature establishes
+- evidence: own analyses bearing on the hypothesis, each with a
+  Supports / Against / Mixed reading
+- evidence strength: an honest at-a-glance verdict
+- open tests: tests not yet run, and any blockers
 
 This file is not a paper draft. It is a machine-readable reference document.
 
@@ -546,11 +546,14 @@ docs/hypotheses/
 - `index.md` carries the intro, "How to read" section, cluster headings
   with bulleted links to individual files (e.g. `[H1: Headline](slug.md)`),
   and the summary table.
-- Each `<slug>.md` carries one hypothesis: `# H<N>: Title`, then all
-  fields (Slug, Theory, Prediction, Competing prediction, Pre-existing
-  evidence, Evidence strength, Empirical test, Data requirements).
-- File naming uses the Slug field value (e.g. `plaintiff-awards.md`,
-  not `h01-plaintiff-awards.md`). Ordering lives in the index, not filenames.
+- Each `<slug>.md` carries one hypothesis, following the structure in
+  [hypotheses.md format](#hypothesesmd-format): `# H<N>: Title` + plain-words
+  lede, evidence-strength callout, then `## Theory`, `## Prediction`,
+  `## Competing prediction(s)`, `## Prior research`, `## Evidence`,
+  `## Open tests`.
+- File naming uses the slug (e.g. `plaintiff-awards.md`, not
+  `h01-plaintiff-awards.md`) — the filename *is* the slug, so there is no
+  separate Slug field. Ordering lives in the index, not filenames.
 - Cross-refs between hypotheses use `[H<N>](other-slug.md)`.
 - Relative paths from `docs/hypotheses/<slug>.md`: `../theory.md`,
   `../reference/mechanisms.md`, `../../build/table/foo.csv`.
@@ -1200,49 +1203,54 @@ The `###` subheadings above are suggestions. Claude may add or omit subheadings 
 
 ### hypotheses.md format
 
+Each hypothesis follows the structure *the claim → what's known → what's left*:
+
 ```
-# Hypotheses
+# H<N>: <one-line claim, stated as a claim>
 
-## How to read this document
+<plain-words lede: 2-4 sentences stating the hypothesis, ending on the core
+claim>
 
-Each hypothesis entry contains:
-- **Theory:** Which framework generates the prediction
-- **Prediction:** What the theory says should happen
-- **Competing prediction:** What alternative theories predict differently
-- **Pre-existing evidence:** What we already know (with sources)
-- **Evidence strength:** How well existing evidence supports/contradicts
-- **Empirical test:** How the hypothesis could be adjudicated
-- **Data requirements:** Which datasets are needed
-- **Priority:** Based on (discriminating power) x (testability)
+> **Evidence strength: <Very strong | Strong | Moderate | Weak | Not tested>.**
+> <one-line status>
 
-## Hypothesis name
+## Theory
+Which framework (from theory.md) generates the prediction.
 
-### Theory
-- ...
+## Prediction
+What the theory says should happen.
 
-### Prediction
-- ...
+## Competing prediction(s)
+What alternative theories predict differently.
 
-### Competing prediction
-- ...
+## Prior research
+What the external literature establishes. (Own results go under Evidence.)
 
-### Pre-existing evidence
-- ...
+## Evidence
+A table of own analyses bearing on the hypothesis:
 
-### Evidence strength
-- ...
+| Analysis | Bearing | Key takeaway |
+|----------|---------|--------------|
+| AN-NNN (or — for results predating the analysis registry) | Supports / Against / Mixed | One-sentence finding; full design and results behind the link |
 
-### Empirical test
-- ...
-
-### Data requirements
-- ...
-
-### Priority
-- ...
+## Open tests
+Forward-looking only — tests not yet run. One `###` subsection per test or test
+family. Add a `**Blocked on:**` line only where a real blocker exists (missing
+data, pending access, dependency on another analysis). Omit this section
+entirely when nothing is open.
 ```
 
-The `###` subheadings above are suggestions. Claude may add or omit subheadings as appropriate for the content. The saude project's hypotheses.md provides a detailed example of this format in practice.
+Conventions:
+- **Folder mode:** the title is `# H<N>: ...` and the parts are `##` / `###` as
+  above. **Flat-file mode:** each hypothesis is a `##` section and its parts
+  shift down one level (`###` / `####`).
+- Cross-reference hypotheses by slug (`[H<N>](other-slug.md)`), not H-number.
+- The Evidence table holds completed, interpreted analyses; queued or
+  not-yet-interpreted analyses belong under Open tests.
+- Evidence assessments must be honest about strength and limitations.
+
+The connect project's `docs/hypotheses/` provides a detailed example of this
+format in practice.
 
 ---
 
