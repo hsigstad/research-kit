@@ -175,6 +175,8 @@ Path conventions (when the doc lives at `docs/findings.md`):
 - News texts: `[outlet YYYY-MM-DD (short topic)](../references/news/texts/NNN.txt)`
 - Cross-refs to same-dir docs: `[stylized-facts §X](reference/stylized-facts.md#anchor)` or `[briefs/Y §Z](briefs/Y.md#anchor)`
 
+**Analysis ledger.** If the project maintains an analysis ledger (`docs/analyses/` with `AN-NNN` entries indexed in `docs/reference/analysis-index.yaml`), cite the ledger entry in `*Own analysis*` — e.g. `AN-026` — rather than raw build artifacts. The ledger entry is the canonical record: it links to the backing script and holds the results table and interpretation. Bare `AN-NNN` tokens auto-link on the rendered site.
+
 For news anchors that carry a load-bearing quote, append the quote inline:
 > [Folha 2026-03 (Cucolo, Pesquisa Patrimonial CNJ)](../references/news/texts/070.txt) — anchor: *"a execução de sentenças judiciais que determinam o pagamento de dívidas seja hoje um dos principais gargalos do Judiciário"*
 
