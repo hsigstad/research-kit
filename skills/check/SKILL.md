@@ -146,6 +146,7 @@ deterministic ones; surface the others in a **Manual review** section.
 | Code | Auto / manual | Default proposal |
 |---|---|---|
 | `cite.malformed` | Auto | Deterministic transform: lowercase ns, kebab-case key. Show old → new diff per occurrence |
+| `cite.prose-style` | Manual | Prose author-year citation (e.g. `Smith (2020)`) — replace with `[cite:<bibkey>]`. Surface each occurrence with the surrounding line; user picks the bibkey (or adds a bib entry if missing). High-false-positive risk for paper drafts that paraphrase quoted titles; treat as a soft prompt, not a blocker |
 | `cite.orphan-manifest` | Auto | Run `/cite-sync <slug>` — regenerates the manifest from the live cited set, so the orphan entry drops out atomically (don't hand-edit the TOML) |
 | `cite.missing-from-manifest` | Auto | Run `/cite-sync <slug>` — adds the missing entry by regenerating from the live cited set. Group multiple `cite.missing-from-manifest` + `cite.orphan-manifest` findings for the same project into a single `/cite-sync` invocation |
 | `cite.unresolved-external` | Manual | Surface the missing `[ns:key]`; ask the user to add a registry entry (title, description, optional path) |

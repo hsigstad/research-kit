@@ -69,6 +69,34 @@ MALFORMED_TOKEN_RE = re.compile(
     r"([a-zA-Z0-9_]*[A-Z_][a-zA-Z0-9_]*)\]"
 )
 
+# Matches name-year prose citations: "Smith (2020)", "Smith and Jones (2020)",
+# "Smith et al. (2020)". Used to flag prose that should be [cite:<bibkey>].
+# Surname is a capitalized word ≥3 chars (skips "I", "Do", "An" etc.); year is
+# 1800–2099 with optional trailing letter ("2020a"). Year separator can be
+# either parens or a slash-year (Cahuc 2020 isn't flagged — too many false
+# positives like "Resolução 7/2005").
+PROSE_CITATION_RE = re.compile(
+    r"\b([A-Z][a-zA-Z'À-ſ-]{2,})"  # 1st surname (≥3 chars, allows accents/apostrophe/hyphen)
+    r"(?:"
+    r"\s+et\s+al\.?"
+    r"|\s+and\s+[A-Z][a-zA-Z'À-ſ-]{2,}"
+    r"|,?\s+[A-Z][a-zA-Z'À-ſ-]{2,}\s+and\s+[A-Z][a-zA-Z'À-ſ-]{2,}"
+    r")?"
+    r"\s*\((?:18|19|20)\d{2}[a-z]?\)"
+)
+
+# Surnames that look like author-year but are common false positives — section
+# titles, government bodies, decisions/laws, study labels. Add as encountered.
+PROSE_CITATION_STOPWORDS = {
+    "Resolution", "Resolução", "Decision", "Decisão", "Decreto", "Lei",
+    "Portaria", "Súmula", "Constitution", "Constituição",
+    "Operation", "Operação", "Project", "Projeto",
+    "Table", "Figure", "Section", "Appendix", "Chapter",
+    "Note", "Notes", "Footnote",
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+}
+
 SKIP_DOC_SUBDIRS = {"emails", "whatsapp"}
 
 
@@ -195,6 +223,48 @@ def scan_tokens(repo: Path) -> list[tuple[str, str, str, int]]:
     return tokens
 
 
+def scan_prose_citations(repo: Path) -> list[tuple[str, str, int]]:
+    """Find name-year prose citations in markdown docs that should be
+    [cite:<bibkey>] tokens (per research/rules/citations.md).
+
+    Returns (matched_text, rel_path, line_no). Only scans docs/*.md — .tex
+    files use \\cite{} natively, and prose in paper drafts often quotes
+    author-year strings legitimately ("Smith (2020) argue that...").
+    """
+    results: list[tuple[str, str, int]] = []
+    d = repo / "docs"
+    if not d.is_dir():
+        return results
+    for f in d.rglob("*.md"):
+        try:
+            parts = f.relative_to(d).parts
+            if parts and parts[0] in SKIP_DOC_SUBDIRS:
+                continue
+        except ValueError:
+            pass
+        # Skip the literature index itself — it deliberately lists papers in
+        # author-year prose as the description for each [cite:<key>] bullet.
+        if f.name == "index.md" and f.parent.name == "literature":
+            continue
+        if f.name == "literature.md":
+            continue
+        text = read(f)
+        rel = str(f.relative_to(repo))
+        # Strip backticks (code) and existing [cite:...] tokens before matching.
+        cleaned = re.sub(r"`[^`]+`", "", text)
+        cleaned = re.sub(r"\[cite:[A-Za-z0-9][A-Za-z0-9_-]*\]", "", cleaned)
+        # Strip markdown image alt text and link text — quoted titles often
+        # contain "Title (Year)" patterns that aren't citations.
+        cleaned = re.sub(r'"[^"\n]{0,200}"', "", cleaned)
+        for m in PROSE_CITATION_RE.finditer(cleaned):
+            surname = m.group(1)
+            if surname in PROSE_CITATION_STOPWORDS:
+                continue
+            line_no = cleaned[:m.start()].count("\n") + 1
+            results.append((m.group(0), rel, line_no))
+    return results
+
+
 def scan_malformed_tokens(repo: Path) -> list[tuple[str, str, int]]:
     results: list[tuple[str, str, int]] = []
     search_dirs = [repo / "docs", repo / "paper"]
@@ -284,6 +354,12 @@ def lint_citations(repo: Path, f: Findings, kind: str, registry: dict[str, dict[
     for token_text, rel, line_no in scan_malformed_tokens(repo):
         f.warn("cite.malformed",
                f"malformed citation token {token_text} (namespaces and keys must be lowercase kebab-case)",
+               path=f"{rel}:{line_no}")
+
+    for prose_text, rel, line_no in scan_prose_citations(repo):
+        f.warn("cite.prose-style",
+               f"prose citation '{prose_text}' — replace with [cite:<bibkey>]"
+               f" (see research/rules/citations.md)",
                path=f"{rel}:{line_no}")
 
     if kind == "project":

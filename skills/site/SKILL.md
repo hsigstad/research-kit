@@ -116,6 +116,28 @@ Then customize what you copied:
   direct URL; the make4ht HTML render is the paper page); and contains **no
   deployment logic** of its own (no `DEPLOY_DIR`, no rsync to
   `~/hsigstad.github.io` — deployment is `build.sh`'s job, see step 6).
+- **Cite-ref machinery**: if the project has (or will have) a
+  `docs/literature.md` or `docs/literature/index.md`, the build must turn
+  `[cite:<bibkey>]` tokens into hyperlinks per `research/rules/citations.md`.
+  The canonical implementation lives in
+  `/home/henrik/research/projects/connect/source/site/build_all.py` —
+  copy these helpers verbatim:
+    - `_load_cite_map()` + `CITE_MAP` (papers with their own
+      `docs/literature/<key>.md` page)
+    - `_load_bib_authoryear()` + `BIB_AUTHORYEAR` (author-year labels
+      parsed from `paper/*.bib`)
+    - `_load_index_cite_map()` + `INDEX_CITE_MAP` (papers that appear
+      only as `[cite:<key>]`-tagged bullets on the literature index)
+    - `_link_cite_refs(html, current_stem)` — resolution order:
+      page → index anchor → literal token
+    - `_inject_index_cite_anchors(html)` — adds `id="cite-<key>"` to
+      `<li>` elements on the literature/index page
+  Then wire `_link_cite_refs` into the render pipeline (alongside the
+  existing `_link_an_refs` / `_link_h_refs` / `_link_anec_refs` passes)
+  and run `_inject_index_cite_anchors` only when rendering
+  `docs/literature/index.md`. The CSS rule
+  `.md-body li:target { background: #fff8c4; scroll-margin-top: 4rem; }`
+  in `templates/doc.html` highlights the bullet you jumped to.
 - **Templates**: update `<title>` tags and any paper/talk `<h1>` to use the
   new project's title. Keep all CSS in `:root` and surface colors as-is —
   they are part of the contract below.
