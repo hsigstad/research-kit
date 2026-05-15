@@ -42,7 +42,7 @@ REQUIRED_PROJECT_DOCS = {
 OPTIONAL_PROJECT_DOCS = {
     "theory.md", "hypotheses.md", "desiderata.md", "outline.md",
     "archive.md", "results.md", "findings.md", "anecdotes.md",
-    "qa.md", "README.md", "CONVENTIONS.md",
+    "questions.md", "qa.md", "README.md", "CONVENTIONS.md",
 }
 
 ALLOWED_PROJECT_DOCS = REQUIRED_PROJECT_DOCS | OPTIONAL_PROJECT_DOCS
@@ -122,7 +122,17 @@ def lint_docs_root(repo: Path, f: Findings, kind: str):
 
     present_files = {p.name for p in docs.iterdir() if p.is_file()}
 
-    for name in sorted(required - present_files):
+    # Folder mode: docs/<X>/index.md satisfies the requirement for docs/<X>.md.
+    # Mirrors how hypotheses/, findings/, anecdotes/, literature/ are documented
+    # in the contract — the folder is a substitute for the flat file when entries
+    # grow numerous or long.
+    folder_index_satisfies = {
+        f"{p.name}.md"
+        for p in docs.iterdir()
+        if p.is_dir() and (p / "index.md").is_file()
+    }
+
+    for name in sorted(required - present_files - folder_index_satisfies):
         f.err("doc.missing", f"required file missing: docs/{name}")
 
     for name in sorted(present_files - allowed):

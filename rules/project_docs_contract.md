@@ -43,6 +43,7 @@ repo/
     decisions.md
     theory.md        # optional
     hypotheses.md    # optional
+    questions.md     # optional; written by /questions skill
     results.md       # optional
     archive.md       # optional
     briefs/          # optional; human-readable topic narratives
@@ -351,6 +352,13 @@ Includes:
 
 Focus on relevance, not citation formatting.
 
+**Folder mode** (`docs/literature/`): when the flat file becomes unwieldy
+(per-paper notes longer than a few lines each, or 20+ entries), promote
+to a folder with one page per paper plus `index.md` listing them — same
+pattern as `docs/hypotheses/` and `docs/findings/`. The folder satisfies
+the contract's required-file slot: `docs/literature/index.md` substitutes
+for `docs/literature.md`.
+
 ---
 
 ### decisions.md
@@ -563,6 +571,26 @@ Rules:
 - Where possible, identify predictions that discriminate between competing theories.
 - Evidence assessments should be honest about strength and limitations.
 - Speculative or loosely formed hypotheses belong in `thinking.md` until sharpened.
+
+---
+
+### questions.md (optional)
+
+The 3–5 policy-relevant research questions the project answers. Each
+question synthesizes evidence from multiple hypotheses and findings into
+a single statement that a non-technical reader can grasp.
+
+Written and updated by the `/questions` skill.
+
+Contains:
+- Q-slug per question (`Q:<slug>`, per `rules/identifiers.md`)
+- one-sentence statement of the question
+- the answer the project gives, with the load-bearing findings cited
+- which hypotheses the answer rests on
+
+Sits one level up from `hypotheses.md`: hypotheses are testable predictions
+about specific mechanisms; questions are the policy-relevant claims those
+hypotheses aggregate into.
 
 ---
 
