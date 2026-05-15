@@ -840,6 +840,25 @@ Rules:
 
 ---
 
+### docs/analyses/ (optional)
+
+One file per analysis (an experiment, regression table, descriptive cut), named
+`an-NNN-<slug>.md`. The folder is the project's analysis ledger: each page
+records what was run, the result, and the interpretation. It pairs with
+`docs/reference/analysis-index.yaml` (the queryable index) and feeds the
+Evidence tables in `hypotheses/`.
+
+Each page carries structured YAML frontmatter (metadata + a `design:` block),
+which the site build renders as a human-readable panel, followed by a markdown
+body (`## Results`, `## Interpretation`, `## Follow-ups`). See `analyses
+format` in §6.
+
+Used by projects with a server round-trip or a high volume of discrete
+analyses (`connect`). Projects with few analyses can keep them in `results.md`
+instead.
+
+---
+
 ### anecdotes.md (optional)
 
 Structured catalog of anecdotal evidence (cases, stories, news incidents) used to motivate or illustrate the research.
@@ -1251,6 +1270,66 @@ Conventions:
 
 The connect project's `docs/hypotheses/` provides a detailed example of this
 format in practice.
+
+---
+
+### analyses format
+
+One file per analysis under `docs/analyses/`, named `an-NNN-<slug>.md`.
+Structured fields live in YAML frontmatter (machine- and LLM-readable); the
+site build renders them as a human-readable panel. Prose stays in the body.
+
+```
+---
+id: an-NNN
+hypothesis: <slug>            # hypothesis slug — resolves to a link; omit if none
+type: descriptive | causal | placebo | robustness
+status: queued | exported | interpreted
+status_date: YYYY-MM-DD       # date the current status was reached
+confidence: pending | green | yellow | red
+created: YYYY-MM-DD
+script: <repo-relative path to the script>
+target: <repo-relative path to the output artifact>
+commit: <git hash at export>
+design:
+  sample: <slug of a docs/sample/ page>   # optional ` — deviation` tail for robustness variants
+  specification: <how the estimand is computed>
+  # ...project-specific keys (see below)...
+---
+# AN-NNN: <research question>
+
+## Results
+## Interpretation
+## Follow-ups
+```
+
+The `design:` block records what makes the analysis reproducible, minus what
+the Results table already shows (don't restate outcome variables — those are
+the table's rows). Its keys are a fixed allowlist:
+
+- **Universal core**, valid in every project: `sample`, `specification`,
+  `notes`.
+- **Project extensions**: declared in `docs/reference/analysis-schema.yaml`
+  (`design_keys: [...]`). `connect`, e.g., adds `weights` and `connection`.
+- **`notes`** is the catch-all. If something keeps landing in `notes`, that is
+  the signal to promote it to a declared key.
+
+`/check docs` flags any `design:` key outside the allowlist
+(`analysis.design.unknown-key`).
+
+Conventions:
+- `sample` references a `docs/sample/` page by slug — define the sample once
+  there and don't re-derive it in every AN page. The build resolves the slug
+  to a link. For robustness variants, append ` — <deviation>` (e.g.
+  `randomization-valid-plaintiff — excl. courts with >20 varas`); the
+  deviation reads as plain text after the linked base.
+- `specification` uses felm-style formula structure (`y ~ x | FE | IV |
+  cluster`) with **descriptive, plain-language terms** — not literal code
+  identifiers, which would mislead a reader into grepping the source. The
+  literal script is linked via `script:`.
+- What is *constant across the project* — the core identification strategy —
+  belongs in `methods.md`, stated once, not echoed in every analysis page.
+- The Evidence table in `hypotheses/` links back here by `AN-NNN`.
 
 ---
 

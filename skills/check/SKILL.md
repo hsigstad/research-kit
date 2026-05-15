@@ -117,6 +117,7 @@ of the plan — surfaced but not auto-applied. Common fixes:
 | `decisions.bad-header` | Rewrite the header to `## YYYY-MM-DD — <title>` (em-dash). Auto-fix if the date is parseable; manual otherwise |
 | `handoff.bad-filename` | `git mv` to `<ISO-timestamp>_<short-tag>.md` (manual: pick the right tag) |
 | `source.underscore-cited` | Manual review — either rename the script to drop the underscore (and let it be a real artifact) or rewrite the citing doc to point elsewhere |
+| `analysis.design.unknown-key` | Manual review — either fold the value into an allowed `design:` key (or `notes`), or, if it recurs across analyses, add the key to `docs/reference/analysis-schema.yaml` |
 
 **Ledgers (`/check ledgers`): numbered list, per-gap apply/skip/quit.**
 
