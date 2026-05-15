@@ -148,12 +148,41 @@ A traffic-light convention runs across both scales: 🟢 = strongest confidence,
 
 Every empirical finding and interpretation entry must contain, in this order:
 
-1. **Confidence tag + headline sentence.** First non-blank line of the entry's body. Format: `🟢/🟡/🔴 <one-sentence summary with the load-bearing number>`.
+1. **Confidence tag + headline sentence.** First non-blank line of the entry's body. Format: `🟢/🟡/🔴 <one declarative sentence stating the finding as a claim about the world, with the load-bearing number(s) and AN cite(s)>`. See "Headline rule" below — this is the most quoted line in the doc and the bar is high.
 2. **Expanded explanation.** Plain prose, 1–4 paragraphs, with inline anchored citations (no bare `[CNJ-DIAG22 p.198]` — use `[CNJ-DIAG22 p.198](../../references/cnj/file.pdf#page=198)` instead).
 3. **Optional sub-paragraphs** for updates, robustness, caveats — each prefixed with a bold header like `**Forward-look caveat (added YYYY-MM-DD).**` so the reader can date the addition.
 4. **Optional figure embed** with italicized caption underneath.
 5. **The Sources footer** — see "Sources footer" below. Required, standardized, four-class.
 6. **Optional Draws-on / Cross-refs paragraph** if the entry is an interpretation. Lists the empirical findings the inference rests on, by anchor link.
+
+## Headline rule
+
+The 🟢/🟡/🔴 line directly under the title is the single most-quoted unit in the doc — it gets linked, screenshotted, and dropped into emails out of context. It has to stand on its own.
+
+1. **One declarative sentence stating the finding as a claim about the world.** Lead with the conclusion. Not a setup sentence, not a meta-introduction.
+2. **Self-contained.** A reader landing here from a deep link must be able to parse the sentence without looking at the title or surrounding text. Spell out what "the asymmetry" / "the settlement effect" / "the gap" actually refers to — whose, between what, in what direction. Project-specific terms must be unpacked or replaced.
+3. **Flesh out the title, don't echo it.** The title is the same claim in headline form; the sentence adds the load-bearing numbers, units, and scope. If the sentence reads like the title plus a comma, it's wasted space.
+4. **Ground load-bearing magnitudes in numbers + AN cites.** Not "substantial" or "large". Significance markers (`*`, `**`, `***`) attach to the numbers they qualify.
+5. **No evidence-as-subject, no meta-predicate, no hedged lead.** Confidence comes from the colored dot, not the verb. Avoid:
+   - *"The asymmetry is the strongest evidence for X…"* (evidence as subject)
+   - *"Three findings converge: …"* / *"Two patterns suggest…"* (meta-predicate)
+   - *"X suggests that…"* / *"…is consistent with…"* (hedged lead)
+   State the claim, then say why in the explanatory paragraph.
+6. **Hard ceiling: 40 words, one sentence.** If you can't fit it in 40 words, the claim is compound — split it, or move secondary clauses into the explanatory paragraph below.
+
+The headline rule applies equally to empirical and interpretation entries. Interpretations are still claims about the world — they just rest on multiple empirical premises (named in the `Draws on:` paragraph).
+
+**Failing headlines look like:**
+
+- *"The settlement effect tripled after the 2017 labor reform."* → what settlement effect, of what on what?
+- *"Three findings converge: …"* → meta-predicate; the reader has to assemble the claim.
+- *"The inverse value gradient combined with the flat dose-response suggests…"* → evidence-as-subject + hedged lead.
+- *"Recusal reform intended to extend recusal to colleagues. Instead, …"* → setup-then-claim; the first sentence carries no information.
+
+**Passing headlines look like:**
+
+- *"Connected-judge assignment moves plaintiff awards by 30–40% (AN-044) but leaves defendant outcomes unchanged across every connection type tested (AN-031) — an asymmetry that contingency-paid plaintiff lawyers vs fixed-wage defendant lawyers can produce, but implicit bias cannot."*
+- *"Connected-judge assignment raised the probability of settlement by 2.3pp (ns) before the 2017 labor reform and 7.1pp\*\*\* after — the settlement channel of favoritism roughly tripled (AN-038)."*
 
 ## Sources footer (the standard schema)
 
