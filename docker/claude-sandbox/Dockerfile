@@ -2,9 +2,24 @@ FROM debian:bookworm-slim
 
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl git ca-certificates nodejs npm \
+    curl git ca-certificates openssh-client nodejs npm \
     python3 python3-pip python3-venv \
     chromium chromium-driver \
+    rsync pandoc \
+  && rm -rf /var/lib/apt/lists/*
+
+# TeX Live (curated subset: latexmk, biber, make4ht, common paper packages)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    texlive-latex-base texlive-latex-recommended texlive-latex-extra \
+    texlive-fonts-recommended texlive-fonts-extra \
+    texlive-bibtex-extra texlive-extra-utils \
+    texlive-science texlive-luatex \
+    latexmk biber \
+  && rm -rf /var/lib/apt/lists/*
+
+# R
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    r-base \
   && rm -rf /var/lib/apt/lists/*
 
 # Install Claude Code
@@ -25,6 +40,7 @@ RUN pip install --no-cache-dir \
     PyMuPDF mistune \
     linearmodels pydantic python-dotenv html2text \
     openai anthropic \
+    SQLAlchemy pyyaml pypdf pytesseract pytest scons \
     git+https://github.com/DarrenZal/otter-mcp.git
 
 # Install uv at the same path the host uses, so .mcp.json works as-is
