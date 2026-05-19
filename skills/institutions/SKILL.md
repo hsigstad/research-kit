@@ -18,17 +18,21 @@ citations against `artigos.db`.
   reference; add new sections for topics not yet covered
 - `/institutions audit` — verify citations resolve, flag stale claims,
   check coverage against shared reference without adding content
-- `/institutions --update <section> [--artifact <build/path>]` —
+- `/institutions --update <section> [--artifact <AN-id-or-build-path>]` —
   **surgical single-section edit**. Update one section of
   `institutions.md` (e.g. after a new law, portaria, or court ruling
   changes the rule it documents). Reads only `CLAUDE.md`,
-  `institutions.md`, and the optional triggering artifact. Does not
-  re-derive other sections, does not re-walk the full shared
-  reference. Use from `/next` step 5 when a run surfaced an
-  institutional fact that belongs in one existing section. The
-  `<section>` argument is a heading slug from the current file.
-  Distinct from `update` (which re-checks the whole file against the
-  shared reference for missing sections).
+  `institutions.md`, and the optional triggering artifact.
+  `--artifact` accepts either an AN id (preferred — e.g. `AN-019`;
+  the skill reads `docs/analyses/an-019-*.md` to recover the
+  institutional fact and its source) or a raw `build/<path>`
+  fallback. Citations in the edited section use the AN id, not the
+  bare build path. Does not re-derive other sections, does not
+  re-walk the full shared reference. Use from `/next` step 5 when a
+  run surfaced an institutional fact that belongs in one existing
+  section. The `<section>` argument is a heading slug from the
+  current file. Distinct from `update` (which re-checks the whole
+  file against the shared reference for missing sections).
 
 If no project slug is given, infer from the current working directory.
 
@@ -203,8 +207,10 @@ iteration that ran an analysis revealing an institutional fact.
 1. `$PROJ/CLAUDE.md` — current focus and naming conventions.
 2. `$PROJ/docs/institutions.md` — locate the target section, respect
    the file's existing structure.
-3. The `--artifact` build path (if given) — the table/figure whose
-   IAT or output triggered the update.
+3. The `--artifact` argument (if given). If an AN id: read
+   `$PROJ/docs/analyses/an-NNN-*.md` to recover the underlying
+   fact; cite the AN id in the section's citation tail. If a
+   `build/<path>`: read the artifact directly.
 4. The relevant shared-reference topic file *only if* the target
    section directly mirrors it.
 

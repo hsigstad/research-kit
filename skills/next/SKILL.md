@@ -47,6 +47,28 @@ The workspace root contains `CLAUDE.md` alongside `projects/`, `pipelines/`,
 `ideas/`, `research/`. If the current directory is inside a project, search
 upward. `$ROOT` for paths below; `$PROJ = $ROOT/projects/<slug>/`.
 
+## Analysis ledger (`docs/analyses/`)
+
+Every project uses the AN-NNN analysis ledger: each new-script iteration
+of `/next` produces a new AN page at `docs/analyses/an-NNN-<slug>.md`
+as the **primary target** of the iteration. The AN page is the
+canonical home of the question, design, headline result, and
+confidence. `findings.md` / `hypotheses.md` etc. cite the AN id; they
+do not duplicate the magnitude.
+
+The frontmatter contract is defined in
+`research-kit/rules/project_docs_contract.md` §"analyses format". A
+project may override status/confidence vocabulary and add design keys
+via `$PROJ/docs/reference/analysis-schema.yaml` — read it if present
+and conform; otherwise use the contract defaults.
+
+If `$PROJ/docs/analyses/` does not yet exist (a project predating the
+convention), scaffold it on first invocation: `mkdir
+docs/analyses/`, write an `index.md` with the standard heading and a
+"Summary table" placeholder, and report the scaffold once in the
+end-of-iteration report so the researcher can wire it into the site
+build.
+
 ## What to read
 
 Always read 1–3. Read 4+ only in propose mode.
@@ -71,14 +93,16 @@ Always read 1–3. Read 4+ only in propose mode.
 Produce 3–5 ranked candidates. For each, output the following fields:
 
 - **Description**: one sentence.
-- **Primary target**: one of —
-  - `hypotheses.md:H<#>` — updates an existing hypothesis status block.
-  - `findings.md:<slug>` — updates an existing finding entry.
-  - `institutions.md:<section>` — updates an institutional section.
-  - `theory.md:<framework-id>` — refines a theoretical framework.
-  - `literature.md:<citekey>` — annotates a literature entry.
-  - `(new entry, no current target)` — exploratory, will produce a new
-    finding via `--extend` rather than a `--update`.
+- **Primary target**: almost always `analyses/an-NNN` — every
+  new-script iteration produces a new AN page. NNN is the next
+  sequential id (max of existing `an-*.md` + 1, zero-padded to 3).
+  Exception: an iteration that *re-uses* an existing script (a refit at
+  a different sample, a re-run after a parser fix) without producing
+  a new AN page declares one of the legacy targets instead —
+  `hypotheses.md:H<#>` / `findings.md:<slug>` /
+  `institutions.md:<section>` / `theory.md:<framework-id>` /
+  `literature.md:<citekey>`. New work = AN page; touching old work =
+  the doc that holds the claim.
 - **Secondary targets** (optional): any other docs the run will touch
   per the propagation checklist (briefs, stylized-facts, outline).
 - **Required inputs**: existing build artifacts or pipeline outputs.
@@ -101,17 +125,34 @@ Ranking criteria, in order:
 5. Picks up a high-value lead from a prior `/next` iteration
    (the `## Leads from …` blocks in `todo.md`).
 
-Candidate format example:
+Candidate format example (new analysis):
 
 ```
-Candidate 2: H6 vara-FE × foro stratification (cross-jurisdictional follow-up)
-  Description: refit H6 fixed effects with foro dummies to test whether
-    the productivity axis collapses to between-foro composition.
-  Primary target: hypotheses.md:H6 (status block)
-  Secondary: findings.md:vara-productivity-axis,
-             briefs/vara-productivity.md
-  Required inputs: build/table/h6_vara_fe_by_foro.csv (existing)
-  Effort: medium — refit + new cut.
+Candidate 2: AN-019 — within-mayor 2nd-term irregularity contrast
+  Description: refit the lame-duck regression on the subset of mayors
+    whose 1st and 2nd consecutive terms both fall in the panel, with
+    mayor FE to absorb selection-into-reelection.
+  Primary target: analyses/an-019 (new AN page)
+  Secondary: hypotheses.md:H:lame-duck (status block updated to
+             reference AN-019 if confirmed); findings.md (new
+             entry citing AN-019 if the result holds)
+  Required inputs: build/clean/court_party.parquet (mayor identifiers),
+                   build/analysis/doe_irregularity_panel.parquet
+  Effort: medium — new script + sample restriction.
+  Risk: power may be thin given the within-mayor subset.
+```
+
+Candidate format example (re-use of existing script):
+
+```
+Candidate 4: H6 vara-FE refit with post-fix sample
+  Description: re-run AN-031's fixed-effect spec on the corrected
+    sample after the parser fix; check that the productivity axis
+    estimate survives.
+  Primary target: hypotheses.md:H6 (status block — AN-031 re-run, not new AN)
+  Secondary: findings.md:vara-productivity-axis (refresh magnitude)
+  Required inputs: build/table/h6_vara_fe.csv (re-run target)
+  Effort: low — sample swap + refit.
   Risk: none.
 ```
 
@@ -142,6 +183,60 @@ In **specify mode** (`/next <description>` with no proposal step), if
 the researcher's description didn't name a primary target, the restate
 must derive one or ask. A run with no nameable target is rare and
 usually a sign the work is too unfocused.
+
+### Scaffold the AN page now (before step 3)
+
+When the primary target is a new AN page, write the page *now* — at
+the end of step 2, before writing the script. This makes the AN id
+stable for the script's IAT header and lets step 4 update the same
+file rather than scrambling to create it post-hoc.
+
+Numbering: `ls $PROJ/docs/analyses/an-*.md`, parse the numeric prefix,
+take the max and add 1, zero-pad to 3. Show the proposed id once in
+the restate output ("Drafting AN-019 at `docs/analyses/an-019-<slug>.md`").
+
+File contents at step 2:
+
+```yaml
+---
+id: an-NNN
+hypothesis: <slug | null>      # H slug if the run tests an existing H; null otherwise
+type: <descriptive | causal | placebo | robustness>
+status: pending                # use the project schema's "queued" / "draft" if it overrides
+status_date: <today>
+confidence: pending
+created: <today>
+script: source/<dir>/<base>.py
+target: build/<dir>/<base>.<ext>
+design:
+  sample: <one line from the restate>
+  specification: <one line, felm-style if applicable>
+  notes: <free-form>
+  # project-specific keys from docs/reference/analysis-schema.yaml
+---
+# AN-NNN: <research question>
+
+## Question
+
+<the question, in 2-3 sentences — copy from the restate>
+
+## Design
+
+<a few sentences on sample, specification, identification — what is
+load-bearing for interpretation but not in the frontmatter>
+
+## Results
+
+*Pending — emits `<target>`.*
+```
+
+Read `$PROJ/docs/reference/analysis-schema.yaml` first if it exists
+and conform the frontmatter to it (status vocabulary, design keys).
+If the schema is absent, use the contract default above and flag
+the absence once in the end-of-iteration report.
+
+The script written in step 3 should include `# AN-NNN` in its IAT
+header so the source-to-AN back-link is greppable.
 
 ## Step 3 — Write the script
 
@@ -205,6 +300,27 @@ Report a short summary to the researcher:
 **Stop and let the researcher confirm before doc propagation.** Doc
 edits are harder to reverse than re-running a script.
 
+### Finalize the AN page before propagating
+
+After a successful run (and before step 5), open the AN page created
+in step 2 and fill in:
+
+- `## Results` body: a short prose summary of the headline number(s),
+  including the figure / table reference and the surprise-or-not call.
+  Keep it tight — the place for full interpretation is downstream (a
+  finding entry, a hypothesis status block), not the AN page.
+- `## Interpretation` (if the project's schema uses this section):
+  one to three sentences on what the result means for the question.
+- `## Follow-ups` (optional): tangential leads worth recording. These
+  should also go to `todo.md` per step 6.
+- Frontmatter: `status: done` (or the project schema's interpreted
+  equivalent), `status_date: <today>`, `confidence: <green/yellow/red>`
+  per the inspection.
+
+This is a direct write to `docs/analyses/an-NNN-<slug>.md` — no skill
+call. The AN page IS the primary target; step 5a below treats it as
+already updated.
+
 ## Step 5 — Propagate to docs
 
 ### 5a. Update the primary target
@@ -216,12 +332,21 @@ project:
 
 | Primary target | Invocation |
 |---|---|
-| `hypotheses.md:H<#>` | `/hypothesis --update H<#> --artifact build/<path>` |
-| `findings.md:<slug>` | `/findings --update <slug> --artifact build/<path>` |
-| `institutions.md:<section>` | `/institutions --update <section> --artifact build/<path>` |
-| `theory.md:<framework-id>` | `/theory --update <framework-id> --artifact build/<path>` |
-| `literature.md:<citekey>` | `/literature --update <citekey> --artifact build/<path>` |
-| `(new entry, no current target)` | `/findings --extend` (or `/hypothesis --extend` if the run introduced a new testable claim) |
+| `analyses/an-NNN` *(default)* | **No skill call** — the page was written in step 2 and finalized in step 4. Move to 5b. |
+| `hypotheses.md:H<#>` | `/hypothesis --update H<#> --artifact AN-NNN` (the AN id of the script being re-used; the skill resolves it to script/target/headline) |
+| `findings.md:<slug>` | `/findings --update <slug> --artifact AN-NNN` |
+| `institutions.md:<section>` | `/institutions --update <section> --artifact AN-NNN` |
+| `theory.md:<framework-id>` | `/theory --update <framework-id> --artifact AN-NNN` |
+| `literature.md:<citekey>` | `/literature --update <citekey> --artifact AN-NNN` |
+
+**`--artifact` takes an AN id, not a build path.** The propagation
+skills resolve the AN id by reading `docs/analyses/an-NNN-*.md` to
+recover script + target + headline. This keeps the citation in the
+citing doc on the AN id (stable across re-runs) rather than the
+build path (which may move under the script if the output set
+changes). For one-off cases where the run produced an output not
+yet ledgered, fall back to `--artifact build/<path>`; the resulting
+edit will note the missing AN entry as a lint.
 
 `--update` modes are surgical: they read only the project CLAUDE.md,
 the target doc, and the artifact. They do not re-derive other entries.
@@ -315,7 +440,9 @@ cleanly — the project hasn't opted in.
 ## Step 6 — Close out
 
 - Append a one-line entry to `docs/done.md` under today's date with the
-  script path and the headline number.
+  script path and the headline number. In AN-mode, lead with the AN id:
+  `AN-019 (source/table/within_mayor_lameduck.py) — within-mayor
+  contrast: -0.4pp [CI: -1.2, +0.4], result attenuates to noise.`
 - **Capture tangential leads in `todo.md`.** If steps 3–5 surfaced
   high-value tangential questions — a surprising coefficient, an
   unexplained pattern, a natural follow-up cut, a data quality issue
@@ -390,13 +517,15 @@ Auto-mode semantics:
   proceed if the top-ranked candidate (a) has no risk flag (no "needs
   raw data we don't have", no "duplicates existing artifact", no
   "depends on unshipped parser fix") AND (b) has a named primary
-  target — `hypotheses.md:H<#>`, `findings.md:<slug>`, etc. A
-  candidate that declared `(new entry, no current target)` is too
-  exploratory for auto mode; bail and require manual pick.
+  target — `analyses/an-NNN`, `hypotheses.md:H<#>`,
+  `findings.md:<slug>`, etc. A candidate that can't name its
+  target is too unfocused for auto mode; bail and require manual pick.
 - **Primary target drives propagation.** The candidate's declared
   primary target tells auto mode which `--update <ID>` call to make
-  in step 5. No guessing. If the target is `(new entry)`, route to
-  `--extend` instead.
+  in step 5. No guessing. When the target is `analyses/an-NNN`, the
+  AN page is written and finalized in steps 2 and 4 with no skill
+  call (see step 5a); only the secondary targets receive `--update`
+  invocations.
 - **Doc propagation runs by the same checklist** keyed to run type;
   no shortcuts. The propagation skills (`/findings --update`,
   `/hypothesis --update`, etc.) are invoked exactly as in attended mode.

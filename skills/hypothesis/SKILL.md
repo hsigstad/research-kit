@@ -28,7 +28,7 @@ If neither exists, ask the user which to create. Default to flat file for
 - `/hypothesis <project-slug>` — run against a specific project under `projects/`.
 - `/hypothesis --audit` — do not write; report gaps, dangling refs, and orphan theories.
 - `/hypothesis --extend` — preserve existing entries; only append new hypotheses suggested by current evidence/literature.
-- `/hypothesis --update <H#> [--artifact <build/path>]` — **surgical single-entry edit**. Update the status block (or evidence/test fields) of one existing hypothesis after a new analysis result. Reads only `CLAUDE.md`, `hypotheses.md`, and the optional triggering build artifact. Does not re-derive other hypotheses, does not re-read `theory.md`/`literature.md`/etc. Use from `/next` step 5 when a run affects exactly one hypothesis (demotion after null, strengthening after a confirming test, status-block refresh). The `--artifact` argument lets the skill cite the specific build output that triggered the update.
+- `/hypothesis --update <H#> [--artifact <AN-id-or-build-path>]` — **surgical single-entry edit**. Update the status block (or evidence/test fields) of one existing hypothesis after a new analysis result. Reads only `CLAUDE.md`, `hypotheses.md`, and the optional triggering artifact. `--artifact` accepts either an AN id (preferred — e.g. `AN-019`; the skill reads `docs/analyses/an-019-*.md` to recover script + target + headline + confidence) or a raw `build/<path>` (fallback for unledgered runs). Does not re-derive other hypotheses, does not re-read `theory.md`/`literature.md`/etc. Use from `/next` step 5 when a run affects exactly one hypothesis (demotion after null, strengthening after a confirming test, status-block refresh).
 
 ## Finding the workspace root
 
@@ -184,10 +184,14 @@ untouched.
 1. `$PROJ/CLAUDE.md` — for current focus and naming conventions.
 2. `$PROJ/docs/hypotheses.md` or `$PROJ/docs/hypotheses/<slug>.md` — to
    locate the target entry and respect its template exactly.
-3. The `--artifact` build path (if given) — the CSV/figure that
-   triggered the update; cite it in the new status text.
-4. The triggering script's IAT docstring (derived from the artifact
-   path via the `source/X.py → build/X.*` convention) — for context.
+3. The `--artifact` argument (if given). If an AN id: read
+   `$PROJ/docs/analyses/an-NNN-*.md` to recover the script, target,
+   headline, and confidence — cite the AN id (e.g. `AN-019`) in the
+   evidence row, not the build path. If a `build/<path>`: read the
+   artifact itself.
+4. The triggering script's IAT docstring (derived from the AN page's
+   `script:` field, or from the `source/X.py → build/X.*` convention
+   for bare-path artifacts) — for context.
 
 Do **not** re-read `theory.md`, `literature.md`, `institutions.md`,
 `data.md`, or any other context unless the target hypothesis's text
@@ -197,6 +201,13 @@ explicitly cites them and the update would change those citations.
 template (fields, order, prose style) inferred from neighboring
 entries. Add or update only the fields the new result affects —
 typically the status block, the evidence list, or the priority tag.
+Evidence-table rows that point at this hypothesis should use the AN
+id (`AN-019`) as the anchor, not a bare build path.
+
+**Back-link to the AN page.** When --artifact is an AN id and the AN
+page's `hypothesis:` frontmatter field is null or different from
+this hypothesis's slug, update the AN page's `hypothesis:` field to
+match. Both sides of the link should agree.
 
 **What not to touch:** other hypotheses, the document header, the
 summary table (if present), or any cross-cutting structure.

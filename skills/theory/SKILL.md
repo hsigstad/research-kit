@@ -16,7 +16,7 @@ project's empirical design can adjudicate.
 - `/theory <project-slug>` — run against a specific project under `projects/`.
 - `/theory --audit` — do not write; report coverage, dangling refs, and missing sections.
 - `/theory --extend` — preserve existing entries; only append new frameworks suggested by current evidence/literature.
-- `/theory --update <framework-id> [--artifact <build/path>]` — **surgical single-framework edit**. Update one framework entry (prediction, scope, references) when a new analysis result or literature touchpoint changes how it applies to the project. Reads only `CLAUDE.md`, `theory.md`, and the optional triggering artifact. Does not re-derive other frameworks, does not re-walk `literature.md`/`hypotheses.md`. Use from `/next` step 5 when a run refines a single framework's empirical content. The `<framework-id>` argument is the entry number or name as used in `theory.md`. Numbering is sacred — never renumber (paper and hypothesis cross-refs depend on it).
+- `/theory --update <framework-id> [--artifact <AN-id-or-build-path>]` — **surgical single-framework edit**. Update one framework entry (prediction, scope, references) when a new analysis result or literature touchpoint changes how it applies to the project. Reads only `CLAUDE.md`, `theory.md`, and the optional triggering artifact. `--artifact` accepts either an AN id (preferred — e.g. `AN-019`; the skill reads `docs/analyses/an-019-*.md` to recover the relevant empirical content) or a raw `build/<path>` fallback. The framework entry's references back to evidence cite the AN id, not the build path. Does not re-derive other frameworks, does not re-walk `literature.md`/`hypotheses.md`. Use from `/next` step 5 when a run refines a single framework's empirical content. The `<framework-id>` argument is the entry number or name as used in `theory.md`. Numbering is sacred — never renumber (paper and hypothesis cross-refs depend on it).
 
 ## Finding the workspace root
 
@@ -91,9 +91,13 @@ result narrows the framework's domain, a citation needs adding).
 1. `$PROJ/CLAUDE.md` — current focus.
 2. `$PROJ/docs/theory.md` — locate the target framework, respect its
    template exactly.
-3. The `--artifact` build path (if given) — the result that triggered
-   the update.
-4. The triggering script's IAT docstring — for context.
+3. The `--artifact` argument (if given). If an AN id: read
+   `$PROJ/docs/analyses/an-NNN-*.md` to recover the empirical result;
+   the framework's evidence citation uses the AN id. If a
+   `build/<path>`: read the artifact directly.
+4. The triggering script's IAT docstring (from the AN page's
+   `script:` field, or the `source/X.py → build/X.*` convention for
+   bare-path artifacts) — for context.
 
 Do **not** re-read `literature.md`, `hypotheses.md`, or any external
 literature unless the target framework's citation list would change.

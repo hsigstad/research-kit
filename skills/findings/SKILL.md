@@ -26,7 +26,7 @@ stress-test the entries you've written.
 - `/findings --refresh` — recompute the load-bearing numbers in entries against current build artifacts; flag entries whose headline numbers don't match the current data. Critical for catching staleness after pipeline reruns or parser fixes.
 - `/findings --audit` — do not write; report completeness gaps (missing source classes, missing confidence tags, dangling cross-refs, sources without page anchors).
 - `/findings --footer <slug-or-heading>` — re-format only the Sources footer of one specified entry to the standardized 4-class schema (used to roll out the schema across an existing doc).
-- `/findings --update <slug-or-heading> [--artifact <build/path>]` — **surgical single-entry edit**. Update one finding's body (headline, magnitude, caveat, confidence tag) after a new analysis result. Reads only `CLAUDE.md`, `findings.md`, and the optional triggering build artifact. Does not re-derive other findings, does not re-read `stylized-facts.md`/briefs/audits. Use from `/next` step 5 when a run affects exactly one existing finding (re-run with revised magnitude, parser fix that shifts a number, confidence promotion/demotion after replication). Distinct from `--refresh` (which walks all findings) and `--footer` (which touches only the Sources block).
+- `/findings --update <slug-or-heading> [--artifact <AN-id-or-build-path>]` — **surgical single-entry edit**. Update one finding's body (headline, magnitude, caveat, confidence tag) after a new analysis result. Reads only `CLAUDE.md`, `findings.md`, and the optional triggering artifact. `--artifact` accepts either an AN id (preferred — e.g. `AN-019`; the skill reads `docs/analyses/an-019-*.md` to recover script + target + headline) or a raw `build/<path>` (fallback for runs not yet ledgered). Does not re-derive other findings, does not re-read `stylized-facts.md`/briefs/audits. Use from `/next` step 5 when a run affects exactly one existing finding (re-run with revised magnitude, parser fix that shifts a number, confidence promotion/demotion after replication). Distinct from `--refresh` (which walks all findings) and `--footer` (which touches only the Sources block).
 
 ## Finding the workspace root
 
@@ -204,7 +204,19 @@ Path conventions (when the doc lives at `docs/findings.md`):
 - News texts: `[outlet YYYY-MM-DD (short topic)](../references/news/texts/NNN.txt)`
 - Cross-refs to same-dir docs: `[stylized-facts §X](reference/stylized-facts.md#anchor)` or `[briefs/Y §Z](briefs/Y.md#anchor)`
 
-**Analysis ledger.** If the project maintains an analysis ledger (`docs/analyses/` with `AN-NNN` entries indexed in `docs/reference/analysis-index.yaml`), cite the ledger entry in `*Own analysis*` — e.g. `AN-026` — rather than raw build artifacts. The ledger entry is the canonical record: it links to the backing script and holds the results table and interpretation. Bare `AN-NNN` tokens auto-link on the rendered site.
+**Analysis ledger.** Every project maintains an analysis ledger
+(`docs/analyses/` with `AN-NNN` entries indexed in
+`docs/reference/analysis-index.yaml`). Cite the ledger entry in
+`*Own analysis*` — e.g. `AN-026` — rather than raw build artifacts.
+The ledger entry is the canonical record: it links to the backing
+script and holds the results table and interpretation. Bare `AN-NNN`
+tokens auto-link on the rendered site.
+
+The finding's headline number must match the AN page's `headline:`
+frontmatter (or `## Results` body) at write time. If they disagree,
+the AN page wins — finding entries cite the AN; they do not
+re-derive the magnitude. Drift between the two is a `--refresh`
+target.
 
 For news anchors that carry a load-bearing quote, append the quote inline:
 > [Folha 2026-03 (Cucolo, Pesquisa Patrimonial CNJ)](../references/news/texts/070.txt) — anchor: *"a execução de sentenças judiciais que determinam o pagamento de dívidas seja hoje um dos principais gargalos do Judiciário"*
@@ -390,10 +402,14 @@ walk-back) and the rest of `findings.md` should remain untouched.
 1. `$PROJ/CLAUDE.md` — for current focus and naming conventions.
 2. `$PROJ/docs/findings.md` — to locate the target entry
    and respect its template exactly.
-3. The `--artifact` build path (if given) — the CSV/figure that
-   triggered the update. Re-read it to derive the new magnitude.
+3. The `--artifact` argument (if given). If an AN id: read
+   `$PROJ/docs/analyses/an-NNN-*.md` to recover the script, target,
+   headline, and confidence — the AN page is canonical, do not
+   re-derive numbers from the build artifact. If a `build/<path>`:
+   read the artifact itself.
 4. The triggering script's IAT docstring (via the `source/X.py →
-   build/X.*` convention) — for context.
+   build/X.*` convention, or the `script:` field on the AN page) —
+   for context.
 
 Do **not** re-read `stylized-facts.md`, briefs, audits, or paper.tex
 unless the target finding's Sources footer explicitly cites them and
