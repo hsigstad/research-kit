@@ -443,24 +443,58 @@ def _subblock_keys(fm_text: str, parent: str) -> list[str]:
     return keys
 
 
+def _yaml_block_list(text: str, parent: str) -> list[str]:
+    """Items in a YAML block list (`parent:\\n  - a\\n  - b`)."""
+    items, in_block = [], False
+    for line in text.splitlines():
+        if re.match(rf"^{re.escape(parent)}:\s*$", line):
+            in_block = True
+            continue
+        if in_block:
+            if re.match(r"^\S", line):
+                break
+            m = re.match(r"^\s+-\s+(\S+)", line)
+            if m:
+                items.append(m.group(1))
+    return items
+
+
 def lint_analyses(repo: Path, f: Findings, workspace: Path):
-    """Validate docs/analyses/ AN-page frontmatter: `design:` block keys must
-    fall within the allowlist — the universal core plus per-project extensions
-    declared in docs/reference/analysis-schema.yaml. Files without frontmatter
-    are skipped (legacy section-based pages, not yet migrated)."""
+    """Validate docs/analyses/ AN-page frontmatter:
+
+    - `design:` block keys must fall within the allowlist — the universal
+      core plus per-project extensions declared in
+      docs/reference/analysis-schema.yaml (`design_keys: [...]`).
+    - When the page's `status` matches the project's `done_status`
+      (default: `done`), every field listed in the schema's
+      `required_when_done:` block must be present and non-empty in the
+      frontmatter. Project opts in by declaring `required_when_done`.
+
+    Files without frontmatter are skipped (legacy section-based pages).
+    """
     adir = repo / "docs" / "analyses"
     if not adir.is_dir():
         return
     allowed = set(ANALYSIS_DESIGN_CORE)
+    required_when_done: list[str] = []
+    done_status = "done"
     schema = repo / "docs" / "reference" / "analysis-schema.yaml"
     if schema.is_file():
-        m = re.search(r"^design_keys:\s*\[(.*?)\]", read(schema), re.MULTILINE)
+        schema_text = read(schema)
+        m = re.search(r"^design_keys:\s*\[(.*?)\]", schema_text, re.MULTILINE)
         if m:
             allowed |= {k.strip() for k in m.group(1).split(",") if k.strip()}
+        else:
+            allowed |= set(_yaml_block_list(schema_text, "design_keys"))
+        required_when_done = _yaml_block_list(schema_text, "required_when_done")
+        m = re.search(r"^done_status:\s*(\S+)\s*$", schema_text, re.MULTILINE)
+        if m:
+            done_status = m.group(1).strip().strip('"').strip("'")
     for md in sorted(adir.glob("*.md")):
         if md.name == "index.md":
             continue
-        fm = YAML_FRONTMATTER_RE.match(read(md))
+        text = read(md)
+        fm = YAML_FRONTMATTER_RE.match(text)
         if not fm:
             continue  # legacy section-based page — not yet migrated
         unknown = [k for k in _subblock_keys(fm.group(1), "design")
@@ -470,6 +504,17 @@ def lint_analyses(repo: Path, f: Findings, workspace: Path):
                    f"design keys outside allowlist: {sorted(unknown)} "
                    f"(allowed: {sorted(allowed)})",
                    path=str(md.relative_to(workspace)))
+        if required_when_done:
+            meta = parse_frontmatter(text) or {}
+            status = (meta.get("status") or "").strip().strip('"').strip("'")
+            if status == done_status:
+                missing = [k for k in required_when_done
+                           if not (meta.get(k) or "").strip()]
+                if missing:
+                    f.err("analysis.frontmatter.missing-when-done",
+                          f"status: {done_status} but missing required "
+                          f"fields: {missing}",
+                          path=str(md.relative_to(workspace)))
 
 
 # ---------------------------------------------------------------------------

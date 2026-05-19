@@ -228,6 +228,14 @@ load-bearing for interpretation but not in the frontmatter>
 ## Results
 
 *Pending — emits `<target>`.*
+
+## Interpretation
+
+*Pending.*
+
+## Follow-ups
+
+*Pending — see Step 4 of /next for the puzzles / extensions / blind-spots taxonomy.*
 ```
 
 Read `$PROJ/docs/reference/analysis-schema.yaml` first if it exists
@@ -311,15 +319,80 @@ in step 2 and fill in:
   finding entry, a hypothesis status block), not the AN page.
 - `## Interpretation` (if the project's schema uses this section):
   one to three sentences on what the result means for the question.
-- `## Follow-ups` (optional): tangential leads worth recording. These
-  should also go to `todo.md` per step 6.
+- `## Follow-ups`: brainstorm using the taxonomy below.
 - Frontmatter: `status: done` (or the project schema's interpreted
   equivalent), `status_date: <today>`, `confidence: <green/yellow/red>`
-  per the inspection.
+  per the inspection, and `headline: <one sentence with direction,
+  magnitude, significance>`.
 
 This is a direct write to `docs/analyses/an-NNN-<slug>.md` — no skill
 call. The AN page IS the primary target; step 5a below treats it as
 already updated.
+
+#### Follow-up taxonomy (`## Follow-ups`)
+
+After interpreting the result, think hard about what it implies, what
+it leaves unanswered, and what would make it more convincing. Organize
+into three categories:
+
+- **Puzzles** — things in the result that are surprising,
+  counter-intuitive, or don't fit the prior. Each puzzle states
+  what's unexpected and proposes a concrete diagnostic.
+  Examples: a wrong-sign coefficient → subgroup decomposition; effect
+  in one panel but absent in another → composition check; unexpectedly
+  small N → trace the merge/filter; significant placebo → mechanical-
+  correlation or specification-error check.
+
+- **Extensions** — analyses that deepen or sharpen the finding,
+  building on the same outcome with different cuts or robustness.
+  Examples: heterogeneity by another covariate; alternative spec
+  (different FE, clustering, sample); dose-response with treatment
+  intensity; placebo not yet run.
+
+- **Blind spots** — things *this* analysis cannot answer but that
+  the result makes more important to investigate. May need different
+  data, outcomes, or identification.
+  Examples: result shows the effect exists — but does it affect
+  downstream quality (appeals, reversals)?; we measure the connected
+  party — but what about the counterparty?
+
+**Format.** Rank globally by priority (1 = most urgent), tagging each
+with its type:
+
+```markdown
+## Follow-ups
+
+1. **<short title>** *(puzzle | extension | blind spot)*:
+   <what's surprising / what it would test / what's missing>.
+   Suggested script: `<slug>.<ext>`
+```
+
+If the result is clean and expected and there's nothing to chase:
+
+```markdown
+## Follow-ups
+
+None — result is clean and expected.
+```
+
+**Ranking heuristics.** A puzzle that threatens the paper's main
+result outranks an extension. An extension needed for the next draft
+outranks a speculative blind spot. A diagnostic that unblocks other
+analyses outranks a standalone robustness check.
+
+**Calibration.** Aim for 0–5 follow-ups per analysis. Don't manufacture
+follow-ups for completeness. Every item should be specific to *this*
+result; skip boilerplate ("run more robustness checks").
+
+**Routing** (handled in step 6; noted here so the brainstorm anticipates
+where each item goes):
+
+- Actionable puzzles → `todo.md` under a `## Leads from <script-name>
+  — YYYY-MM-DD` heading.
+- Broader blind spots → `docs/thinking.md` under the appropriate
+  section ("Current open questions" or "Possible directions").
+- If a follow-up tests an existing hypothesis, note the H slug in the
+  entry so the hypothesis page can be cross-referenced later.
 
 ## Step 5 — Propagate to docs
 
