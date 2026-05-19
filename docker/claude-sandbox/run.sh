@@ -68,8 +68,13 @@ fi
 # --- Apptainer/Singularity path ---
 SIF="$SCRIPT_DIR/$IMAGE_NAME.sif"
 
+# Use project disk for build temp files (default /tmp is too small for TeX etc.)
+export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-/projects/ec113/henrik/tmp}"
+export SINGULARITY_TMPDIR="$APPTAINER_TMPDIR"
+mkdir -p "$APPTAINER_TMPDIR"
+
 if [ ! -f "$SIF" ]; then
-    echo "Building $IMAGE_NAME.sif (this takes a few minutes the first time)..."
+    echo "Building $IMAGE_NAME.sif (this takes a while the first time)..."
     "$RUNTIME" build --fakeroot "$SIF" "$SCRIPT_DIR/claude-sandbox.def"
 fi
 
