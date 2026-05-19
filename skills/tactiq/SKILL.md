@@ -59,11 +59,21 @@ Read `.tactiq_processed.json` from the workspace root:
       "date": "YYYY-MM-DD",
       "processed_at": "ISO8601"
     }
+  },
+  "ignored": {
+    "<drive_file_id>": {
+      "title": "<meeting title or filename>",
+      "date": "YYYY-MM-DD",
+      "reason": "<short reason — e.g., 'solo recording', 'not project-relevant'>",
+      "ignored_at": "ISO8601"
+    }
   }
 }
 ```
 
-Skip any file ID already present. If the file is missing or corrupt, treat as `{"processed": {}}` and warn the user.
+Skip any file ID present in either `processed` or `ignored`. If the file is missing or corrupt, treat as `{"processed": {}, "ignored": {}}` and warn the user.
+
+The `ignored` section is for transcripts the user has explicitly marked as not worth saving anywhere (solo test recordings, unrelated calls, etc.). Add entries when the user invokes `/tactiq ignore <file_id>` or asks to mark specific transcripts as ignored. Never auto-populate `ignored` — only the user decides what to ignore.
 
 ## Step 3 — fetch each unprocessed doc
 
