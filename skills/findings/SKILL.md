@@ -1,12 +1,12 @@
 ---
 name: findings
-description: "Populate, extend, refresh, or audit a project's docs/reference/key-findings.md — a curated index of headline empirical findings and interpretations with confidence tags and standardized source footers. Use when the user wants to draft a new findings doc, append new entries from recent build artifacts or audit JSONs, refresh load-bearing numbers against the current data, or check completeness."
+description: "Populate, extend, refresh, or audit a project's docs/findings.md — a curated index of headline empirical findings and interpretations with confidence tags and standardized source footers. Use when the user wants to draft a new findings doc, append new entries from recent build artifacts or audit JSONs, refresh load-bearing numbers against the current data, or check completeness."
 user_invocable: true
 ---
 
-# /findings — Populate docs/reference/key-findings.md
+# /findings — Populate docs/findings.md
 
-Draft, extend, refresh, or audit a project's `docs/reference/key-findings.md`:
+Draft, extend, refresh, or audit a project's `docs/findings.md`:
 the curated index of *what we have learned* that the project considers
 load-bearing for the paper or for downstream interpretation. Each entry is
 a confidence-tagged headline with an expanded explanation, anchored to
@@ -26,7 +26,7 @@ stress-test the entries you've written.
 - `/findings --refresh` — recompute the load-bearing numbers in entries against current build artifacts; flag entries whose headline numbers don't match the current data. Critical for catching staleness after pipeline reruns or parser fixes.
 - `/findings --audit` — do not write; report completeness gaps (missing source classes, missing confidence tags, dangling cross-refs, sources without page anchors).
 - `/findings --footer <slug-or-heading>` — re-format only the Sources footer of one specified entry to the standardized 4-class schema (used to roll out the schema across an existing doc).
-- `/findings --update <slug-or-heading> [--artifact <build/path>]` — **surgical single-entry edit**. Update one finding's body (headline, magnitude, caveat, confidence tag) after a new analysis result. Reads only `CLAUDE.md`, `key-findings.md`, and the optional triggering build artifact. Does not re-derive other findings, does not re-read `stylized-facts.md`/briefs/audits. Use from `/next` step 5 when a run affects exactly one existing finding (re-run with revised magnitude, parser fix that shifts a number, confidence promotion/demotion after replication). Distinct from `--refresh` (which walks all findings) and `--footer` (which touches only the Sources block).
+- `/findings --update <slug-or-heading> [--artifact <build/path>]` — **surgical single-entry edit**. Update one finding's body (headline, magnitude, caveat, confidence tag) after a new analysis result. Reads only `CLAUDE.md`, `findings.md`, and the optional triggering build artifact. Does not re-derive other findings, does not re-read `stylized-facts.md`/briefs/audits. Use from `/next` step 5 when a run affects exactly one existing finding (re-run with revised magnitude, parser fix that shifts a number, confidence promotion/demotion after replication). Distinct from `--refresh` (which walks all findings) and `--footer` (which touches only the Sources block).
 
 ## Finding the workspace root
 
@@ -36,14 +36,13 @@ The workspace root contains `CLAUDE.md` alongside `projects/`, `pipelines/`, `id
 
 Discovery order, first hit wins:
 
-1. `$PROJ/docs/reference/key-findings.md`
-2. `$PROJ/docs/key-findings.md`
-3. `$PROJ/docs/findings.md`
+1. `$PROJ/docs/findings.md`
+2. `$PROJ/docs/findings/index.md` (folder mode — see below)
+3. `$PROJ/docs/reference/key-findings.md` (legacy)
 4. Project-specific path declared in `$PROJ/CLAUDE.md` or `$PROJ/docs/summary.md`
 
 If none exists, ask the user which location to create. Default suggestion is
-`docs/reference/key-findings.md`. Do not silently create the file at a
-non-canonical path.
+`docs/findings.md`. Do not silently create the file at a non-canonical path.
 
 ## What to read (in order)
 
@@ -51,8 +50,8 @@ Read these files to build context. If one is missing, note it and move on; never
 
 1. `$PROJ/CLAUDE.md` — current focus, key terms, conventions
 2. `$PROJ/docs/summary.md` — research question (required)
-3. `$PROJ/docs/reference/key-findings.md` (if exists) — existing entries; match their template exactly
-4. `$PROJ/docs/reference/stylized-facts.md` (if exists) — fact-by-fact ledger; key-findings draws its empirical anchors from here
+3. `$PROJ/docs/findings.md` (if exists) — existing entries; match their template exactly
+4. `$PROJ/docs/reference/stylized-facts.md` (if exists) — fact-by-fact ledger; findings draws its empirical anchors from here
 5. `$PROJ/docs/hypotheses.md` (if exists) — every empirical finding should map to at least one hypothesis or angle
 6. `$PROJ/docs/briefs/*.md` — narrative synthesis files; cross-link from findings entries
 7. `$PROJ/docs/audits/findings/*.{md,json}` (if exists) — output of `/findings-audit`; this contains anchor quotes and corroborations to fold into entries
@@ -64,10 +63,12 @@ Read these files to build context. If one is missing, note it and move on; never
 
 ## Document structure
 
+### Flat-file mode (`docs/findings.md`)
+
 Required sections (in order):
 
 ```markdown
-# Key Findings — <project topic>
+# Findings — <project topic>
 
 <one-paragraph explanation of what this document is and isn't>
 
@@ -121,6 +122,12 @@ underlying data.">
 candidates>
 ```
 
+### Folder mode (`docs/findings/`)
+
+When the project has 20+ entries, use one file per finding. See the
+"Folder mode" section below for the full specification. The `index.md`
+carries the overview and links; each `<slug>.md` carries one entry.
+
 ## Confidence-tag scheme (verbatim — copy into `## How to read the confidence tags`)
 
 A traffic-light convention runs across both scales: 🟢 = strongest confidence, 🟡 = middle, 🔴 = weakest. The *meaning* of each color depends on whether the claim is empirical or interpretive.
@@ -141,12 +148,41 @@ A traffic-light convention runs across both scales: 🟢 = strongest confidence,
 
 Every empirical finding and interpretation entry must contain, in this order:
 
-1. **Confidence tag + headline sentence.** First non-blank line of the entry's body. Format: `🟢/🟡/🔴 <one-sentence summary with the load-bearing number>`.
+1. **Confidence tag + headline sentence.** First non-blank line of the entry's body. Format: `🟢/🟡/🔴 <one declarative sentence stating the finding as a claim about the world, with the load-bearing number(s) and AN cite(s)>`. See "Headline rule" below — this is the most quoted line in the doc and the bar is high.
 2. **Expanded explanation.** Plain prose, 1–4 paragraphs, with inline anchored citations (no bare `[CNJ-DIAG22 p.198]` — use `[CNJ-DIAG22 p.198](../../references/cnj/file.pdf#page=198)` instead).
 3. **Optional sub-paragraphs** for updates, robustness, caveats — each prefixed with a bold header like `**Forward-look caveat (added YYYY-MM-DD).**` so the reader can date the addition.
 4. **Optional figure embed** with italicized caption underneath.
 5. **The Sources footer** — see "Sources footer" below. Required, standardized, four-class.
 6. **Optional Draws-on / Cross-refs paragraph** if the entry is an interpretation. Lists the empirical findings the inference rests on, by anchor link.
+
+## Headline rule
+
+The 🟢/🟡/🔴 line directly under the title is the single most-quoted unit in the doc — it gets linked, screenshotted, and dropped into emails out of context. It has to stand on its own.
+
+1. **One declarative sentence stating the finding as a claim about the world.** Lead with the conclusion. Not a setup sentence, not a meta-introduction.
+2. **Self-contained.** A reader landing here from a deep link must be able to parse the sentence without looking at the title or surrounding text. Spell out what "the asymmetry" / "the settlement effect" / "the gap" actually refers to — whose, between what, in what direction. Project-specific terms must be unpacked or replaced.
+3. **Flesh out the title, don't echo it.** The title is the same claim in headline form; the sentence adds the load-bearing numbers, units, and scope. If the sentence reads like the title plus a comma, it's wasted space.
+4. **Ground load-bearing magnitudes in numbers + AN cites.** Not "substantial" or "large". Significance markers (`*`, `**`, `***`) attach to the numbers they qualify.
+5. **No evidence-as-subject, no meta-predicate, no hedged lead.** Confidence comes from the colored dot, not the verb. Avoid:
+   - *"The asymmetry is the strongest evidence for X…"* (evidence as subject)
+   - *"Three findings converge: …"* / *"Two patterns suggest…"* (meta-predicate)
+   - *"X suggests that…"* / *"…is consistent with…"* (hedged lead)
+   State the claim, then say why in the explanatory paragraph.
+6. **Hard ceiling: 40 words, one sentence.** If you can't fit it in 40 words, the claim is compound — split it, or move secondary clauses into the explanatory paragraph below.
+
+The headline rule applies equally to empirical and interpretation entries. Interpretations are still claims about the world — they just rest on multiple empirical premises (named in the `Draws on:` paragraph).
+
+**Failing headlines look like:**
+
+- *"The settlement effect tripled after the 2017 labor reform."* → what settlement effect, of what on what?
+- *"Three findings converge: …"* → meta-predicate; the reader has to assemble the claim.
+- *"The inverse value gradient combined with the flat dose-response suggests…"* → evidence-as-subject + hedged lead.
+- *"Recusal reform intended to extend recusal to colleagues. Instead, …"* → setup-then-claim; the first sentence carries no information.
+
+**Passing headlines look like:**
+
+- *"Connected-judge assignment moves plaintiff awards by 30–40% (AN-044) but leaves defendant outcomes unchanged across every connection type tested (AN-031) — an asymmetry that contingency-paid plaintiff lawyers vs fixed-wage defendant lawyers can produce, but implicit bias cannot."*
+- *"Connected-judge assignment raised the probability of settlement by 2.3pp (ns) before the 2017 labor reform and 7.1pp\*\*\* after — the settlement channel of favoritism roughly tripled (AN-038)."*
 
 ## Sources footer (the standard schema)
 
@@ -161,15 +197,135 @@ Every entry's footer is structured into four bulleted classes. Missing classes a
 - *Validation*: <verification status per backing script>   <!-- only when project has validation.yaml -->
 ```
 
-Path conventions (when the doc lives at `docs/reference/key-findings.md`):
-- Build artifacts: `[`stem.csv`](../../build/table/stem.csv)`
-- Scripts: `[`stem.py`](../../source/table/stem.py)`
-- Reports with page: `[CNJ-DEF24 p.205](../../references/cnj/justica_em_numeros_2024.pdf#page=205)`
-- News texts: `[outlet YYYY-MM-DD (short topic)](../../references/news/texts/NNN.txt)`
-- Cross-refs to other docs in `$PROJ/docs/`: `[stylized-facts §X](stylized-facts.md#anchor)` (same dir) or `[briefs/Y §Z](../briefs/Y.md#anchor)` (sibling dir)
+Path conventions (when the doc lives at `docs/findings.md`):
+- Build artifacts: `[`stem.csv`](../build/table/stem.csv)`
+- Scripts: `[`stem.py`](../source/table/stem.py)`
+- Reports with page: `[CNJ-DEF24 p.205](../references/cnj/justica_em_numeros_2024.pdf#page=205)`
+- News texts: `[outlet YYYY-MM-DD (short topic)](../references/news/texts/NNN.txt)`
+- Cross-refs to same-dir docs: `[stylized-facts §X](reference/stylized-facts.md#anchor)` or `[briefs/Y §Z](briefs/Y.md#anchor)`
+
+**Analysis ledger.** If the project maintains an analysis ledger (`docs/analyses/` with `AN-NNN` entries indexed in `docs/reference/analysis-index.yaml`), cite the ledger entry in `*Own analysis*` — e.g. `AN-026` — rather than raw build artifacts. The ledger entry is the canonical record: it links to the backing script and holds the results table and interpretation. Bare `AN-NNN` tokens auto-link on the rendered site.
 
 For news anchors that carry a load-bearing quote, append the quote inline:
-> [Folha 2026-03 (Cucolo, Pesquisa Patrimonial CNJ)](../../references/news/texts/070.txt) — anchor: *"a execução de sentenças judiciais que determinam o pagamento de dívidas seja hoje um dos principais gargalos do Judiciário"*
+> [Folha 2026-03 (Cucolo, Pesquisa Patrimonial CNJ)](../references/news/texts/070.txt) — anchor: *"a execução de sentenças judiciais que determinam o pagamento de dívidas seja hoje um dos principais gargalos do Judiciário"*
+
+## Folder mode (`docs/findings/`)
+
+When a project has 20+ findings entries and the single file becomes
+unwieldy, promote to a folder structure:
+
+```
+docs/findings/
+  index.md           # overview + confidence scheme + linked index + open items
+  <slug>.md          # one file per finding
+```
+
+### When to use folder vs flat file
+
+- **Flat file** (`docs/findings.md`): projects with <20 entries. Simpler,
+  everything searchable in one place.
+- **Folder** (`docs/findings/`): projects with 20+ entries. Per-finding
+  pages on the site, cleaner diffs, easier to edit one entry without
+  touching others.
+
+### index.md structure
+
+```markdown
+# Findings — <project topic>
+
+<intro paragraph, same as flat-file mode>
+
+---
+
+## How to read the confidence tags
+
+<confidence-tag scheme — identical to flat-file mode>
+
+---
+
+## Findings overview
+
+**<Theme 1>** *(empirical)*
+
+- 🟢 [Headline sentence](slug.md) — one-line summary
+- 🟡 [Another headline](another-slug.md) — one-line summary
+
+**Interpretations**
+
+- 🟢 [Interpretation headline](interp-slug.md) — one-line summary
+
+---
+
+## Open items
+
+<bulleted list of gaps, same as flat-file mode>
+```
+
+### Per-finding file structure (`<slug>.md`)
+
+Each finding file is standalone:
+
+```markdown
+# <Finding headline>
+
+🟡 <Confidence tag + headline sentence with the load-bearing number.>
+
+<Expanded explanation, 1–4 paragraphs.>
+
+**Sources.**
+- *Own analysis*: ...
+- *Reports*: ...
+- *News anchors*: ...
+- *Cross-refs*: ...
+```
+
+- Heading is `#` (top-level) since the file is standalone.
+- Entry schema and Sources footer are identical to flat-file mode.
+- For interpretations, include the `**Draws on:** [...]` paragraph
+  linking to the empirical findings it depends on, using relative file
+  links: `[headline](other-slug.md)`.
+
+### Path conventions in folder mode
+
+Since files live at `docs/findings/<slug>.md`:
+- Build artifacts: `[`stem.csv`](../../build/table/stem.csv)`
+- Scripts: `[`stem.py`](../../source/table/stem.py)`
+- Reports with page: `[CNJ-DEF24 p.205](../../references/cnj/file.pdf#page=205)`
+- News texts: `[outlet YYYY-MM-DD](../../references/news/texts/NNN.txt)`
+- Sibling docs: `[stylized-facts §X](../reference/stylized-facts.md#anchor)`
+- Cross-refs between findings: `[other headline](other-slug.md)`
+
+### File naming
+
+- Slugs are lowercase, hyphens only, ≤40 characters.
+- Derive from the heading: "Most exfis do not recover the debt" →
+  `most-exfis-do-not-recover.md`.
+- Avoid redundant prefixes like `finding-` — the directory provides context.
+
+### Skill behavior in folder mode
+
+- `/findings` (populate): creates `index.md` + one file per finding.
+- `/findings --update <slug>`: edits only `docs/findings/<slug>.md` — the
+  minimal-read-set is the same as flat-file `--update` mode.
+- `/findings --extend`: appends new files and adds entries to
+  `index.md`'s overview.
+- `/findings --refresh`: walks all `docs/findings/*.md` files, compares
+  numbers to build artifacts, reports drift per file.
+- `/findings --audit`: checks each file for schema compliance and
+  verifies `index.md` links resolve.
+- `/findings --footer <slug>`: operates on one file.
+
+### Migrating from flat to folder
+
+When a flat `docs/findings.md` crosses ~20 entries:
+
+1. Create `docs/findings/` directory.
+2. Extract `index.md` (intro + confidence scheme + overview + open items).
+3. Extract each `### ` entry into `<slug>.md`, promoting heading to `#`.
+4. Rewrite overview links from `#anchor` to `slug.md`.
+5. Fix relative paths (`../build/` → `../../build/`, etc.).
+6. Delete the original `docs/findings.md`.
+7. Update `artifacts.yaml` cited_in paths if the project has one.
 
 ### Validation badge (only when project has a validation ledger)
 
@@ -227,12 +383,12 @@ all meaningful.
 
 Surgical single-entry edit. Use when one finding's content changed
 (magnitude revised, caveat added, confidence tag moved, parser-fix
-walk-back) and the rest of `key-findings.md` should remain untouched.
+walk-back) and the rest of `findings.md` should remain untouched.
 
 **Minimal read set** — do not re-read the full briefing pack:
 
 1. `$PROJ/CLAUDE.md` — for current focus and naming conventions.
-2. `$PROJ/docs/reference/key-findings.md` — to locate the target entry
+2. `$PROJ/docs/findings.md` — to locate the target entry
    and respect its template exactly.
 3. The `--artifact` build path (if given) — the CSV/figure that
    triggered the update. Re-read it to derive the new magnitude.
@@ -256,7 +412,7 @@ confidence-tag scheme section, or any cross-cutting structure.
 token values rather than free-text edits where possible. That keeps
 `--refresh` cycles cheap on subsequent re-runs.
 
-**Output:** the edited `key-findings.md` plus a one-paragraph summary
+**Output:** the edited `findings.md` plus a one-paragraph summary
 (which entry, before → after, what artifact was cited). The summary
 belongs in the `/next` end-of-iteration report.
 

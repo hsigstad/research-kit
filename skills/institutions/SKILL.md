@@ -133,12 +133,24 @@ Write `docs/institutions.md` following the project docs contract format.
 Structure it around the project's institutional needs, not the shared
 reference's organization.
 
-For each section:
+For each section, apply the **inline vs. reference** calibration from
+the Principles section:
 
-- **Pull institutional facts** from the shared-reference topic files.
-  Rewrite for project relevance — don't copy paragraphs verbatim.
-  The project's institutions.md should explain why each fact matters
-  *for this project's research design*, not just state the fact.
+- **Inline the load-bearing facts** — project-specific institutional
+  details that Claude would hallucinate about if not grounded. These
+  are facts where getting it wrong would break paper prose or research
+  design suggestions. Rewrite for project relevance — don't copy
+  paragraphs verbatim from the shared reference. Explain why each fact
+  matters *for this project's research design*, not just state it.
+
+- **Reference general doctrine.** For institutional facts that Claude
+  knows reliably (e.g., how open-list PR works, what the three
+  improbidade categories are), write a one-line pointer to the relevant
+  shared-reference topic file and section (e.g., "See `improbidade.md`
+  §1 in the shared reference for LIA categories and sanctions"). Do
+  not duplicate the shared reference — coauthors have access to the
+  public repo. The file header should include the shared-reference
+  repo URL and list the most relevant topic files.
 
 - **Use backtick citations** for statutory references. For every statute
   cited, use the canonical compact form (`` `CDC.43.§2` ``,
@@ -265,15 +277,33 @@ this project.
 
 ### Relationship to the shared reference
 
-The shared reference (`research/institutions/brazil/`) is the canonical,
-cross-project repository of institutional knowledge. Project-level
-`institutions.md` files select from it and add project-specific context.
+The shared reference (`research/institutions/brazil/`) is a public repo
+([brazil-institutions](https://github.com/hsigstad/brazil-institutions))
+that all coauthors can access. Project-level `institutions.md` files
+should **reference it, not duplicate it**.
 
 - Shared reference = general, authoritative, cross-cutting
 - Project institutions.md = project-specific, curated, design-oriented
 
-The skill bridges the two. It should never duplicate the shared reference
-wholesale — only pull what this project needs.
+The skill bridges the two. The calibration principle is
+**hallucination risk**:
+
+- **Inline in institutions.md:** project-specific facts that Claude
+  cannot reliably derive from training data and would hallucinate
+  about (e.g., "first-instance improbidade convictions do not trigger
+  Ficha Limpa", "TJSP assigns cases by NPU last digits", regime change
+  timelines specific to the sample period). These are the load-bearing
+  facts for the research design.
+- **Reference to the shared repo:** general institutional doctrine that
+  Claude knows reliably from training data or that is standard enough
+  to look up on demand (e.g., the three categories of improbidade,
+  how open-list PR works, MP constitutional structure). For these,
+  a one-line pointer like "See `improbidade.md` §2 in the shared
+  reference" is sufficient.
+
+The test: if Claude got this fact wrong, would it break the paper prose
+or lead to a bad research-design suggestion? If yes, inline it. If no,
+reference it.
 
 ### Citation conventions
 
@@ -289,6 +319,8 @@ wholesale — only pull what this project needs.
 ### What NOT to put in institutions.md
 
 - Verbatim statute text (use `artigos.db`)
+- General institutional doctrine covered in the shared reference that
+  Claude knows reliably from training data (reference it instead)
 - Generic procedure that applies to any case type (cross-reference
   the shared reference instead)
 - Empirical results (those go in `results.md`)

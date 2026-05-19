@@ -41,8 +41,8 @@ REQUIRED_PROJECT_DOCS = {
 
 OPTIONAL_PROJECT_DOCS = {
     "theory.md", "hypotheses.md", "desiderata.md", "outline.md",
-    "archive.md", "results.md", "key-findings.md", "anecdotes.md",
-    "qa.md", "README.md", "CONVENTIONS.md",
+    "archive.md", "results.md", "findings.md", "anecdotes.md",
+    "questions.md", "qa.md", "README.md", "CONVENTIONS.md",
 }
 
 ALLOWED_PROJECT_DOCS = REQUIRED_PROJECT_DOCS | OPTIONAL_PROJECT_DOCS
@@ -60,6 +60,9 @@ ALLOWED_PIPELINE_DOCS = REQUIRED_PIPELINE_DOCS | OPTIONAL_PIPELINE_DOCS
 ALLOWED_DOC_SUBFOLDERS = {
     "briefs", "reference", "notes", "literature", "anecdotes",
     "emails", "reviews", "specs", "whatsapp", "feedback",
+    # Folder-mode doc types (see §5 of the contract): promoted from a flat
+    # file when entries grow numerous or long.
+    "hypotheses", "findings", "analyses", "sample", "dataframes", "variables",
     # Canonical-by-tooling locations:
     #   audits/ — output of the /findings-audit skill (docs/audits/findings/<date>.md)
     #   refs/   — citation manifest written by /cite-sync (docs/refs/manifest.toml)
@@ -119,7 +122,17 @@ def lint_docs_root(repo: Path, f: Findings, kind: str):
 
     present_files = {p.name for p in docs.iterdir() if p.is_file()}
 
-    for name in sorted(required - present_files):
+    # Folder mode: docs/<X>/index.md satisfies the requirement for docs/<X>.md.
+    # Mirrors how hypotheses/, findings/, anecdotes/, literature/ are documented
+    # in the contract — the folder is a substitute for the flat file when entries
+    # grow numerous or long.
+    folder_index_satisfies = {
+        f"{p.name}.md"
+        for p in docs.iterdir()
+        if p.is_dir() and (p / "index.md").is_file()
+    }
+
+    for name in sorted(required - present_files - folder_index_satisfies):
         f.err("doc.missing", f"required file missing: docs/{name}")
 
     for name in sorted(present_files - allowed):
@@ -405,8 +418,125 @@ def lint_ideas(workspace: Path, f: Findings):
 
 
 # ---------------------------------------------------------------------------
+# Analysis-page frontmatter (docs/analyses/)
+# ---------------------------------------------------------------------------
+
+# Universal core `design:` keys — valid in every project. Projects may declare
+# additional keys in docs/reference/analysis-schema.yaml (design_keys: [...]).
+ANALYSIS_DESIGN_CORE = {"sample", "specification", "notes"}
+
+
+def _subblock_keys(fm_text: str, parent: str) -> list[str]:
+    """Keys nested one indent level under `parent:` in a frontmatter block.
+    (parse_frontmatter deliberately skips indented lines — no yaml dep.)"""
+    keys, in_block = [], False
+    for line in fm_text.splitlines():
+        if re.match(rf"^{re.escape(parent)}:\s*$", line):
+            in_block = True
+            continue
+        if in_block:
+            if re.match(r"^\S", line):  # back to a top-level key — block ended
+                break
+            m = re.match(r"^\s+([A-Za-z0-9_]+):", line)
+            if m:
+                keys.append(m.group(1))
+    return keys
+
+
+def lint_analyses(repo: Path, f: Findings, workspace: Path):
+    """Validate docs/analyses/ AN-page frontmatter: `design:` block keys must
+    fall within the allowlist — the universal core plus per-project extensions
+    declared in docs/reference/analysis-schema.yaml. Files without frontmatter
+    are skipped (legacy section-based pages, not yet migrated)."""
+    adir = repo / "docs" / "analyses"
+    if not adir.is_dir():
+        return
+    allowed = set(ANALYSIS_DESIGN_CORE)
+    schema = repo / "docs" / "reference" / "analysis-schema.yaml"
+    if schema.is_file():
+        m = re.search(r"^design_keys:\s*\[(.*?)\]", read(schema), re.MULTILINE)
+        if m:
+            allowed |= {k.strip() for k in m.group(1).split(",") if k.strip()}
+    for md in sorted(adir.glob("*.md")):
+        if md.name == "index.md":
+            continue
+        fm = YAML_FRONTMATTER_RE.match(read(md))
+        if not fm:
+            continue  # legacy section-based page — not yet migrated
+        unknown = [k for k in _subblock_keys(fm.group(1), "design")
+                   if k not in allowed]
+        if unknown:
+            f.warn("analysis.design.unknown-key",
+                   f"design keys outside allowlist: {sorted(unknown)} "
+                   f"(allowed: {sorted(allowed)})",
+                   path=str(md.relative_to(workspace)))
+
+
+# ---------------------------------------------------------------------------
 # CLAUDE.md presence
 # ---------------------------------------------------------------------------
+
+def lint_variables(repo: Path, f: Findings, workspace: Path):
+    """Validate docs/variables/ pages: each must have a `defined_in:` field in
+    YAML frontmatter pointing to `<script-path>:<line>`, and the variable name
+    (page filename minus .md) must appear at that line in the source. Catches
+    silent rename drift between the variable docs and the code."""
+    vdir = repo / "docs" / "variables"
+    if not vdir.is_dir():
+        return
+    for md in sorted(vdir.glob("*.md")):
+        if md.name == "index.md":
+            continue
+        var_name = md.stem
+        text = read(md)
+        m = YAML_FRONTMATTER_RE.match(text)
+        if not m:
+            f.err("variables.no-frontmatter",
+                  f"variables/{md.name}: missing frontmatter with defined_in:",
+                  path=str(md.relative_to(workspace)))
+            continue
+        meta = parse_frontmatter(text) or {}
+        defined_in = meta.get("defined_in", "").strip()
+        if not defined_in:
+            f.err("variables.no-defined-in",
+                  f"variables/{md.name}: frontmatter missing defined_in: <script>:<line>",
+                  path=str(md.relative_to(workspace)))
+            continue
+        # Family pages (e.g., c20.md) opt out by setting defined_in: family
+        if defined_in == "family":
+            continue
+        if ":" not in defined_in:
+            f.err("variables.bad-defined-in",
+                  f"variables/{md.name}: defined_in must be '<path>:<line>', got {defined_in!r}",
+                  path=str(md.relative_to(workspace)))
+            continue
+        path_part, _, line_part = defined_in.rpartition(":")
+        try:
+            line_no = int(line_part)
+        except ValueError:
+            f.err("variables.bad-defined-in",
+                  f"variables/{md.name}: line number not an int in defined_in={defined_in!r}",
+                  path=str(md.relative_to(workspace)))
+            continue
+        src = repo / path_part
+        if not src.is_file():
+            f.err("variables.script-missing",
+                  f"variables/{md.name}: defined_in script not found: {path_part}",
+                  path=str(md.relative_to(workspace)))
+            continue
+        lines = src.read_text(errors="replace").splitlines()
+        if line_no < 1 or line_no > len(lines):
+            f.err("variables.line-out-of-range",
+                  f"variables/{md.name}: defined_in line {line_no} out of range (file has {len(lines)} lines)",
+                  path=str(md.relative_to(workspace)))
+            continue
+        line_text = lines[line_no - 1]
+        if not re.search(rf"\b{re.escape(var_name)}\b", line_text):
+            f.err("variables.name-mismatch",
+                  f"variables/{md.name}: variable name {var_name!r} not found at "
+                  f"{path_part}:{line_no} (line: {line_text.strip()!r})",
+                  path=str(md.relative_to(workspace)))
+
 
 def lint_claude_md(repo: Path, f: Findings, kind: str):
     if kind != "project":
@@ -591,6 +721,8 @@ def lint_repo(repo: Path, kind: str, workspace: Path) -> Findings:
     lint_docs_root(repo, f, kind)
     lint_todo_done(repo, f)
     lint_thinking(repo, f)
+    lint_analyses(repo, f, workspace)
+    lint_variables(repo, f, workspace)
     lint_decisions(repo, f)
     lint_handoffs(repo, f)
     lint_source_build(repo, f)

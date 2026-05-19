@@ -13,7 +13,7 @@ Reads (best-effort; all optional — missing files skip cleanly):
   build/{table,figure}/*             output artifacts and
   build/{table,figure}/*.run.json    provenance sidecars
                                      (research-kit/rules/run_json.md)
-  docs/reference/key-findings.md     curated findings index (light parse)
+  docs/findings.md     curated findings index (light parse)
 
 Emits a single-screen health report grouped by index. Each check fires a
 traffic-light glyph (✓ pass, ⚠ minor, ✗ major) plus counts. Pass --detail

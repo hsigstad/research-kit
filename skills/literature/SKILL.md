@@ -103,18 +103,24 @@ keyword search missed but are one hop from the core literature.
 ### 7. Write literature.md and bib entries
 
 Update `docs/literature.md` following the project docs contract format.
-Include a `file:` field for each paper so the PDF is easy to locate:
+**Every bullet must begin with a `[cite:<bibkey>]` token** — this is what
+makes the entry addressable from other docs (per `rules/citations.md`).
+Without it, anything written elsewhere as `[cite:<bibkey>]` will fall back
+to literal text and not link to the index. Include a `file:` field for
+each paper so the PDF is easy to locate:
 ```markdown
 ## Topic heading
 
-- Author (Year) "Title"
+- [cite:avis2018government] Author (Year) "Title"
   - topic: what the paper is about
   - relevance: why it matters for this project
   - file: citekey.pdf
 ```
 
-The `file:` field uses the **bib citekey** as the filename (e.g., `avis2018government.pdf`).
-This ensures PDFs, bib entries, and literature.md all use the same identifier.
+The `file:` field, the `[cite:...]` key, and the BibTeX key must all be
+the same citekey. This ensures PDFs, bib entries, literature.md, and
+inline citations across all docs resolve to the same identifier — and
+the site build can deep-link to the bullet via `literature/index.html#cite-<bibkey>`.
 
 #### Citekey convention
 

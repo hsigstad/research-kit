@@ -140,7 +140,7 @@ Audit checks specific to sidecars:
   provenance" (script may predate the convention or skip the helper).
 - `.run.json` present whose `script` field points at a missing or
   renamed file → flag as "stale provenance".
-- `commit_dirty: true` on an artifact cited from `key-findings.md` →
+- `commit_dirty: true` on an artifact cited from `findings.md` →
   flag for re-run from clean.
 
 ## Gitignore policy

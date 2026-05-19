@@ -129,10 +129,10 @@ can't execute.
 
 Default-discovery order, first hit wins:
 
-1. `docs/reference/key-findings.md`
-2. `docs/key-findings.md`
-3. `docs/findings.md`
-4. `docs/hypotheses.md` (audit the evidence-so-far blocks under each hypothesis)
+1. `docs/findings.md`
+2. `docs/findings/index.md` (folder mode)
+3. `docs/reference/key-findings.md` (legacy)
+4. `docs/hypotheses.md` (or `docs/hypotheses/index.md`) (audit the evidence-so-far blocks under each hypothesis)
 5. Project-specific path declared in `CLAUDE.md` or `docs/summary.md`
 
 If `--findings` is passed, use it directly. If nothing is found, ask the user
@@ -426,7 +426,7 @@ Structure:
 `docs/audits/findings/state.yaml`:
 
 ```yaml
-findings_path: docs/reference/key-findings.md
+findings_path: docs/findings.md
 findings_sha: <git short sha>
 sources:
   - type: news

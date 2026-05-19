@@ -47,8 +47,11 @@ if [ "$RUNTIME" = "docker" ]; then
     exec docker run --rm -it \
         -v "$(pwd)":/workspace \
         -v "$HOME/Dropbox":/home/henrik/Dropbox:ro \
+        -v "$HOME/Screenshots":/home/henrik/Screenshots:ro \
         -v "$HOME/.claude":/home/henrik/.claude \
         -v "$HOME/.claude.json":/home/henrik/.claude.json \
+        -v "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
+        -v "$HOME/.ssh":/home/henrik/.ssh:ro \
         "${WHATSAPP_MOUNT[@]}" \
         -e TERM=xterm-256color \
         -e COLORTERM=truecolor \
@@ -72,8 +75,11 @@ fi
 
 exec "$RUNTIME" run \
     --bind "$(pwd)":/workspace \
+    --bind "$HOME/Screenshots":/home/henrik/Screenshots:ro \
     --bind "$HOME/.claude":/home/henrik/.claude \
     --bind "$HOME/.claude.json":/home/henrik/.claude.json \
+    --bind "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
+    --bind "$HOME/.ssh":/home/henrik/.ssh:ro \
     --env "TERM=xterm-256color" \
     --env "COLORTERM=truecolor" \
     --env "DATA_DIR=/workspace/data" \

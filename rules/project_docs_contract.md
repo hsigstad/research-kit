@@ -43,6 +43,7 @@ repo/
     decisions.md
     theory.md        # optional
     hypotheses.md    # optional
+    questions.md     # optional; written by /questions skill
     results.md       # optional
     archive.md       # optional
     briefs/          # optional; human-readable topic narratives
@@ -89,7 +90,7 @@ repo/
   `rules/build_layers.md`
 - **`build/table/` and `build/figure/` are tracked by git by default.**
   These are the analysis outputs that back claims in `docs/` (especially
-  `docs/reference/key-findings.md` and `docs/reference/stylized-facts.md`).
+  `docs/findings.md` and `docs/reference/stylized-facts.md`).
   Tracking them means: (a) doc citations into `build/table/*.csv` resolve
   on a fresh clone, (b) magnitude drift after a re-run shows up in `git
   diff` and serves as an early warning for parser/data regressions, and
@@ -269,7 +270,7 @@ docs/
   outline.md
   archive.md
   results.md
-  key-findings.md
+  findings.md
   anecdotes.md
   qa.md
 ```
@@ -350,6 +351,13 @@ Includes:
 - blog posts (if relevant)
 
 Focus on relevance, not citation formatting.
+
+**Folder mode** (`docs/literature/`): when the flat file becomes unwieldy
+(per-paper notes longer than a few lines each, or 20+ entries), promote
+to a folder with one page per paper plus `index.md` listing them — same
+pattern as `docs/hypotheses/` and `docs/findings/`. The folder satisfies
+the contract's required-file slot: `docs/literature/index.md` substitutes
+for `docs/literature.md`.
 
 ---
 
@@ -515,25 +523,74 @@ In empirical projects, this file documents the specific hypotheses being tested,
 the theories that generate them, the pre-existing evidence for or against each,
 and the empirical strategy for adjudication.
 
-Contains:
-- hypotheses with the generating theory identified
-- predictions: what the theory says should happen
-- pre-existing evidence: what is already known (with sources)
-- competing predictions: what alternative theories predict differently
-- empirical test or evidence strategy
-- data requirements and availability
-- priority ranking
+Acceptable locations (discovery order):
+1. `docs/hypotheses.md` (flat file — preferred for <15 hypotheses)
+2. `docs/hypotheses/index.md` (folder mode — for 15+ or individually long entries)
+
+Contains, for each hypothesis:
+- the generating theory
+- the prediction, and competing predictions from alternative theories
+- prior research: what the external literature establishes
+- evidence: own analyses bearing on the hypothesis, each with a
+  Supports / Against / Mixed reading
+- evidence strength: an honest at-a-glance verdict
+- open tests: tests not yet run, and any blockers
 
 This file is not a paper draft. It is a machine-readable reference document.
 
 Cross-references `theory.md` for theoretical frameworks, `literature.md` for
 sources, and `data.md` for data availability.
 
+**Folder mode** (`docs/hypotheses/`): When the flat file exceeds ~15
+hypotheses or individual entries grow long (each accumulating evidence
+blocks, robustness notes, etc.), promote to a folder:
+
+```
+docs/hypotheses/
+  index.md           # intro + field schema + cluster index + summary table
+  <slug>.md          # one file per hypothesis, named by slug field
+```
+
+- `index.md` carries the intro, "How to read" section, cluster headings
+  with bulleted links to individual files (e.g. `[H1: Headline](slug.md)`),
+  and the summary table.
+- Each `<slug>.md` carries one hypothesis, following the structure in
+  [hypotheses.md format](#hypothesesmd-format): `# H<N>: Title` + plain-words
+  lede, evidence-strength callout, then `## Theory`, `## Prediction`,
+  `## Competing prediction(s)`, `## Prior research`, `## Evidence`,
+  `## Open tests`.
+- File naming uses the slug (e.g. `plaintiff-awards.md`, not
+  `h01-plaintiff-awards.md`) — the filename *is* the slug, so there is no
+  separate Slug field. Ordering lives in the index, not filenames.
+- Cross-refs between hypotheses use `[H<N>](other-slug.md)`.
+- Relative paths from `docs/hypotheses/<slug>.md`: `../theory.md`,
+  `../reference/mechanisms.md`, `../../build/table/foo.csv`.
+
 Rules:
 - Each hypothesis should identify which theory generates the prediction.
 - Where possible, identify predictions that discriminate between competing theories.
 - Evidence assessments should be honest about strength and limitations.
 - Speculative or loosely formed hypotheses belong in `thinking.md` until sharpened.
+
+---
+
+### questions.md (optional)
+
+The 3–5 policy-relevant research questions the project answers. Each
+question synthesizes evidence from multiple hypotheses and findings into
+a single statement that a non-technical reader can grasp.
+
+Written and updated by the `/questions` skill.
+
+Contains:
+- Q-slug per question (`Q:<slug>`, per `rules/identifiers.md`)
+- one-sentence statement of the question
+- the answer the project gives, with the load-bearing findings cited
+- which hypotheses the answer rests on
+
+Sits one level up from `hypotheses.md`: hypotheses are testable predictions
+about specific mechanisms; questions are the policy-relevant claims those
+hypotheses aggregate into.
 
 ---
 
@@ -699,7 +756,7 @@ Rules:
 - Claude should not create reference documents for narrative content (use briefs) or for structured memory (use canonical files)
 - No approval needed to add new files under `docs/reference/` (unlike `docs/` root)
 
-#### docs/reference/key-findings.md (recommended for mature projects)
+#### docs/findings.md (recommended for mature projects)
 
 The curated *directory of conclusions* — what the project considers
 load-bearing for the paper or for downstream interpretation. Distinct
@@ -708,9 +765,9 @@ from `stylized-facts.md` (the dense fact-by-fact ledger) and
 when it has anchored evidence and a directional reading.
 
 Acceptable locations (discovery order):
-1. `docs/reference/key-findings.md` (preferred)
-2. `docs/key-findings.md`
-3. `docs/findings.md`
+1. `docs/findings.md` (preferred)
+2. `docs/findings/index.md` (folder mode — see `/findings` skill)
+3. `docs/reference/key-findings.md` (legacy)
 4. Project-specific path declared in `CLAUDE.md` or `docs/summary.md`
 
 Required structure:
@@ -750,12 +807,34 @@ Sources footer schema (required, four classes; missing classes appear as `none d
 - *Cross-refs*: stylized-facts §, briefs/, audits/findings/, related findings
 ```
 
-Path conventions when the doc lives at `docs/reference/key-findings.md`:
-- Build artifacts: `[`stem.csv`](../../build/table/stem.csv)`
-- Reports with page anchor: `[CNJ-DEF24 p.205](../../references/cnj/justica_em_numeros_2024.pdf#page=205)`
-- News texts: `[outlet YYYY-MM-DD (topic)](../../references/news/texts/NNN.txt)`
-- Same-dir cross-refs: `[stylized-facts §X](stylized-facts.md#anchor)`
-- Sibling-dir cross-refs: `[briefs/Y §Z](../briefs/Y.md#anchor)`
+Path conventions when the doc lives at `docs/findings.md`:
+- Build artifacts: `[`stem.csv`](../build/table/stem.csv)`
+- Reports with page anchor: `[CNJ-DEF24 p.205](../references/cnj/justica_em_numeros_2024.pdf#page=205)`
+- News texts: `[outlet YYYY-MM-DD (topic)](../references/news/texts/NNN.txt)`
+- Same-dir cross-refs: `[reference/stylized-facts §X](reference/stylized-facts.md#anchor)`
+- Sibling-dir cross-refs: `[briefs/Y §Z](briefs/Y.md#anchor)`
+
+**Folder mode** (`docs/findings/`): When the single-file format exceeds
+~20 entries and becomes unwieldy, promote to a folder:
+
+```
+docs/findings/
+  index.md           # overview + confidence scheme + linked entry index + open items
+  <slug>.md          # one file per finding (short slug, ≤40 chars)
+```
+
+- `index.md` carries the intro, confidence-tag scheme, `## Findings overview`
+  (with bullets linking to individual files, e.g. `[headline](slug.md)`),
+  and `## Open items`.
+- Each `<slug>.md` carries one finding: `# Headline`, confidence tag + body,
+  Sources footer. Heading is `#` (top-level) since the file is standalone.
+- Entry schema and Sources footer are identical to flat-file mode.
+- Path conventions: since files live at `docs/findings/slug.md`, relative
+  paths use `../../build/`, `../../source/`, `../../references/`, and
+  `../reference/stylized-facts.md` for sibling-dir docs.
+- Cross-refs between findings use `[other headline](other-slug.md)`.
+- Use flat file (`docs/findings.md`) for projects with <20 entries; folder
+  mode for 20+.
 
 Maintenance rules:
 - After any pipeline rerun or parser fix, run `/findings --refresh` (or manually re-verify) to catch number drift between entry headlines and current build artifacts. Stale headlines that survived multiple parser fixes are the most common failure mode.
@@ -769,7 +848,7 @@ The `/findings` skill populates, extends, refreshes, and audits this document. T
 
 ---
 
-### key-findings.md (optional)
+### findings.md (optional)
 
 Settled top-line findings — the TLDR a paper reader gets in the first 30 seconds.
 
@@ -786,6 +865,25 @@ Rules:
 - Only add findings that are stable enough to share externally.
 - Speculative or tentative findings belong in `thinking.md`.
 - Each entry should reference the underlying result (`result:<key>`, table path, or figure path).
+
+---
+
+### docs/analyses/ (optional)
+
+One file per analysis (an experiment, regression table, descriptive cut), named
+`an-NNN-<slug>.md`. The folder is the project's analysis ledger: each page
+records what was run, the result, and the interpretation. It pairs with
+`docs/reference/analysis-index.yaml` (the queryable index) and feeds the
+Evidence tables in `hypotheses/`.
+
+Each page carries structured YAML frontmatter (metadata + a `design:` block),
+which the site build renders as a human-readable panel, followed by a markdown
+body (`## Results`, `## Interpretation`, `## Follow-ups`). See `analyses
+format` in §6.
+
+Used by projects with a server round-trip or a high volume of discrete
+analyses (`connect`). Projects with few analyses can keep them in `results.md`
+instead.
 
 ---
 
@@ -1152,49 +1250,114 @@ The `###` subheadings above are suggestions. Claude may add or omit subheadings 
 
 ### hypotheses.md format
 
+Each hypothesis follows the structure *the claim → what's known → what's left*:
+
 ```
-# Hypotheses
+# H<N>: <one-line claim, stated as a claim>
 
-## How to read this document
+<plain-words lede: 2-4 sentences stating the hypothesis, ending on the core
+claim>
 
-Each hypothesis entry contains:
-- **Theory:** Which framework generates the prediction
-- **Prediction:** What the theory says should happen
-- **Competing prediction:** What alternative theories predict differently
-- **Pre-existing evidence:** What we already know (with sources)
-- **Evidence strength:** How well existing evidence supports/contradicts
-- **Empirical test:** How the hypothesis could be adjudicated
-- **Data requirements:** Which datasets are needed
-- **Priority:** Based on (discriminating power) x (testability)
+> **Evidence strength: <Very strong | Strong | Moderate | Weak | Not tested>.**
+> <one-line status>
 
-## Hypothesis name
+## Theory
+Which framework (from theory.md) generates the prediction.
 
-### Theory
-- ...
+## Prediction
+What the theory says should happen.
 
-### Prediction
-- ...
+## Competing prediction(s)
+What alternative theories predict differently.
 
-### Competing prediction
-- ...
+## Prior research
+What the external literature establishes. (Own results go under Evidence.)
 
-### Pre-existing evidence
-- ...
+## Evidence
+A table of own analyses bearing on the hypothesis:
 
-### Evidence strength
-- ...
+| Analysis | Bearing | Key takeaway |
+|----------|---------|--------------|
+| AN-NNN (or — for results predating the analysis registry) | Supports / Against / Mixed | One-sentence finding; full design and results behind the link |
 
-### Empirical test
-- ...
-
-### Data requirements
-- ...
-
-### Priority
-- ...
+## Open tests
+Forward-looking only — tests not yet run. One `###` subsection per test or test
+family. Add a `**Blocked on:**` line only where a real blocker exists (missing
+data, pending access, dependency on another analysis). Omit this section
+entirely when nothing is open.
 ```
 
-The `###` subheadings above are suggestions. Claude may add or omit subheadings as appropriate for the content. The saude project's hypotheses.md provides a detailed example of this format in practice.
+Conventions:
+- **Folder mode:** the title is `# H<N>: ...` and the parts are `##` / `###` as
+  above. **Flat-file mode:** each hypothesis is a `##` section and its parts
+  shift down one level (`###` / `####`).
+- Cross-reference hypotheses by slug (`[H<N>](other-slug.md)`), not H-number.
+- The Evidence table holds completed, interpreted analyses; queued or
+  not-yet-interpreted analyses belong under Open tests.
+- Evidence assessments must be honest about strength and limitations.
+
+The connect project's `docs/hypotheses/` provides a detailed example of this
+format in practice.
+
+---
+
+### analyses format
+
+One file per analysis under `docs/analyses/`, named `an-NNN-<slug>.md`.
+Structured fields live in YAML frontmatter (machine- and LLM-readable); the
+site build renders them as a human-readable panel. Prose stays in the body.
+
+```
+---
+id: an-NNN
+hypothesis: <slug>            # hypothesis slug — resolves to a link; omit if none
+type: descriptive | causal | placebo | robustness
+status: queued | exported | interpreted
+status_date: YYYY-MM-DD       # date the current status was reached
+confidence: pending | green | yellow | red
+created: YYYY-MM-DD
+script: <repo-relative path to the script>
+target: <repo-relative path to the output artifact>
+commit: <git hash at export>
+design:
+  sample: <slug of a docs/sample/ page>   # optional ` — deviation` tail for robustness variants
+  specification: <how the estimand is computed>
+  # ...project-specific keys (see below)...
+---
+# AN-NNN: <research question>
+
+## Results
+## Interpretation
+## Follow-ups
+```
+
+The `design:` block records what makes the analysis reproducible, minus what
+the Results table already shows (don't restate outcome variables — those are
+the table's rows). Its keys are a fixed allowlist:
+
+- **Universal core**, valid in every project: `sample`, `specification`,
+  `notes`.
+- **Project extensions**: declared in `docs/reference/analysis-schema.yaml`
+  (`design_keys: [...]`). `connect`, e.g., adds `weights` and `connection`.
+- **`notes`** is the catch-all. If something keeps landing in `notes`, that is
+  the signal to promote it to a declared key.
+
+`/check docs` flags any `design:` key outside the allowlist
+(`analysis.design.unknown-key`).
+
+Conventions:
+- `sample` references a `docs/sample/` page by slug — define the sample once
+  there and don't re-derive it in every AN page. The build resolves the slug
+  to a link. For robustness variants, append ` — <deviation>` (e.g.
+  `randomization-valid-plaintiff — excl. courts with >20 varas`); the
+  deviation reads as plain text after the linked base.
+- `specification` uses felm-style formula structure (`y ~ x | FE | IV |
+  cluster`) with **descriptive, plain-language terms** — not literal code
+  identifiers, which would mislead a reader into grepping the source. The
+  literal script is linked via `script:`.
+- What is *constant across the project* — the core identification strategy —
+  belongs in `methods.md`, stated once, not echoed in every analysis page.
+- The Evidence table in `hypotheses/` links back here by `AN-NNN`.
 
 ---
 
