@@ -261,6 +261,18 @@ Location and naming (per workspace.md "Source and build naming convention"):
   exploratory checks kept for reproducibility but not part of the
   pipeline. Use sparingly — most scripts should not need it.
 
+**Table and figure.** When the result is quantitative *and* has a
+natural visual form, produce both: a machine-readable table
+(`.json` / `.csv` / `.parquet` — what the build, paper macros, and
+review read) and a figure (`.png` / `.pdf` — what a human scans).
+Emit both from the analysis script, or from the analysis script plus a
+sibling figure script, sharing the script base name and following the
+project's `source/` layout. The AN page's `## Results` then embeds the
+figure and reports the table's headline numbers (step 4). A pure-count,
+linkage, or paper-table analysis with no meaningful visual is exempt —
+don't manufacture a figure. Defer to any project-specific output
+convention in the project's `CLAUDE.md`.
+
 IAT header per `research-kit/rules/inline_audit_trail.md`:
 
 - `INTENT` — the question.
@@ -313,10 +325,12 @@ edits are harder to reverse than re-running a script.
 After a successful run (and before step 5), open the AN page created
 in step 2 and fill in:
 
-- `## Results` body: a short prose summary of the headline number(s),
-  including the figure / table reference and the surprise-or-not call.
-  Keep it tight — the place for full interpretation is downstream (a
-  finding entry, a hypothesis status block), not the AN page.
+- `## Results` body: if the analysis produced a figure, **embed it**
+  (`![caption](<repo-relative path>)`) at the top of the section, then
+  give a short prose summary of the headline number(s) with the table
+  reference and the surprise-or-not call. Keep the prose tight — the
+  place for full interpretation is downstream (a finding entry, a
+  hypothesis status block), not the AN page.
 - `## Interpretation` (if the project's schema uses this section):
   one to three sentences on what the result means for the question.
 - `## Follow-ups`: brainstorm using the taxonomy below.
