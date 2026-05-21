@@ -19,10 +19,6 @@ From: debian:bookworm-slim
         latexmk biber \
     && rm -rf /var/lib/apt/lists/*
 
-    apt-get update && apt-get install -y --no-install-recommends \
-        r-base \
-    && rm -rf /var/lib/apt/lists/*
-
     # ── 1b. R toolchain ─────────────────────────────────────────────────
     apt-get update && apt-get install -y --no-install-recommends \
         r-base r-base-dev \
@@ -49,6 +45,10 @@ From: debian:bookworm-slim
         imagemagick \
         tesseract-ocr \
         gcc g++ make \
+        libxml2-dev libssl-dev libcurl4-openssl-dev \
+        libfontconfig1-dev libfreetype6-dev \
+        libharfbuzz-dev libfribidi-dev \
+        libpng-dev libtiff5-dev libjpeg-dev \
         unzip \
         bash-completion \
         tmux \
@@ -98,7 +98,8 @@ From: debian:bookworm-slim
         jupyter ipykernel notebook
 
     # ── 6. R packages (CRAN) ────────────────────────────────────────────
-    Rscript -e 'install.packages(c("dplyr","readr","tidyr","lubridate","arrow","fixest","data.table","purrr","ggplot2","kableExtra","knitr","stringr","forcats","broom"), repos="https://cloud.r-project.org", Ncpus=4)'
+    # Fails loudly: if any package is missing afterwards the build aborts.
+    Rscript -e 'pkgs <- c("dplyr","readr","tidyr","lubridate","arrow","fixest","data.table","purrr","ggplot2","kableExtra","knitr","stringr","forcats","broom","modelsummary","did","sandwich","lmtest","haven","marginaleffects"); install.packages(pkgs, repos="https://cloud.r-project.org", Ncpus=4); missing <- pkgs[!pkgs %in% rownames(installed.packages())]; if (length(missing)) { cat("FAILED to install:", missing, "\n"); quit(status=1) }'
 
 %environment
     export PATH="/opt/venv/bin:$PATH"

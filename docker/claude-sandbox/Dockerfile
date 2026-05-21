@@ -18,11 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     latexmk biber \
   && rm -rf /var/lib/apt/lists/*
 
-# R
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    r-base \
-  && rm -rf /var/lib/apt/lists/*
-
 # ── 1b. R toolchain ─────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     r-base r-base-dev \
@@ -49,6 +44,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     imagemagick \
     tesseract-ocr \
     gcc g++ make \
+    libxml2-dev libssl-dev libcurl4-openssl-dev \
+    libfontconfig1-dev libfreetype6-dev \
+    libharfbuzz-dev libfribidi-dev \
+    libpng-dev libtiff5-dev libjpeg-dev \
     unzip \
     bash-completion \
     tmux \
@@ -73,6 +72,24 @@ RUN ARCH=$(dpkg --print-architecture) \
 
 # ── 4. Claude Code ──────────────────────────────────────────────────
 RUN npm install -g @anthropic-ai/claude-code
+
+# ── 4b. R packages (CRAN) ───────────────────────────────────────────
+# Must run as root (before the USER henrik switch below) so packages land
+# in the system library /usr/local/lib/R/site-library, visible to henrik.
+# Fails loudly: if any package is missing afterwards the build aborts,
+# so a stale image can never silently ship without its R libraries.
+RUN Rscript -e ' \
+    pkgs <- c( \
+        "dplyr", "readr", "tidyr", "lubridate", "arrow", \
+        "fixest", "data.table", "purrr", "ggplot2", \
+        "kableExtra", "knitr", "stringr", "forcats", "broom", \
+        "modelsummary", "did", "sandwich", "lmtest", \
+        "haven", "marginaleffects" \
+    ); \
+    install.packages(pkgs, repos = "https://cloud.r-project.org", Ncpus = 4); \
+    missing <- pkgs[!pkgs %in% rownames(installed.packages())]; \
+    if (length(missing)) { cat("FAILED to install:", missing, "\n"); quit(status = 1) } \
+'
 
 # ── 5. Match host user ──────────────────────────────────────────────
 RUN useradd -m -u 1000 henrik
@@ -103,15 +120,6 @@ RUN pip install --no-cache-dir \
     pytest scons \
     jupyter ipykernel notebook \
     git+https://github.com/DarrenZal/otter-mcp.git
-
-# ── 7. R packages (CRAN) ────────────────────────────────────────────
-RUN Rscript -e ' \
-    install.packages(c( \
-        "dplyr", "readr", "tidyr", "lubridate", "arrow", \
-        "fixest", "data.table", "purrr", "ggplot2", \
-        "kableExtra", "knitr", "stringr", "forcats", "broom" \
-    ), repos = "https://cloud.r-project.org", Ncpus = 4) \
-'
 
 # ── 8. uv (for MCP server envs) ─────────────────────────────────────
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
