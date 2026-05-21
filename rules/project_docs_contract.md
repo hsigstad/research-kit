@@ -455,6 +455,25 @@ Rules:
 - Must not include empirical results or interpretation.
 - Speculative content belongs in `thinking.md`.
 
+**Companion folder** (`docs/data/`): `data.md` stays the concise index — one
+structured entry per source. A source that needs more than fits there gets a
+companion file:
+
+```
+docs/data/
+  <source>.md        # detailed provenance + manual-work record for one source
+```
+
+- Use a companion file when a source has **non-obvious provenance** or
+  **manual data work** — entity matching, hand lookups, judgment calls a
+  reader or referee would want to audit. Automated, scripted transformations
+  do **not** need one: the scripts and their inline audit trail are the
+  documentation. The companion file records only what code cannot.
+- The `data.md` entry for that source stays concise and links to its
+  `docs/data/<source>.md`.
+- Unlike hypotheses folder mode, `docs/data/` does not replace `data.md` —
+  the two coexist (`data.md` = index, `docs/data/` = per-source detail).
+
 ---
 
 ### methods.md
