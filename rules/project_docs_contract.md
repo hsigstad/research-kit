@@ -48,6 +48,7 @@ repo/
     archive.md       # optional
     briefs/          # optional; human-readable topic narratives
     reference/       # optional; structured lookup material (mappings, catalogs)
+    variables/       # optional; per-variable definition pages (defined_in: lint)
     notes/           # optional; miscellaneous working documents
 
   source/          # analysis code
@@ -205,6 +206,8 @@ repo/
     data.md
     decisions.md
     archive.md
+    data/            # optional; per-source provenance companions
+    variables/       # optional; per-variable definition pages
 
   source/          # pipeline code
   build/           # outputs (cleaned data, logs, etc.)
@@ -473,6 +476,59 @@ docs/data/
   `docs/data/<source>.md`.
 - Unlike hypotheses folder mode, `docs/data/` does not replace `data.md` —
   the two coexist (`data.md` = index, `docs/data/` = per-source detail).
+
+---
+
+### docs/variables/ (optional)
+
+Per-variable definition pages for constructed variables whose meaning or
+construction is **not** self-evident from the name — one file per
+variable, plus an `index.md`.
+
+Analysis dataframes and cleaned tables accumulate derived columns
+(treatment indicators, weights, recodes, geometric fields) whose
+definition lives buried in a script. `docs/variables/` surfaces them:
+each page says what the variable is, how it is computed, and exactly
+where. Self-evident columns (`year`, `npu`, raw passthroughs) are not
+catalogued.
+
+Structure:
+
+```
+docs/variables/
+  index.md           # intro + grouped index of variable pages
+  <name>.md          # one page per variable; filename stem = variable name
+```
+
+Each `<name>.md` carries YAML frontmatter with a required `defined_in:`
+field:
+
+```
+---
+defined_in: <repo-relative-script-path>:<line>
+type: <dtype / value range>          # optional
+---
+# `<name>`
+
+What the variable is, how it is constructed, and links to related docs.
+```
+
+- `defined_in` points at the exact `<script>:<line>` where the variable
+  is constructed. `tools/check_docs.py` (`lint_variables`) verifies that
+  the variable name actually appears at that line — catching silent
+  rename drift between the docs and the code.
+- A page documenting a **family** of related variables (e.g. a set of
+  dummies built in a loop) opts out of the line check with
+  `defined_in: family`.
+- Additional frontmatter keys are project-specific: a project keys
+  variables to its analysis dataframes (`dataframe:`), a pipeline to its
+  cleaned tables (`table:`).
+- `index.md` carries the intro and a grouped, linked index of the
+  variable pages. It is exempt from the `defined_in:` requirement.
+
+Pages under `docs/variables/` may be created freely (like
+`docs/reference/`), provided they follow the `defined_in:` schema above.
+The `connect` project is the reference implementation.
 
 ---
 
@@ -1503,7 +1559,7 @@ When operating in a project repository:
 1. Always check whether `docs/` exists.
 2. Use the standardized files above.
 3. Never mix content across files.
-4. Never invent new documentation files in `docs/` root without asking. Files under `docs/briefs/`, `docs/reference/`, and `docs/notes/` may be created freely.
+4. Never invent new documentation files in `docs/` root without asking. Files under `docs/briefs/`, `docs/reference/`, `docs/notes/`, and `docs/variables/` may be created freely (`docs/variables/` pages must follow the `defined_in:` schema).
 5. When the user says "add X to Y", update the corresponding file directly.
 6. If uncertain where something belongs, ask before writing.
 
