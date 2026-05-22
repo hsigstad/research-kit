@@ -1,8 +1,17 @@
 """Helpers for the /tactiq skill.
 
-Two CLI subcommands:
-  download <file_id> <out_path>   export a Google Doc as text/plain via Drive API
-  parse <txt_path>                parse a Tactiq plaintext export → JSON
+Three CLI subcommands:
+  download <file_id> <out_path>          export a Google Doc as text/plain via Drive API
+  parse <txt_path>                       parse a Tactiq plaintext export → JSON
+  save <txt_path> <file_id> <dest_path>  parse + render the meeting markdown file
+
+The `save` subcommand is the deterministic format-and-write step. It takes the
+downloaded text, parses it, renders the frontmatter + transcript markdown, and
+writes it to dest_path (appending -2, -3, ... on collision). It prints the final
+path written. Routing dest_path to the right project is the caller's job; pass
+--attendees to override the parsed attendee list when the Tactiq export's
+comma-separated "Attendees:" line is ambiguous (e.g. a single "Lastname, First"
+name that parses as two people).
 
 The Drive access token is read from rclone's config (~/.config/rclone/rclone.conf,
 section [gdrive]). Run any rclone command first (e.g. `rclone about gdrive:`) so
@@ -153,6 +162,58 @@ def _structured_transcript(lines: list[str]) -> list[dict]:
     return out
 
 
+def build_markdown(parsed: dict, file_id: str, attendees: list[str]) -> str:
+    """Render a parsed Tactiq transcript as the meeting markdown file.
+
+    Matches the layout in SKILL.md Step 6: YAML frontmatter, an H1 title, an
+    optional Highlights section (omitted when empty/boilerplate), and the
+    transcript as `[MM:SS] **Speaker**: text` lines separated by blank lines.
+    """
+    out = ["---",
+           f"title: {parsed['title']}",
+           f"date: {parsed['date']}",
+           "attendees: [" + ", ".join(attendees) + "]",
+           f"tactiq_id: {file_id}",
+           "source: tactiq",
+           "---",
+           "",
+           f"# {parsed['title']}",
+           ""]
+    highlights = (parsed.get("highlights") or "").strip()
+    if highlights:
+        out += ["## Highlights", "", highlights, ""]
+    out += ["## Transcript", ""]
+    for t in parsed.get("transcript_lines", []):
+        out.append(f"[{t['timestamp']}] **{t['speaker']}**: {t['text']}")
+        out.append("")
+    return "\n".join(out).rstrip() + "\n"
+
+
+def save(txt_path: str, file_id: str, dest_path: str, attendees: str | None = None) -> str:
+    """Parse txt_path and write the rendered meeting markdown to dest_path.
+
+    Appends -2, -3, ... to the filename if dest_path already exists. Returns the
+    final path written. `attendees`, if given, is a comma-separated override for
+    the frontmatter attendee list.
+    """
+    parsed = parse(txt_path)
+    if attendees is not None:
+        attlist = [a.strip() for a in attendees.split(",") if a.strip()]
+    else:
+        attlist = parsed["attendees"]
+    md = build_markdown(parsed, file_id, attlist)
+
+    p = Path(dest_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    if p.exists():
+        n = 2
+        while (p.parent / f"{p.stem}-{n}{p.suffix}").exists():
+            n += 1
+        p = p.parent / f"{p.stem}-{n}{p.suffix}"
+    p.write_text(md, encoding="utf-8")
+    return str(p)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -164,12 +225,21 @@ def main() -> None:
     p = sub.add_parser("parse")
     p.add_argument("txt_path")
 
+    s = sub.add_parser("save")
+    s.add_argument("txt_path")
+    s.add_argument("file_id")
+    s.add_argument("dest_path")
+    s.add_argument("--attendees", default=None,
+                   help="comma-separated override for the frontmatter attendees list")
+
     args = ap.parse_args()
     if args.cmd == "download":
         download(args.file_id, args.out_path)
     elif args.cmd == "parse":
         json.dump(parse(args.txt_path), sys.stdout, ensure_ascii=False, indent=2)
         sys.stdout.write("\n")
+    elif args.cmd == "save":
+        print(save(args.txt_path, args.file_id, args.dest_path, args.attendees))
 
 
 if __name__ == "__main__":

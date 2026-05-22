@@ -32,7 +32,7 @@ The user invokes the skill with no required args. Optional:
 
 - rclone configured with a `gdrive` remote (see `~/.config/rclone/rclone.conf`).
 - Run in a non-sandboxed session — the skill needs network access and the rclone config file.
-- Helper script: `research-kit/skills/tactiq/tactiq_helpers.py` (Drive download + Tactiq parser).
+- Helper script: `research-kit/skills/tactiq/tactiq_helpers.py` (Drive download, Tactiq parser, meeting-file renderer).
 
 ## Step 1 — list Tactiq docs
 
@@ -150,13 +150,31 @@ Matching rules:
 
 ## Step 6 — save the file
 
-Path: `projects/<slug>/docs/meetings/YYYY-MM-DD-<title-slug>.md`
+Decide the destination path, then let the helper render and write it. Do **not**
+hand-write the markdown — the `save` subcommand is the single source of truth for
+the file format, so the layout never drifts between runs.
 
-Slug rules: lowercase, ASCII-fold, non-alphanumeric → `-`, collapse repeats, trim, truncate to ~50 chars. If the file already exists, append `-2`, `-3`, etc.
+Destination path: `projects/<slug>/docs/meetings/YYYY-MM-DD-<title-slug>.md`
+(unmatched meetings go to `inbox/meetings/YYYY-MM-DD-<title-slug>.md`).
 
-Unmatched files go to `inbox/meetings/YYYY-MM-DD-<title-slug>.md`.
+Slug rules: lowercase, ASCII-fold, non-alphanumeric → `-`, collapse repeats, trim,
+truncate to ~50 chars.
 
-File contents:
+```bash
+python3 "$SKILL_DIR/tactiq_helpers.py" save \
+  /tmp/tactiq/<FILE_ID>.txt <FILE_ID> \
+  projects/<slug>/docs/meetings/YYYY-MM-DD-<title-slug>.md
+```
+
+The subcommand parses the transcript, renders the frontmatter + transcript
+markdown, appends `-2`, `-3`, ... if the path already exists, and prints the
+final path written. Record that printed path in `.tactiq_processed.json`.
+
+Pass `--attendees "Name One,Name Two"` to override the frontmatter attendee list
+when the Tactiq `Attendees:` line is ambiguous — e.g. a single `Lastname, First`
+name that the comma-split parser reads as two people.
+
+The rendered file looks like:
 
 ```markdown
 ---
@@ -171,7 +189,7 @@ source: tactiq
 
 ## Highlights
 
-<highlights section, verbatim — omit this section if empty or default boilerplate>
+<highlights section, verbatim — omitted when empty or default boilerplate>
 
 ## Transcript
 
@@ -182,7 +200,8 @@ source: tactiq
 ...
 ```
 
-Keep the body **raw**. Do not summarize, restructure, translate, or strip content.
+The body is kept **raw** — the helper never summarizes, restructures, translates,
+or strips content.
 
 ## Step 7 — update dedup state and report
 
