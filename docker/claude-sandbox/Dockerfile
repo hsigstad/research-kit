@@ -81,10 +81,11 @@ RUN npm install -g @anthropic-ai/claude-code
 RUN Rscript -e ' \
     pkgs <- c( \
         "dplyr", "readr", "tidyr", "lubridate", "arrow", \
-        "fixest", "data.table", "purrr", "ggplot2", \
+        "fixest", "lfe", "data.table", "dtplyr", "purrr", "ggplot2", \
         "kableExtra", "knitr", "stringr", "forcats", "broom", \
         "modelsummary", "did", "sandwich", "lmtest", \
-        "haven", "marginaleffects" \
+        "haven", "marginaleffects", "tidyverse", \
+        "Hmisc", "quantreg", "stargazer" \
     ); \
     install.packages(pkgs, repos = "https://cloud.r-project.org", Ncpus = 4); \
     missing <- pkgs[!pkgs %in% rownames(installed.packages())]; \
@@ -114,7 +115,7 @@ RUN pip install --no-cache-dir \
     openai anthropic \
     pypdf pdfplumber PyMuPDF \
     pdf2image pytesseract \
-    linearmodels pydantic \
+    linearmodels pydantic pyreadr \
     html2text \
     requests-cache tenacity \
     pytest scons \
