@@ -18,10 +18,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     latexmk biber \
   && rm -rf /var/lib/apt/lists/*
 
-# ── 1b. R toolchain ─────────────────────────────────────────────────
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# ── 1b. R toolchain (from CRAN apt repo for latest R ≥ 4.4) ─────────
+# Debian bookworm ships R 4.2.2; newer CRAN packages (Matrix ≥ 1.6, quantreg)
+# require R ≥ 4.4. Use CRAN's official Debian repo to get a current R.
+# Key fingerprint 95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7 (Johannes Ranke);
+# fetched from Ubuntu keyserver since CRAN no longer publishes a stable .asc URL.
+RUN mkdir -p /etc/apt/keyrings \
+ && curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB8F25A8A73EACF41" \
+      -o /etc/apt/keyrings/cran_debian_key.asc \
+ && echo "deb [signed-by=/etc/apt/keyrings/cran_debian_key.asc] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" \
+      > /etc/apt/sources.list.d/r-cran.list \
+ && apt-get update && apt-get install -y --no-install-recommends \
     r-base r-base-dev \
-  && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
 # ── 1c. TeX Live (full — bulletproof, no per-package guessing) ───────
 RUN apt-get update && apt-get install -y \
