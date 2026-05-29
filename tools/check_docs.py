@@ -758,6 +758,60 @@ def lint_underscore_cited(repo: Path, f: Findings):
 # Driver
 # ---------------------------------------------------------------------------
 
+# Stale runtime-test disclaimer text. Pre-2026-05-29 affordance from the
+# old authoring container that lacked R/tidyverse/lfe. After
+# research/rules/synthetic_and_bypasses.md retired the affordance, any
+# remaining instance is residue that should be cleaned up. /check is the
+# right place for this scan because it's static — it doesn't enforce the
+# runtime test itself (the queue/export skill does that, e.g. /connect-run);
+# it only flags the lingering disclaimer text that no longer applies.
+STALE_RUNTIME_DISCLAIMER_RE = re.compile(
+    r"(NOT\s+runtime[- ]tested|parse[- ]checked\s+only)",
+    re.IGNORECASE,
+)
+
+
+def lint_stale_runtime_disclaimer(repo: Path, f: Findings, workspace: Path):
+    """Flag stale 'NOT runtime-tested' / 'parse-checked only' disclaimers.
+
+    Per research/rules/synthetic_and_bypasses.md, this convention was
+    retired 2026-05-29. Scan analysis pages and source scripts for
+    residual text; do NOT verify whether scripts are actually tested
+    (that's the queue/export skill's job).
+    """
+    # Analysis pages
+    adir = repo / "docs" / "analyses"
+    if adir.is_dir():
+        for md in sorted(adir.rglob("*.md")):
+            text = read(md)
+            for n, line in enumerate(text.splitlines(), 1):
+                if STALE_RUNTIME_DISCLAIMER_RE.search(line):
+                    f.warn(
+                        "stale.runtime-disclaimer",
+                        "stale 'NOT runtime-tested' / 'parse-checked only' "
+                        "disclaimer — affordance retired 2026-05-29 (see "
+                        "research/rules/synthetic_and_bypasses.md)",
+                        path=f"{md.relative_to(workspace)}:{n}",
+                    )
+    # Source comments
+    src = repo / "source"
+    if src.is_dir():
+        for sp in iter_scripts(src, recursive=True):
+            try:
+                text = read(sp)
+            except Exception:
+                continue
+            for n, line in enumerate(text.splitlines(), 1):
+                if STALE_RUNTIME_DISCLAIMER_RE.search(line):
+                    f.warn(
+                        "stale.runtime-disclaimer",
+                        "stale 'NOT runtime-tested' / 'parse-checked only' "
+                        "disclaimer — affordance retired 2026-05-29 (see "
+                        "research/rules/synthetic_and_bypasses.md)",
+                        path=f"{sp.relative_to(workspace)}:{n}",
+                    )
+
+
 def lint_repo(repo: Path, kind: str, workspace: Path) -> Findings:
     rel = repo.relative_to(workspace)
     f = Findings(scope=str(rel))
@@ -774,6 +828,7 @@ def lint_repo(repo: Path, kind: str, workspace: Path) -> Findings:
     lint_merge_validate(repo, f)
     lint_archive_leakage(repo, f)
     lint_underscore_cited(repo, f)
+    lint_stale_runtime_disclaimer(repo, f, workspace)
     return f
 
 

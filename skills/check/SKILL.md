@@ -118,6 +118,7 @@ of the plan — surfaced but not auto-applied. Common fixes:
 | `handoff.bad-filename` | `git mv` to `<ISO-timestamp>_<short-tag>.md` (manual: pick the right tag) |
 | `source.underscore-cited` | Manual review — either rename the script to drop the underscore (and let it be a real artifact) or rewrite the citing doc to point elsewhere |
 | `analysis.design.unknown-key` | Manual review — either fold the value into an allowed `design:` key (or `notes`), or, if it recurs across analyses, add the key to `docs/reference/analysis-schema.yaml` |
+| `stale.runtime-disclaimer` | Auto — delete the `NOT runtime-tested` / `parse-checked only` line. The affordance was retired 2026-05-29 (see `research/rules/synthetic_and_bypasses.md`); the disclaimer is residual text, not a live convention. /check flags residue only; the queue/export skill (e.g. `/connect-run`) gates new scripts on the actual runtime test |
 
 **Ledgers (`/check ledgers`): numbered list, per-gap apply/skip/quit.**
 
