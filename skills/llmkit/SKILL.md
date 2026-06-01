@@ -22,12 +22,15 @@ File-backed cache. Each entry is a JSON file with three sections: `_cache_meta`,
 
 ```python
 cache = LLMCache(Path("cache_dir"))
-key = cache.key(doc_id, text_hash, model)  # composite key
+key = cache.key(doc_id, text_hash, model)                              # composite key (back-compat)
+key = cache.key(doc_id, text_hash, model, schema_name="my_task")       # schema-aware key (recommended for new tasks)
 hit = cache.get(key)                       # by composite key
 hit = cache.get_by_doc(doc_id)             # legacy fallback (doc_id.json)
 cache.put(key, extraction, doc_id=..., text_hash=..., ...)
 entries = cache.iter_entries()
 ```
+
+`schema_name` is **opt-in** so existing caches (procure, EJ) stay valid. When you pass it, `schema_name` is mixed into the key — preventing collisions when two extraction tasks run against the same `(doc_id, text)` on the same model. New tasks should pass it; established tasks can migrate by renaming cache files (the new key is computable from each file's `_cache_meta`).
 
 ### `ExtractionSchema(BaseModel)`
 
@@ -54,7 +57,9 @@ result = extract(
     schema=MySchema, model="gpt-4o-mini",
     prompt_file="my_prompt.txt",
     cache=cache, client=openai_client,
-    reextract=False,  # True to redo stale entries
+    reextract=False,            # True to redo stale entries
+    use_structured_outputs=True, # recommended — server-side schema enforcement
+    schema_in_cache_key=True,   # recommended for new tasks (see above)
 )
 result.valid        # bool — did Pydantic validation pass
 result.parsed       # MySchema instance (or None if invalid)
@@ -70,11 +75,12 @@ Stratified sampling for human review. See `llmkit/audit.py`.
 
 ## Cache design
 
-### Cache key = `hash(doc_id, text_hash, model)`
+### Cache key = `hash(doc_id, text_hash, model[, schema_name])`
 
 - **Prompt changes do NOT invalidate cache** — intentional, to avoid re-extraction during iterative development
 - **Text changes DO invalidate** — different text = different key = cache miss
 - **Model changes DO invalidate** — different model = different key
+- **schema_name is opt-in** — pass it for new tasks (prevents cross-task collisions on the same document); omit it to stay compatible with caches written before the schema-aware option existed
 
 ### Cache metadata (audit trail, not part of key)
 
@@ -122,6 +128,31 @@ entry.is_stale(current_prompt_hash="...")  # True if prompt changed
 ### Backward compatibility
 
 Old-style caches (`{doc_id}.json` with raw extraction, no metadata wrapper) are readable via `get_by_doc()`. The `_load()` method detects both formats.
+
+## LLM call modes
+
+`extract()` supports two response modes. Both write the same cache shape; the `_cache_meta.api_params.response_format` field records which was used.
+
+### `use_structured_outputs=True` (recommended)
+
+Calls `client.chat.completions.parse(response_format=schema)`. OpenAI enforces the Pydantic schema **server-side** via constrained decoding. The model literally cannot produce out-of-schema field names or types.
+
+- No JSON-keyword requirement on the prompt.
+- No need to spell out nested field names in the system prompt — the schema does it.
+- Requires a Structured-Outputs-capable model (gpt-4o, gpt-4o-mini, gpt-4.1, o-series).
+- `_cache_meta.api_params.response_format == "structured_outputs"`; `schema_name` is recorded.
+
+### `use_structured_outputs=False` (legacy / default for back-compat)
+
+Calls `client.chat.completions.create(response_format={"type": "json_object"})`.
+
+- Guarantees the output parses as JSON, but **does not enforce the schema** — field names are at the model's discretion. Always spell the schema out in the system prompt under this mode.
+- Requires the literal word "json" to appear somewhere in the messages.
+- Default `False` so existing caches/scripts don't change behavior; new tasks should set `True`.
+
+## `__bool__` and the `c = cache or DEFAULT` trap
+
+`LLMCache` is **always truthy** (`__bool__` returns `True`). Before this was set explicitly, `LLMCache.__len__` made an empty cache *falsy*, so the common idiom `c = passed_cache or DEFAULT_CACHE` silently substituted the default whenever a caller passed a brand-new empty cache. If you maintain wrapper code that predates this fix, prefer `c = DEFAULT_CACHE if cache is None else cache` regardless — defensive against any future override that might want to make an LLMCache falsy.
 
 ## Per-project setup
 
@@ -206,3 +237,4 @@ Consult this skill (even without explicit `/llmkit` invocation) whenever you're 
 - **`ExtractionSchema` uses `ClassVar`** — not underscore-prefixed attrs (Pydantic v2 treats `_`-prefixed as private attrs, which aren't JSON-serializable).
 - **`messages` stores the full API input** — each file is a self-contained audit record. Expect cache files to be large for long documents. Access document text via `entry.messages[1]["content"]`.
 - **`diarios` moved** — the package is now at `~/research/packages/diarios/` (was `~/research/diarios/`). Imports unchanged.
+- **Cache-key changes need a rename, not a re-extract** — switching a task to `schema_in_cache_key=True` invalidates existing cache lookups. Both the old and new key are deterministic functions of the file's `_cache_meta` (`doc_id`, `text_hash`, `model`, optional `schema_name`), so a one-shot script can rename every cache file from the old key to the new one without re-calling the LLM. Do that, not `--reextract`, when migrating an established task.
