@@ -42,7 +42,8 @@ repo/
     methods.md
     decisions.md
     theory.md        # optional
-    hypotheses.md    # optional
+    hypotheses/      # optional; folder mode is the default (see §5)
+    findings/        # optional; folder mode is the default (see §5)
     questions.md     # optional; written by /questions skill
     results.md       # optional
     archive.md       # optional
@@ -599,8 +600,8 @@ the theories that generate them, the pre-existing evidence for or against each,
 and the empirical strategy for adjudication.
 
 Acceptable locations (discovery order):
-1. `docs/hypotheses.md` (flat file — preferred for <15 hypotheses)
-2. `docs/hypotheses/index.md` (folder mode — for 15+ or individually long entries)
+1. `docs/hypotheses/index.md` (folder mode — default for new projects)
+2. `docs/hypotheses.md` (flat file — legacy / very small projects with <5 entries)
 
 Contains, for each hypothesis:
 - the generating theory
@@ -616,9 +617,10 @@ This file is not a paper draft. It is a machine-readable reference document.
 Cross-references `theory.md` for theoretical frameworks, `literature.md` for
 sources, and `data.md` for data availability.
 
-**Folder mode** (`docs/hypotheses/`): When the flat file exceeds ~15
-hypotheses or individual entries grow long (each accumulating evidence
-blocks, robustness notes, etc.), promote to a folder:
+**Folder mode** (`docs/hypotheses/`, **the default for new projects**):
+new projects scaffold straight to this structure; flat-file mode is
+kept only for legacy projects and very small (<5 hypothesis) projects.
+The folder layout:
 
 ```
 docs/hypotheses/
@@ -840,9 +842,9 @@ from `stylized-facts.md` (the dense fact-by-fact ledger) and
 when it has anchored evidence and a directional reading.
 
 Acceptable locations (discovery order):
-1. `docs/findings.md` (preferred)
-2. `docs/findings/index.md` (folder mode — see `/findings` skill)
-3. `docs/reference/key-findings.md` (legacy)
+1. `docs/findings/index.md` (folder mode — default for new projects)
+2. `docs/findings.md` (flat file — legacy / very small projects)
+3. `docs/reference/key-findings.md` (deprecated)
 4. Project-specific path declared in `CLAUDE.md` or `docs/summary.md`
 
 Required structure:
@@ -889,8 +891,10 @@ Path conventions when the doc lives at `docs/findings.md`:
 - Same-dir cross-refs: `[reference/stylized-facts §X](reference/stylized-facts.md#anchor)`
 - Sibling-dir cross-refs: `[briefs/Y §Z](briefs/Y.md#anchor)`
 
-**Folder mode** (`docs/findings/`): When the single-file format exceeds
-~20 entries and becomes unwieldy, promote to a folder:
+**Folder mode** (`docs/findings/`, **the default for new projects**):
+new projects scaffold straight to this structure; flat-file mode is
+kept only for legacy projects and very small projects with <5 entries.
+The folder layout:
 
 ```
 docs/findings/
@@ -908,8 +912,10 @@ docs/findings/
   paths use `../../build/`, `../../source/`, `../../references/`, and
   `../reference/stylized-facts.md` for sibling-dir docs.
 - Cross-refs between findings use `[other headline](other-slug.md)`.
-- Use flat file (`docs/findings.md`) for projects with <20 entries; folder
-  mode for 20+.
+- New projects default to folder mode regardless of expected size;
+  it scales cleanly and avoids the flat-to-folder migration step.
+  Flat-file mode is retained only for legacy and trivially small (<5
+  entries) projects.
 
 Maintenance rules:
 - After any pipeline rerun or parser fix, run `/findings --refresh` (or manually re-verify) to catch number drift between entry headlines and current build artifacts. Stale headlines that survived multiple parser fixes are the most common failure mode.
