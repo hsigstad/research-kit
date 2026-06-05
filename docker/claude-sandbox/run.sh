@@ -47,11 +47,13 @@ if [ "$RUNTIME" = "docker" ]; then
     exec docker run --rm -it \
         -v "$(pwd)":/workspace \
         -v "$HOME/Dropbox":/home/henrik/Dropbox:ro \
+        -v "$HOME/Dropbox/Transfer_Bocconi":/home/henrik/Dropbox/Transfer_Bocconi \
         -v "$HOME/Screenshots":/home/henrik/Screenshots:ro \
         -v "$HOME/.claude":/home/henrik/.claude \
         -v "$HOME/.claude.json":/home/henrik/.claude.json \
         -v "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
         -v "$HOME/.ssh":/home/henrik/.ssh:ro \
+        -v "$HOME/.config/rclone-sandbox/rclone.conf":/home/henrik/.config/rclone/rclone.conf:ro \
         "${WHATSAPP_MOUNT[@]}" \
         -e TERM=xterm-256color \
         -e COLORTERM=truecolor \
