@@ -87,6 +87,8 @@ exec "$RUNTIME" run \
     --bind "$HOME/.claude.json":/home/henrik/.claude.json \
     --bind "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
     --bind "$HOME/.ssh":/home/henrik/.ssh:ro \
+    --bind /projects/ec113/henrik/.config/rclone-sandbox/rclone.conf:/rclone.conf:ro \
+    --env "RCLONE_CONFIG=/rclone.conf" \
     --env "TERM=xterm-256color" \
     --env "COLORTERM=truecolor" \
     --env "DATA_DIR=/workspace/data" \
