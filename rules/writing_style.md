@@ -68,6 +68,12 @@ but the default is short, and when you write a long one, ask whether it
 splits cleanly into two without losing meaning. Vary length deliberately
 for rhythm; don't write all short sentences either.
 
+**Vary sentence length within paragraphs.** Cadence uniformity — three
+or four 18-to-24-word sentences in a row — is the strongest 2026 AI
+tell, and the one that survives surface-level rewriting. After a long
+sentence, write a short one. After two clauses, write one. Read the
+paragraph aloud: if every sentence has the same shape, restructure.
+
 - At most two subordinate clauses. Three-clause stacks get split.
 - Em-dashes are fine — used as parenthetical inserts, to introduce examples,
   or to gloss a term.
@@ -132,7 +138,23 @@ reader: they have to decode the term before they can read on. Compare:
 **Avoid (AI-tell vocabulary):** delve into, leverage, navigate (as buzzword),
 underscore, robust (as filler), comprehensive, multifaceted, paradigm,
 seamless, pivotal, intricate, holistic, dynamic landscape, in today's
-world, it is important to note that, it's worth mentioning that.
+world, it is important to note that, it's worth mentioning that. Also:
+crucial, vital, particularly suitable, highly competitive, substantial
+(as filler), severe (as filler intensifier), sizeable, one of the most
+X in the world, a testament to. These are the 2026-vintage promotional
+words that read as AI-drafted scene-setting.
+
+**No present-participle tail clauses.** Sentences ending in `…, providing
+/ ensuring / reflecting / emphasizing / highlighting / showcasing /
+fostering / underscoring / contributing to / reinforcing X` are a
+recurring AI cadence. Replace with a period and a separate sentence
+that says what the tail was trying to say, or just cut the tail. The
+substance usually survives the deletion.
+
+**No negative parallelism.** `It is not X, it is Y` and `Not just X but
+Y` are now widely recognised as ChatGPT's signature rhetorical move.
+State the positive claim directly. If the contrast genuinely matters,
+two sentences are clearer than one balanced one.
 
 **No stacked adjectives.** "A clean, well-identified, flexible design" → pick
 one. "A flexible design" or "a well-identified design".
@@ -237,6 +259,14 @@ just as bad as lots of footnotes.
 Default: follow standard style guides. Em-dashes, en-dashes, curly quotes,
 ellipsis character — all fine where correct.
 
+**On em-dashes specifically:** the published-econ baseline still allows
+them, and LaTeX's `---` rendering is conventional. But mid-2026 readers
+treat *high em-dash density* — em-dash substituting for commas, colons,
+and parentheses across a paragraph — as a tell. The rule is per-paragraph:
+at most one em-dash per paragraph; reserve it for the genuinely
+parenthetical case where the comma or paren would lose structure. Where
+a comma works, use a comma; where a colon works, use a colon.
+
 Context-specific exceptions may apply (e.g., referee reports often require
 plain ASCII to avoid AI-detection cues). Authors should layer those
 exceptions on top of this baseline; don't bake them into the general
@@ -336,6 +366,13 @@ your first draft.
 - "This paper" / "this study" used three+ times — vary or drop.
 - "We leave X for future research" — strike entirely; readers care about
   what's in the paper, not your follow-up agenda.
+- Present-participle tail clauses ("…, providing X", "…, reflecting X",
+  "…, reinforcing X") — strip on a final pass; the substance usually
+  survives.
+- Negative parallelism ("not X, but Y" / "it is not X, it is Y") —
+  rewrite as a positive claim.
+- Paragraphs of evenly long sentences — break one in half so the
+  rhythm varies.
 - **Don't abbreviate author names.** "FF show that size matters" — spell
   out "Fama and French". (Cochrane)
 - **"Illustrative test" / "illustrative empirical work" — strike.** Do
