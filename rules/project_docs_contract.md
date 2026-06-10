@@ -954,17 +954,19 @@ Rules:
 One file per analysis (an experiment, regression table, descriptive cut), named
 `an-NNN-<slug>.md`. The folder is the project's analysis ledger: each page
 records what was run, the result, and the interpretation. It pairs with
-`docs/reference/analysis-index.yaml` (the queryable index) and feeds the
-Evidence tables in `hypotheses/`.
+`docs/reference/analysis-index.yaml` (the queryable, auto-generated index)
+and feeds the Evidence tables in `hypotheses/`.
 
-Each page carries structured YAML frontmatter (metadata + a `design:` block),
-which the site build renders as a human-readable panel, followed by a markdown
-body (`## Results`, `## Interpretation`, `## Follow-ups`). See `analyses
-format` in §6.
+Each page is **self-contained**: structured YAML frontmatter (metadata + a
+`design:` block) is followed by a markdown body whose `## Results` section
+embeds the actual table or figure — readers should see the numbers, not just
+a path to `build/`. The required body sections are `## Question`, `## Design`,
+`## Results`, `## Interpretation`, with `## Follow-ups` optional. See
+`analyses format` in §6 for the full schema and the auto-index requirement.
 
-Used by projects with a server round-trip or a high volume of discrete
-analyses (`connect`). Projects with few analyses can keep them in `results.md`
-instead.
+Used by projects with a server round-trip (`connect`) or a high volume of
+discrete analyses (`ficha`). Projects with few analyses can keep them in
+`results.md` instead.
 
 ---
 
@@ -1388,18 +1390,27 @@ One file per analysis under `docs/analyses/`, named `an-NNN-<slug>.md`.
 Structured fields live in YAML frontmatter (machine- and LLM-readable); the
 site build renders them as a human-readable panel. Prose stays in the body.
 
+**Guiding principle — the AN page is self-contained.** A reader landing on
+the rendered HTML must see the actual numbers, not just a pointer to a build
+artifact. `## Results` carries the table (as markdown) or the figure (as an
+embed with caption), with values matching `build/table/<slug>/...` or
+`build/figure/<slug>/...` one-to-one. The page reads as the analysis, not as
+a reference to it. Hand-editing the index is not necessary — see
+`analysis-index.yaml` below.
+
 ```
 ---
 id: an-NNN
 hypothesis: <slug>            # hypothesis slug — resolves to a link; omit if none
 type: descriptive | causal | placebo | robustness
-status: queued | exported | interpreted
+status: <project-defined>     # see status_values in analysis-schema.yaml
 status_date: YYYY-MM-DD       # date the current status was reached
 confidence: pending | green | yellow | red
+headline: <one-line takeaway>  # required once status reaches the project's "done" equivalent
 created: YYYY-MM-DD
 script: <repo-relative path to the script>
 target: <repo-relative path to the output artifact>
-commit: <git hash at export>
+commit: <git hash at export>  # only for projects with a server round-trip
 design:
   sample: <slug of a docs/sample/ page>   # optional ` — deviation` tail for robustness variants
   specification: <how the estimand is computed>
@@ -1407,7 +1418,9 @@ design:
 ---
 # AN-NNN: <research question>
 
-## Results
+## Question
+## Design
+## Results        # mandatory — embed the actual table or figure, not a pointer
 ## Interpretation
 ## Follow-ups
 ```
@@ -1419,12 +1432,28 @@ the table's rows). Its keys are a fixed allowlist:
 - **Universal core**, valid in every project: `sample`, `specification`,
   `notes`.
 - **Project extensions**: declared in `docs/reference/analysis-schema.yaml`
-  (`design_keys: [...]`). `connect`, e.g., adds `weights` and `connection`.
+  (`design_keys: [...]`). `connect`, e.g., adds `weights` and `connection`;
+  `ficha` adds `scope`, `timing_variable`, `controls`, `outcomes`.
 - **`notes`** is the catch-all. If something keeps landing in `notes`, that is
   the signal to promote it to a declared key.
 
 `/check docs` flags any `design:` key outside the allowlist
 (`analysis.design.unknown-key`).
+
+The schema file also fixes the project-specific `status:` allowlist. Common
+schemes:
+- Local-only projects (e.g. `ficha`): `pending | done | stale`.
+- Server-round-trip projects (e.g. `connect`): `queued | exported |
+  interpreted`. These also carry `commit:` / `exported_at:` / `returned_at:`
+  fields the schema declares as required.
+
+`analysis-index.yaml` (under `docs/reference/`) is the queryable summary of
+all AN pages and **must be auto-generated** from the frontmatter at site
+build time — typically by a `gen_analysis_index.py` invoked from
+`build_all.py`. Hand-edited indexes drift; the regenerator is the source of
+freshness. See `projects/connect/source/site/gen_analysis_index.py` and
+`projects/ficha/source/site/gen_analysis_index.py` for reference
+implementations.
 
 Conventions:
 - `sample` references a `docs/sample/` page by slug — define the sample once
@@ -1436,6 +1465,10 @@ Conventions:
   cluster`) with **descriptive, plain-language terms** — not literal code
   identifiers, which would mislead a reader into grepping the source. The
   literal script is linked via `script:`.
+- `headline` is the one-line takeaway, set when the analysis lands a result.
+  It is what the catalogue page and any cross-referencing finding renders;
+  the body's `## Results` carries the full table. A page with `status` past
+  "queued"/"pending" and no `headline` is a lint smell.
 - What is *constant across the project* — the core identification strategy —
   belongs in `methods.md`, stated once, not echoed in every analysis page.
 - The Evidence table in `hypotheses/` links back here by `AN-NNN`.
