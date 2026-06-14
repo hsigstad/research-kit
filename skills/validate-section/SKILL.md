@@ -453,16 +453,30 @@ For each `(target, check_kind)` pair:
   3. Otherwise infer from heading text per
      [`research-kit/rules/section_labels.md`](../../rules/section_labels.md).
 
-  Load the rule files:
+  **Read the rule files this turn.** Use the Read tool — `style_prose`
+  cannot run from memory. The rule files contain catalogue items the
+  sub-checks below do not enumerate (negative parallelism, AI-tell
+  vocabulary, acronym-on-first-use, present-participle tail clauses,
+  multi-cite chronological order, the naked-"this" rule, and others).
+  Skipping the Read means those checks are silently uncovered.
+
+  Files to Read:
 
   - Always: `research-kit/rules/writing_style.md` (general baseline).
   - The matching per-type file:
     `research-kit/rules/writing_style/<type>.md`.
   - For body-section types (`results`, `methods`, `data`,
-    `institutions`, `discussion`): also load
+    `institutions`, `discussion`): also Read
     `research-kit/rules/writing_style/body.md`.
 
   Apply both general and per-type rules.
+
+  **Gate.** If you did not Read these files in the current turn (no
+  Read tool call appears in the transcript for them), `style_prose`
+  has not run. Record it as `pending` in the section's ledger entry —
+  do not append a completed `ai_checks` entry. A `style_prose` row
+  written without the Read evidence is a false ledger claim, and the
+  section cannot reach `ai-verified` through the required-checks floor.
 
   **Sub-checks.** The catalog of LLM-only checks:
 
