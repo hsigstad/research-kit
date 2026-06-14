@@ -168,10 +168,38 @@ candidate referents. Always say "This *regression* shows…" / "This *rule*
 implies…" / "This *finding* suggests…" — name what *this* refers to. The
 fix is one extra word and removes a recurring source of reader confusion.
 
+**Translate code language into prose.** The data-engineering vocabulary
+we use in scripts and design docs — `cell`, `within-cell`, `grain`,
+`bucket`, `join`, `grid`, `panel grid` — should not appear in published
+prose. State the level of observation, comparison, and fixed effects
+directly. *Within-cell variation* → *variation within race × week*;
+*candidacy grain* → *one observation per candidacy*; *we join X to Y*
+→ *we link X to Y* or *we merge X with Y*. The reader is not reading
+the SConstruct.
+
+**Acronyms.** Define every acronym on first use, including the standard
+ones (OLS, IV, FE, TSE). Acronyms that appear only once or twice in the
+paper should be expanded inline and the abbreviation dropped — the
+reader gains nothing from carrying an unfamiliar three-letter code that
+saves five words across one paragraph.
+
+**Keep internal workflow language out of prose.** Analysis-ledger
+identifiers (`AN-098`), code names, temporary variables, debugging
+notes, build-system stage names (`assemble layer`, `intermediate
+layer`), and TODO references belong in scripts and project docs, not
+in the paper. Replace with research-language descriptions of the
+operation, the variable, or the design choice.
+
 ## 5. Paragraph structure
 
 - Topic sentence first. Don't make the reader work to find the point.
 - One idea per paragraph.
+- **State institutional details, sample definitions, and data-construction
+  facts once.** Cross-reference rather than re-explain. If the reader
+  already learned in §3 that the sample is mayoral 1st-round candidates,
+  do not restate the filter in §5 when discussing a robustness check —
+  point at §3. The most common offender is the institutional setup
+  paragraph that gets paraphrased every time it touches a new analysis.
 - Question-then-answer is a recurring pattern: pose the question explicitly,
   then answer.
 - Formal + informal pairing for technical content: state the formal version,
@@ -189,9 +217,17 @@ fix is one extra word and removes a recurring source of reader confusion.
 - Cite numbers from the data, not vague qualifiers. "65 percent less likely"
   beats "substantially less likely".
 - Name the example. "São Paulo Appeal Court", not "a state appellate court".
-- Define a term parenthetically on first use, especially foreign-language
-  terms: `câmara` (courtroom), `relator` (first-voting judge), `lista de
-  antiguidade` (seniority list).
+- **Foreign-language terms — introduce once, prefer English thereafter.**
+  Gloss the term in parentheses on first use: `câmara` (courtroom),
+  `comarca` (judicial district), `lista de antiguidade` (seniority list).
+  After that, use the English equivalent in the rest of the paper. Keep
+  the foreign term only when it names a specific institutional role
+  the English gloss would mislabel (e.g., `relator` is the role of the
+  judge who writes the lead opinion in Brazilian appellate panels —
+  there is no clean English equivalent). Do not form hybrid expressions
+  that combine the foreign term with English modifiers: write
+  *judicial-district level*, not *comarca level*; *courtroom-level
+  fixed effects*, not *câmara-level fixed effects*.
 
 ## 7. Hedging and caveats
 
@@ -225,6 +261,13 @@ moreover,..." → just one).
   terms, emphasis (rarely).
 - Bullet points only when the content is genuinely a list (steps, items in
   a typology). Default to prose.
+
+### Citations
+
+Order multi-cite parentheticals by year, not alphabetically:
+`(Ferraz and Finan, 2011; Avis et al., 2018; Bobonis et al., 2022)`.
+Within a year, alphabetize. The chronological reading lets the reader
+see the literature accumulate; alphabetical scrambles that signal.
 
 ### Footnotes
 
@@ -278,6 +321,15 @@ style.
 - Strip AI-tell phrasing as a final pass before anything leaves Claude for
   the author to keep.
 - Apply context-specific typography rules in the same final pass.
+
+**Editing a coauthor's draft: minimal intervention.** When the task is
+revising prose that already exists — not drafting from scratch — prefer
+small targeted edits over rewrites. Change a word when a word is wrong;
+restructure a sentence when the sentence is broken; leave the paragraph
+alone when it already works. The bar for replacing the author's
+phrasing is a clear gain in accuracy, clarity, structure, or concision
+— not "I would have written it this way". Voice is a load-bearing
+property of a coauthored paper; do not flatten it.
 
 ## 13. Per-section guides
 
@@ -379,6 +431,17 @@ your first draft.
   real empirical work or don't do any at all (Cochrane).
 - **Strive for precision.** Editing pass: read each sentence — does it
   say something, and does it mean what it says? (Cochrane)
+- **Coding vocabulary in prose** (`cell`, `within-cell`, `grain`,
+  `bucket`, `join`, `grid`) — rewrite in research language. State the
+  level of observation and the comparison directly.
+- **Internal workflow references** (`AN-098`, build-stage names,
+  variable names from scripts, TODO references) — strip and describe
+  the operation or design choice in prose.
+- **Undefined acronyms** — define every acronym on first use, including
+  OLS / IV / FE; drop any acronym that appears only once or twice.
+- **Cite-list alphabetical order** — re-sort by year ascending.
+- **Foreign-language hybrids** (`comarca level`, `vara-level`) — rewrite
+  with the English equivalent or drop the modifier compound entirely.
 
 ---
 

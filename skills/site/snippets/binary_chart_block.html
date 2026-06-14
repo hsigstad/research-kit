@@ -1,0 +1,94 @@
+<!--
+Canonical "Binary columns" chart block for project
+`source/site/templates/dataset.html`. Source of truth — when you change
+this here, port to every project (currently: ficha, fisc, saude,
+procure, poll-sponsor-bias).
+
+## How to integrate
+
+Two pieces go into the project's dataset.html:
+
+1. A new section placeholder `<div id="binary-section"></div>`, placed
+   above the categorical-distributions section so binaries appear
+   first on the page. Insert it right before:
+
+       <!-- Categorical distributions -->  (or "Distribution charts")
+       <div id="dist-section"></div>
+
+   Like:
+
+       <!-- Binary columns -->
+       <div id="binary-section"></div>
+
+       <!-- Categorical distributions -->
+       <div id="dist-section"></div>
+
+2. The JS block below, pasted in the page's <script> region right
+   before the categorical-distribution block. It reads `DATA.binary`
+   (populated by source/summary/compute.py via detect_binary), bails
+   out if empty, and renders a single horizontal Chart.js bar.
+
+The block depends on a `pal` (palette) array already defined earlier
+in the template — every project's dataset.html has one. If a project
+uses `const` instead of `var`, swap `var` → `const` to match local
+style; the logic is identical.
+
+## The canonical JS block
+
+(Copy from `// ──── BEGIN ────` to `// ──── END ────`, paste in the JS
+region of dataset.html.)
+-->
+
+<!-- Placeholder div — drop above the categorical/dist section -->
+<div id="binary-section"></div>
+
+<script>
+// ──── BEGIN binary chart block ────
+// Binary columns — one horizontal bar per column showing share of
+// "true" (1 / "S" / "Y" / etc.) among non-NA rows. NA share is shown
+// alongside the column label so a high-NA binary doesn't look mid-mean.
+(function() {
+  if (typeof Chart === 'undefined') return;
+  var section = document.getElementById('binary-section');
+  var bins = Object.entries(DATA.binary || {});
+  if (bins.length === 0) return;
+  var h2 = document.createElement('h2');
+  h2.className = 'section-title';
+  h2.textContent = 'Binary columns (share = 1 / S / Y)';
+  section.appendChild(h2);
+  var card = document.createElement('div');
+  card.className = 'card full';
+  // Height scales with number of rows: 28px per row + ~60px padding.
+  var height = Math.max(160, bins.length * 28 + 60);
+  card.innerHTML = '<div class="chart-wrap" style="height:' + height + 'px">'
+    + '<canvas id="chart-binary"></canvas></div>';
+  section.appendChild(card);
+  var labels = bins.map(function(e) {
+    var na = e[1].na_pct;
+    var naStr = na > 0 ? '  (NA ' + na + '%)' : '';
+    return e[0] + '  [' + e[1].true_label + ']' + naStr;
+  });
+  var values = bins.map(function(e) { return e[1].mean; });
+  new Chart(document.getElementById('chart-binary'), {
+    type: 'bar',
+    data: { labels: labels,
+            datasets: [{ data: values, backgroundColor: pal[0] }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: function(ctx) {
+            return 'share = ' + (ctx.parsed.x * 100).toFixed(1) + '%';
+          }
+        }}
+      },
+      scales: {
+        x: { beginAtZero: true, max: 1,
+             ticks: { callback: function(v) { return (v * 100) + '%'; } } }
+      }
+    }
+  });
+})();
+// ──── END binary chart block ────
+</script>

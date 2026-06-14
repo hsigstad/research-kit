@@ -233,7 +233,33 @@ you started from.
   table + sample-rows table), `source.html` (group overview with category
   rollups), and optional per-source narrative templates under
   `templates/sources/{id}.html` for groups that have no parquet backing
-  (e.g. a docs-only "diários" page).
+  (e.g. a docs-only "diários" page). The `dataset.html` template
+  includes a **Binary columns** card above the categorical block: one
+  horizontal bar per column showing the share of "true" (1 / "S" / "Y"),
+  with NA% annotated per row. Binary columns are auto-detected by
+  `source/summary/compute.py::detect_binary` from bool dtype, integer
+  ⊆ {0,1,NA}, and string ⊆ {"S","N"} / {"Y","N"} / etc. — no manual
+  registration. Detected binaries are excluded from the per-column
+  value-count chart to avoid double-display.
+
+  **Canonical source of the binary helper:** snippets live in
+  [`snippets/`](snippets/) next to this skill —
+  [`snippets/detect_binary.py`](snippets/detect_binary.py) for the
+  Python detection logic and
+  [`snippets/binary_chart_block.html`](snippets/binary_chart_block.html)
+  for the JS chart block. When scaffolding a new project (or
+  refreshing one whose `compute.py` / `dataset.html` predate the
+  binary feature), paste from these files rather than copying from a
+  random project. When updating the helper, edit the snippet first
+  and propagate to projects.
+
+  **Example-value helper:** the column-info table on each dataset page
+  has an "Example" column showing one sampled non-null value per
+  column. Canonical helper:
+  [`snippets/example_value.py`](snippets/example_value.py). Adds an
+  `example` field to each entry in the `columns` list of the cache
+  JSON; the template renders it as the rightmost cell in the
+  column-info table.
 - Talk page (`talk.html`) — empirical projects usually have a beamer talk
   alongside the paper; theoretical ones often don't.
 
