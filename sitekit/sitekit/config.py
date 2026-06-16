@@ -62,6 +62,37 @@ class SiteConfig:
     # flatten (e.g. docs/briefs/foo.md → docs/foo.html when in the registry).
     folder_mode_subdirs: tuple[str, ...] = ()
 
+    # Per-stem title / description overrides for doc subdirs. Keyed by the
+    # markdown stem (e.g. "emerging-synthesis" -> ("Emerging Synthesis",
+    # "Brief description")). When a subdir page's stem appears here, the
+    # override wins over the fallback.
+    subdir_doc_meta: dict[str, tuple[str, str]] = field(default_factory=dict)
+
+    # Subdir-page title fallback when no subdir_doc_meta entry is present:
+    #   "h1"   (default, connect/serasa style) — use the file's first H1.
+    #   "stem" (fisc style) — use stem.replace("-", " ").title().
+    subdir_title_fallback: str = "h1"
+
+    # When True, the landing page renders an extra `<div class="doc-group">`
+    # for each doc subdir (using the subdir's label from doc_subdirs).
+    # Fisc-style empirical projects use this to surface findings/briefs/
+    # notes/reference under "All Documentation". Connect-style projects
+    # surface subdir content through other mechanisms (GUIDE_BRIEFS,
+    # custom reference cards) and leave this False.
+    index_subdir_groups: bool = False
+
+    # Extra CSS appended to the nav's <style> block. Project-specific styles
+    # (figure-source link badges, custom dropdown variants) that don't fit
+    # anywhere else; included so projects can stay byte-equivalent against
+    # their pre-extraction output without forking nav.py.
+    extra_nav_css: str = ""
+
+    # Full override of NAV_CSS. When set, replaces sitekit's bundled
+    # nav CSS verbatim — used by projects (fisc) whose pre-extraction
+    # CSS used hardcoded colors and want byte-equivalent diff before
+    # converging to the design-system var(--…) palette.
+    nav_css_override: str | None = None
+
     # Auto-discover .md files under docs/<subdir>/ for each folder_mode_subdirs
     # entry and append them to the registry at build time with category
     # f"{Subdir.capitalize()} (folder mode)". index.md is skipped because it's
@@ -79,14 +110,16 @@ class SiteConfig:
     # _inject_nav when rendering their pages.
     nav_extras: list[tuple[str, str, str]] = field(default_factory=list)
 
-    # Additional dropdowns rendered after the Docs dropdown. Each entry is
-    # (label, active_key, items_fn). items_fn receives the BuildContext and
+    # Additional dropdowns rendered alongside Docs. Each entry is
+    # (label, active_key, items_fn) — appended AFTER Docs by default — or
+    # (label, active_key, items_fn, position) where position is "before" |
+    # "after" (the Docs dropdown). items_fn receives (ctx, prefix) and
     # returns a list of nav items. Each item is one of:
     #   (label, href)              → a plain link
     #   ("__group__", "Label")     → a group header
     #   ("__divider__", None)      → a divider line
     # An empty list suppresses the dropdown entirely.
-    nav_dropdowns: list[tuple[str, str, Callable]] = field(default_factory=list)
+    nav_dropdowns: list[tuple] = field(default_factory=list)
 
     # --- features (turn off if not needed) ---
     enable_an_pages: bool = True
@@ -97,6 +130,23 @@ class SiteConfig:
     enable_concept_refs: bool = False
     enable_legal_refs: bool = False
     enable_math_protection: bool = False
+
+    # Strip a leading <h1> from rendered doc-subdir pages (the template's
+    # page-header already shows the title). Connect's default; fisc and
+    # other projects whose subdir markdown doesn't start with H1 can
+    # leave this on without effect, but projects that DO want the H1 in
+    # the body (because of design conventions or hand-crafted markdown)
+    # set False.
+    strip_subdir_leading_h1: bool = True
+
+    # Slugify behavior for heading ids:
+    #   False (default, connect/serasa/poll-sponsor-bias style) — strip
+    #     HTML tags, lowercase, collapse non-[a-z0-9] runs to hyphens.
+    #     Accented chars become hyphens ("Sócios" → "s-cios").
+    #   True (fisc style) — NFKD-normalize first to strip accents
+    #     ("Sócios" → "socios"), and html-unescape entities before slugifying
+    #     (so "&amp;" → "&" → dropped instead of "amp").
+    slugify_unicode_normalize: bool = False
 
     # Cite-ref URL pattern.
     #   "connect" (default) — links to ../literature/<key>.html or
@@ -112,6 +162,21 @@ class SiteConfig:
     # macro injection). Receives the BuildContext.
     paper_extra_substitutions: Callable | None = None
 
+    # Optional override for the default rewrite_md_links. Signature:
+    # `(html: str, ctx: BuildContext, *, in_subdir: bool, prefix: str) -> str`.
+    # Receives the standard kwargs the default rewriter uses so projects
+    # with a precomputed URL map (fisc-style) can swap in their own
+    # algorithm without forking the rest of the pipeline. Default None
+    # means "use sitekit.render.rewrite_md_links".
+    link_rewriter: Callable | None = None
+
+    # Extra content-postprocessing passes applied after the standard
+    # rewrite_md_links + link_* refs pipeline. Each callable receives
+    # `(html, ctx, current_stem, in_subdir)` and returns html. Used for
+    # project-specific patterns (fisc's autolink_doc_refs, figure-source
+    # badges, {{table:NAME}} directive expansion).
+    content_postprocessors: list[Callable] = field(default_factory=list)
+
     # Strip <div class='author'> and <div class='thanks'> from the
     # make4ht paper body before rendering. Connect's pattern (default on)
     # because affiliation footnotes were considered sensitive on the
@@ -119,10 +184,14 @@ class SiteConfig:
     # already can set this False to keep the author block.
     paper_strip_author: bool = True
 
-    # Reading-Guide placeholder message when has_talk is False. None
-    # (default) suppresses the placeholder entirely; a string emits a
-    # `<div class="guide-card placeholder">` with that HTML message.
+    # Reading-Guide placeholder messages for missing paper/talk. None
+    # (default for talk) suppresses; default for paper is the workspace-
+    # standard "Paper not yet built — run bash build.sh site …" message.
     talk_placeholder_msg: str | None = None
+    paper_placeholder_msg: str = (
+        "Paper not yet built &mdash; run <code>bash build.sh site</code> "
+        "on a host with TeX."
+    )
 
     # --- external resolvers ---
     brazil_institutions_url: str = "https://hsigstad.github.io/brazil-institutions/"
@@ -136,7 +205,23 @@ class SiteConfig:
     site_dir_rel: str = "build/site"
 
     # --- archetype-specific (empirical) ---
-    summary_cache_dir_rel: str = "build/summary"
+    summary_cache_dir_rel: str = "source/summary/cache"
+    # Python import path of the project's source/summary/config.py.
+    # Default works for projects following the workspace convention.
+    summary_config_module: str = "source.summary.config"
+    # build/figure/ + build/table/ for descriptives & table page builders
+    figure_build_dir_rel: str = "build/figure"
+    table_build_dir_rel: str = "build/table"
+    figure_source_dir_rel: str = "source/figure"
+    table_source_dir_rel: str = "source/table"
+    # Source-script page mode: "pygments" (default; syntax-highlighted via
+    # the connect-style pages) OR "perline" (plain per-line `#L42` anchors,
+    # poll-sponsor-bias / fisc-style).
+    source_pages_mode: str = "pygments"
+    # When True (default), build descriptives and tables pages alongside
+    # the data section. Empirical-archetype projects use these.
+    build_descriptives: bool = True
+    build_tables: bool = True
 
     # --- archetype-specific (theoretical) ---
     cases_dir_rel: str = "cases"

@@ -67,10 +67,19 @@ def _hero_card(kind: str, paper_title: str, href: str | None) -> str:
     )
 
 
+def _fmt_rows_short(n: int) -> str:
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}K" if n >= 10_000 else f"{n / 1_000:.1f}K"
+    return str(n)
+
+
 def build_index(
     ctx: BuildContext,
     docs_info: list[dict],
     subdir_info: list[dict] | None = None,
+    sources_info: list[dict] | None = None,
     extra_doc_cards: str = "",
     has_paper: bool = False,
     has_talk: bool = False,
@@ -83,6 +92,7 @@ def build_index(
     """
     cfg = ctx.config
     subdir_info = subdir_info or []
+    sources_info = sources_info or []
     template = read_template(cfg, "index.html")
     html = template
 
@@ -98,11 +108,8 @@ def build_index(
             if not (ctx.project_root / rel_path).exists():
                 continue
             guide_cards.append(_guide_card(href, label, desc, priority, pclass))
-        if not has_paper and not guide_cards:
-            guide_cards.append(_guide_placeholder(
-                "Paper",
-                "Paper not yet built &mdash; run <code>bash build.sh site</code> on a host with TeX.",
-            ))
+        if not has_paper:
+            guide_cards.append(_guide_placeholder("Paper", cfg.paper_placeholder_msg))
         if not has_talk and cfg.talk_placeholder_msg:
             guide_cards.append(_guide_placeholder("Talk", cfg.talk_placeholder_msg))
         html = html.replace("<!-- INJECT_GUIDE_CARDS -->", "\n".join(guide_cards))
@@ -139,10 +146,39 @@ def build_index(
             f'<ul class="link-list">{links}</ul></div>'
         )
 
+    # Subdir doc groups (fisc-style empirical projects). Order honors
+    # doc_subdirs; labels come from there too.
+    if cfg.index_subdir_groups:
+        for subdir, label, _color in cfg.doc_subdirs:
+            items = subdoc_by_dir.get(subdir, [])
+            if not items:
+                continue
+            links = "".join(
+                f'<li><a href="{subdir}/{d["stem"]}.html">{d["title"]}</a></li>'
+                for d in items
+            )
+            doc_html.append(
+                f'<div class="doc-group"><h3>{label}</h3>'
+                f'<ul class="link-list">{links}</ul></div>'
+            )
+
     html = html.replace(
         "<!-- INJECT_DOC_CARDS -->",
         (extra_doc_cards + "\n" if extra_doc_cards else "") + "\n".join(doc_html),
     )
+
+    if "<!-- INJECT_SOURCE_CARDS -->" in template:
+        source_cards: list[str] = []
+        for src in sources_info:
+            meta = ""
+            if src.get("total_rows"):
+                meta = f'<span class="data-meta">{_fmt_rows_short(src["total_rows"])}</span>'
+            source_cards.append(
+                f'<a class="data-card" href="sources/{src["id"]}.html">'
+                f'<span class="data-name">{src["name"]}</span>{meta}</a>'
+            )
+        html = html.replace(
+            "<!-- INJECT_SOURCE_CARDS -->", "\n    ".join(source_cards))
 
     html = inject_nav(html, ctx, prefix="", active="home")
 

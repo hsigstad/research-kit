@@ -115,7 +115,13 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
             continue
         entries: list[tuple[str, str]] = []
         for md_path in sorted(sub_path.glob("*.md")):
-            title = _brief_title(md_path)
+            meta_override = cfg.subdir_doc_meta.get(md_path.stem)
+            if meta_override is not None:
+                title = meta_override[0]
+            elif cfg.subdir_title_fallback == "stem":
+                title = md_path.stem.replace("-", " ").title()
+            else:
+                title = _brief_title(md_path)
             href = f'{prefix}{subdir}/{md_path.stem}.html'
             entries.append((title, href))
         if entries:
@@ -147,12 +153,12 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
     </div>
   </div>"""
 
-    # Additional config-supplied dropdowns rendered after Docs (e.g. Data).
-    extra_dropdowns = []
-    for label, key, items_fn in cfg.nav_dropdowns:
-        items = items_fn(ctx, prefix)
+    # Additional config-supplied dropdowns. Position is "after" by default
+    # (rendered after Docs). "before" puts the dropdown ahead of Docs in
+    # the nav (fisc's Data-then-Docs ordering).
+    def _render_dropdown(label: str, key: str, items: list) -> str | None:
         if not items:
-            continue
+            return None
         rendered_items: list[str] = []
         first_group = True
         for item in items:
@@ -171,7 +177,7 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
                 item_label, item_href = item
                 rendered_items.append(f'<a href="{item_href}">{item_label}</a>')
         items_html = "\n    ".join(rendered_items)
-        extra_dropdowns.append(
+        return (
             f"""<div class="nav-dropdown">
     <button{_cls(key)}>{label} &#9662;</button>
     <div class="dropdown-menu">
@@ -179,14 +185,36 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
     </div>
   </div>"""
         )
-    extra_dropdowns_block = ("\n  " + "\n  ".join(extra_dropdowns)) if extra_dropdowns else ""
 
-    nav_html = f"""{NAV_CSS}
+    before_dropdowns: list[str] = []
+    after_dropdowns: list[str] = []
+    for entry in cfg.nav_dropdowns:
+        if len(entry) == 4:
+            label, key, items_fn, position = entry
+        else:
+            label, key, items_fn = entry
+            position = "after"
+        rendered = _render_dropdown(label, key, items_fn(ctx, prefix))
+        if rendered is None:
+            continue
+        (before_dropdowns if position == "before" else after_dropdowns).append(rendered)
+
+    before_block = ("\n  " + "\n  ".join(before_dropdowns)) if before_dropdowns else ""
+    after_block = ("\n  " + "\n  ".join(after_dropdowns)) if after_dropdowns else ""
+
+    # Strip closing </style> from NAV_CSS, append extra_nav_css, restore tag.
+    base_css = cfg.nav_css_override if cfg.nav_css_override is not None else NAV_CSS
+    if cfg.extra_nav_css:
+        nav_css = base_css.replace("</style>\n", cfg.extra_nav_css + "\n</style>\n")
+    else:
+        nav_css = base_css
+
+    nav_html = f"""{nav_css}
 <nav class="site-nav">
   <a href="{prefix}index.html" class="nav-brand">{cfg.project_title}</a>
   <a href="{prefix}index.html"{_cls("home")}>Home</a>
-{extras_block}
-  {docs_dropdown}{extra_dropdowns_block}
+{extras_block}{before_block}
+  {docs_dropdown}{after_block}
 </nav>
 {NAV_JS}"""
     return nav_html

@@ -45,6 +45,7 @@ def _render_content(
     text: str,
     current_stem: str,
     in_subdir: bool,
+    prefix: str = "../",
 ) -> str:
     """Run text through the render + link-rewrite pipeline."""
     cfg = ctx.config
@@ -55,10 +56,15 @@ def _render_content(
         placeholders = {}
 
     content_html = md_to_html(text)
-    if in_subdir:
+    if in_subdir and cfg.strip_subdir_leading_h1:
         content_html = strip_leading_h1(content_html)
-    content_html = add_heading_ids(content_html)
-    content_html = rewrite_md_links(content_html, ctx, in_subdir=in_subdir)
+    content_html = add_heading_ids(
+        content_html, unicode_normalize=cfg.slugify_unicode_normalize)
+    if cfg.link_rewriter is not None:
+        content_html = cfg.link_rewriter(
+            content_html, ctx, in_subdir=in_subdir, prefix=prefix)
+    else:
+        content_html = rewrite_md_links(content_html, ctx, in_subdir=in_subdir)
 
     if cfg.enable_an_pages:
         content_html = link_an_refs(content_html, ctx, current_stem)
@@ -77,6 +83,9 @@ def _render_content(
     if cfg.enable_legal_refs:
         from .links_extra import link_legal_refs
         content_html = link_legal_refs(content_html, ctx)
+
+    for postprocess in cfg.content_postprocessors:
+        content_html = postprocess(content_html, ctx, current_stem, in_subdir)
 
     if placeholders:
         content_html = restore_math(content_html, placeholders)
@@ -197,7 +206,13 @@ def build_doc_subdir(ctx: BuildContext, subdir: str) -> list[dict]:
         if stem in html_stems:
             continue
 
-        title = _brief_title(md_path)
+        meta_override = cfg.subdir_doc_meta.get(stem)
+        if meta_override is not None:
+            title = meta_override[0]
+        elif cfg.subdir_title_fallback == "stem":
+            title = stem.replace("-", " ").title()
+        else:
+            title = _brief_title(md_path)
         text = md_path.read_text(encoding="utf-8")
         meta, body = _split_frontmatter(text)
         content_html = _render_content(ctx, body, stem, in_subdir=True)

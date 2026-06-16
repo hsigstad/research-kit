@@ -52,6 +52,11 @@ def build_site(config: SiteConfig) -> int:
 
     print(f"\nArchetype: {config.archetype}")
     archetype_out = get_archetype(config.archetype)(ctx, docs_info, subdir_info)
+    sources_info: list[dict] = []
+    if isinstance(archetype_out, dict):
+        sources_info = archetype_out.get("sources_info", []) or []
+        for extra in archetype_out.get("extra_docs_info", []) or []:
+            docs_info.append(extra)
 
     print("\nBuilding paper page...")
     has_paper = build_paper_page(ctx)
@@ -74,6 +79,7 @@ def build_site(config: SiteConfig) -> int:
         ctx,
         docs_info=docs_info,
         subdir_info=subdir_info,
+        sources_info=sources_info,
         extra_doc_cards="\n".join(extra_cards),
         has_paper=has_paper,
         has_talk=has_talk,

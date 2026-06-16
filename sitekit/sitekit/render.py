@@ -6,7 +6,9 @@ and nested (connect/fisc) doc layouts share one code path.
 
 from __future__ import annotations
 
+import html as _html_lib
 import re
+import unicodedata
 from pathlib import Path
 from typing import Optional
 
@@ -24,9 +26,20 @@ def md_to_html(text: str) -> str:
     return _md(text)
 
 
-def slugify(text: str) -> str:
-    """Convert heading text to a URL-friendly slug."""
+def slugify(text: str, unicode_normalize: bool = False) -> str:
+    """Convert heading text to a URL-friendly slug.
+
+    Default behavior (connect-style): strip HTML tags, lowercase, collapse
+    non-[a-z0-9] runs to hyphens. Accented chars become hyphens.
+
+    When unicode_normalize=True (fisc-style): also html-unescape entities
+    and NFKD-normalize to drop accents before slugifying. Set per-project
+    via SiteConfig.slugify_unicode_normalize.
+    """
     text = re.sub(r"<[^>]+>", "", text)
+    if unicode_normalize:
+        text = _html_lib.unescape(text)
+        text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
     text = text.lower()
     text = re.sub(r"[^a-z0-9]+", "-", text)
     return text.strip("-")
@@ -37,13 +50,13 @@ def strip_leading_h1(html: str) -> str:
     return re.sub(r"^\s*<h1[^>]*>.*?</h1>\s*", "", html, count=1, flags=re.DOTALL)
 
 
-def add_heading_ids(html: str) -> str:
+def add_heading_ids(html: str, unicode_normalize: bool = False) -> str:
     """Add id attributes to h2-h6 elements that lack them."""
     def _replacer(m: re.Match) -> str:
         level, attrs, content = m.group(1), m.group(2) or "", m.group(3)
         if "id=" in attrs:
             return m.group(0)
-        slug = slugify(content)
+        slug = slugify(content, unicode_normalize=unicode_normalize)
         return f'<h{level}{attrs} id="{slug}">{content}</h{level}>'
     return re.sub(r"<h([2-6])(\s[^>]*)?>(.+?)</h\1>", _replacer, html)
 
