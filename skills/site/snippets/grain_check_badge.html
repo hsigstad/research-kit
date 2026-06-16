@@ -1,0 +1,73 @@
+<!--
+Canonical "grain check" badge for project source/site/templates/dataset.html.
+
+Renders the verify_grain() result as a colored badge near the page-header
+grain line. Green ✓ when the declared key is unique; red ✗ when it isn't
+(with duplicate / null counts). Datasets without `key_columns` declared
+don't render anything.
+
+## How to integrate
+
+1. The page-header section has a meta paragraph that already shows
+   the grain. Replace its closing `</p>` with a wrapping div so the
+   badge can sit on its own line below the grain:
+
+       <p class="meta">
+         <strong>Grain:</strong> /* INJECT_GRAIN */ &nbsp;·&nbsp;
+         <strong>Source:</strong> <code>/* INJECT_SOURCE */</code>
+       </p>
+       <p class="meta" id="grain-check-meta"></p>   <!-- ← add this -->
+
+2. Paste the JS block below in the script region, near the other
+   per-dataset renderers. It reads `DATA.grain_check` and populates
+   `#grain-check-meta` if present.
+
+The badge inherits the cream-palette colors from :root; the green/red
+states use the existing accent2 / accent3 tokens where available, with
+plain fallbacks otherwise.
+-->
+
+<p class="meta" id="grain-check-meta"></p>
+
+<script>
+// ──── BEGIN grain-check block ────
+// Render DATA.grain_check (from compute.py verify_grain) as a colored
+// badge in the page header. Green ✓ unique on (...) / red ✗ with the
+// duplicate + null-key counts. Skips silently when no grain_check
+// is present (raw datasets without a declared key).
+(function() {
+  var meta = document.getElementById('grain-check-meta');
+  if (!meta) return;
+  var g = DATA.grain_check;
+  if (!g) return;
+  var keyStr = '(' + (g.key_columns || []).join(', ') + ')';
+  if (g.error) {
+    meta.innerHTML = '<span style="background:#dc2626;color:#fff;'
+      + 'padding:.1rem .55rem;border-radius:3px;font-size:.78rem">'
+      + '✗ Grain check failed: ' + g.error + '</span>';
+    return;
+  }
+  // Tri-state badge:
+  //   green  = no duplicates, no null keys (clean unique key)
+  //   yellow = no duplicates but some null keys (e.g. left-joined table
+  //            where some rows have no upstream match)
+  //   red    = duplicate rows on the declared key (grain contract broken)
+  var bg, mark, text;
+  if (g.n_duplicate_rows > 0) {
+    bg = '#dc2626'; mark = '✗'; text = 'Grain broken on ' + keyStr;
+  } else if (g.n_null_keys > 0) {
+    bg = '#fd7e14'; mark = '!'; text = 'Unique but null keys on ' + keyStr;
+  } else {
+    bg = '#198754'; mark = '✓'; text = 'Unique on ' + keyStr;
+  }
+  meta.innerHTML = '<span style="background:' + bg + ';color:#fff;'
+    + 'padding:.1rem .55rem;border-radius:3px;font-size:.78rem">'
+    + mark + ' ' + text + '</span>'
+    + ' &nbsp; <span style="color:var(--muted);font-size:.82rem">'
+    + g.n_rows.toLocaleString() + ' rows, '
+    + g.n_unique_keys.toLocaleString() + ' unique keys, '
+    + g.n_duplicate_rows.toLocaleString() + ' duplicate rows, '
+    + g.n_null_keys.toLocaleString() + ' null keys</span>';
+})();
+// ──── END grain-check block ────
+</script>

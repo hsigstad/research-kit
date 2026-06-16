@@ -260,6 +260,39 @@ you started from.
   `example` field to each entry in the `columns` list of the cache
   JSON; the template renders it as the rightmost cell in the
   column-info table.
+
+  **Source-script pages:** every `.py` / `.R` / `.sh` / `.sql` under
+  `source/` is rendered to its own HTML page at
+  `build/site/source/<subpath>.html` with per-line anchors (`#L42`).
+  The dataset page's "Source:" line links to it (project-owned scripts
+  only — upstream `pipelines/*` references stay plain text). Canonical
+  helper: [`snippets/source_pages.py`](snippets/source_pages.py)
+  (functions for `find_source_scripts`, `script_out_name`,
+  `build_source_pages`, plus the per-line gutter CSS for `doc.html`).
+
+  **Pseudocode block:** assembled datasets get an optional
+  `DatasetConfig.pseudocode` field — a short, hand-written summary of
+  how the dataset is built, with input-dataset references in `[brackets]`
+  that the template rewrites to hyperlinks. Renders as a `<pre>` block
+  near the top of the dataset page. Canonical helper:
+  [`snippets/pseudocode_block.md`](snippets/pseudocode_block.md). Lets
+  the long description / notes paragraphs come down — the construction
+  logic lives in one place where every input is clickable.
+
+  **Grain-verification helper:** when a `DatasetConfig.key_columns`
+  field is declared (e.g. `key_columns=["cpf", "npu"]`), the dataset
+  page renders a tri-state badge in the page header — green ✓
+  "Unique on (...)" when the key holds, yellow "!" "Unique but null
+  keys on (...)" when there are no duplicates but some rows have null
+  values in a key column (typical for left-joined panels), red ✗
+  "Grain broken on (...)" when duplicate rows exist. Canonical pair:
+  [`snippets/verify_grain.py`](snippets/verify_grain.py) (Python
+  helper that emits a `grain_check` block in the cache JSON) and
+  [`snippets/grain_check_badge.html`](snippets/grain_check_badge.html)
+  (the page-header JS block). The point is end-to-end data-quality
+  observable on the page itself: if a future change to the assemble
+  script silently breaks grain, the badge flips on the next cache
+  rebuild — no separate ledger entry to maintain.
 - Talk page (`talk.html`) — empirical projects usually have a beamer talk
   alongside the paper; theoretical ones often don't.
 

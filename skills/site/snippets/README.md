@@ -28,6 +28,10 @@ snippet here*.
 | `detect_binary.py` | `source/summary/compute.py` (helper block) | Auto-detect binary columns (bool, int ⊆ {0,1}, string ⊆ {"S","N"} / {"Y","N"} / …) and return `{mean, na_pct, true_label}`. Used to populate the `binary` block of the per-dataset cache JSON. |
 | `binary_chart_block.html` | `source/site/templates/dataset.html` (JS block) | Renders the `DATA.binary` block as a single horizontal Chart.js bar chart, one row per binary column with NA% annotated. |
 | `example_value.py` | `source/summary/compute.py` (helper block) | Return one sampled non-null value per column, truncated for display. Adds an `example` field to each entry in the `columns` list of the cache JSON; the dataset page surfaces it in a new "Example" column on the column-info table. |
+| `verify_grain.py` | `source/summary/compute.py` (helper block) | When a `DatasetConfig.key_columns` field is declared, check that those columns form a unique key on the dataframe and emit a `grain_check` block in the cache JSON. Paired with `grain_check_badge.html` for the page-header badge. |
+| `grain_check_badge.html` | `source/site/templates/dataset.html` (JS block) | Renders the `DATA.grain_check` block as a colored badge near the page-header grain line — green ✓ when unique, red ✗ when duplicates or null keys are present. |
+| `source_pages.py` | `source/site/build_all.py` (functions) | Renders every `.py` / `.R` / `.sh` / `.sql` under `source/` to its own HTML page with per-line anchors (`#L42`), so the dataset page's "Source:" link lands on the right script and `script.py:42` mentions can hyperlink. |
+| `pseudocode_block.md` | `source/summary/config.py` + `compute.py` + `templates/dataset.html` | Adds an optional `pseudocode: str` field on `DatasetConfig`. The page renders it as a `<pre>` block with bracketed `[name]` tokens rewritten to hyperlinks to `data/<name>.html`. Lets prose blocks stay short — construction logic lives in one place where every input is clickable. |
 
 ## Why not a pip package?
 
