@@ -57,29 +57,43 @@ def _fmt_rows_short(n: int) -> str:
 
 
 def _inject_data(html: str, data: dict, marker: str = "/* INJECT_DATA */") -> str:
-    """Replace `/* INJECT_DATA */ {…}` with the actual JSON payload.
+    """Replace the marker with a serialized JSON payload.
 
-    Scans for the marker, then the next `{`, and replaces that brace-balanced
-    block with the serialized payload. Used by dataset.html / source.html
-    templates that need a literal JSON object for client-side rendering.
+    Two template styles supported:
+
+    1. `const DATA = /* INJECT_DATA */ {…};` (fisc) — brace-balanced
+       replacement of the literal `{…}` that follows the marker; JSON
+       is serialized compact (no extra whitespace) so the template's
+       JS context stays clean.
+    2. `const DATA = /* INJECT_DATA */;` (poll-sponsor-bias) — plain
+       string replacement of the marker; JSON serialized with default
+       formatting (spaces around `,` and `:`).
     """
     marker_pos = html.index(marker)
-    brace_start = html.index("{", marker_pos)
-    depth = 0
-    i = brace_start
-    while i < len(html):
-        if html[i] == "{":
-            depth += 1
-        elif html[i] == "}":
-            depth -= 1
-            if depth == 0:
-                brace_end = i
-                break
+    # Scan ahead for the next non-whitespace character. If it's `{`, use
+    # brace-balanced replacement; otherwise plain replace.
+    i = marker_pos + len(marker)
+    while i < len(html) and html[i].isspace():
         i += 1
-    else:
-        raise RuntimeError("Could not find closing brace for DATA object.")
-    payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
-    return html[:brace_start] + payload + html[brace_end + 1:]
+    if i < len(html) and html[i] == "{":
+        brace_start = i
+        depth = 0
+        while i < len(html):
+            if html[i] == "{":
+                depth += 1
+            elif html[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    brace_end = i
+                    break
+            i += 1
+        else:
+            raise RuntimeError("Could not find closing brace for DATA object.")
+        payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+        return html[:brace_start] + payload + html[brace_end + 1:]
+    # Plain-replace fallback.
+    payload = json.dumps(data, ensure_ascii=False)
+    return html.replace(marker, payload, 1)
 
 
 def _load_summary_config(ctx: BuildContext):
@@ -91,18 +105,11 @@ def _load_summary_config(ctx: BuildContext):
 
 
 def data_dropdown_items(ctx: BuildContext, prefix: str) -> list[tuple]:
-    """Nav-dropdown items for the Data menu — one item per SOURCE.
+    """Fisc-style Data dropdown: one item per SOURCE, linking to /sources/<id>.html.
 
-    Empirical projects wire this into SiteConfig.nav_dropdowns:
+    Wire into SiteConfig:
 
-        nav_dropdowns=[
-            ("Data", "data", data_dropdown_items, "before"),
-        ]
-
-    Position is typically "before" (the Docs dropdown) to match fisc's
-    layout. The function pulls SOURCES from the project's summary config
-    module — no SOURCES means an empty list means the dropdown is
-    suppressed.
+        nav_dropdowns=[("Data", "data", data_dropdown_items, "before")]
     """
     config_module = _load_summary_config(ctx)
     if config_module is None:
@@ -111,38 +118,111 @@ def data_dropdown_items(ctx: BuildContext, prefix: str) -> list[tuple]:
     return [(src.name, f"{prefix}sources/{src.id}.html") for src in sources]
 
 
+def data_dropdown_items_grouped(ctx: BuildContext, prefix: str) -> list[tuple]:
+    """Poll-sponsor-bias-style Data dropdown: one item per DATASET, grouped
+    by layer ("Raw (upstream)" then "Assembled"), linking to
+    /<dataset_output_subdir>/<id>.html.
+
+    Wire into SiteConfig:
+
+        nav_dropdowns=[("Data", "data", data_dropdown_items_grouped)]
+
+    (psb uses the default "after" position.)
+    """
+    cfg = ctx.config
+    config_module = _load_summary_config(ctx)
+    if config_module is None:
+        return []
+    summaries = _load_all_datasets(ctx, config_module)
+    if not summaries:
+        return []
+    groups: dict[str, list[dict]] = {"raw": [], "assembled": []}
+    for d in summaries:
+        groups.setdefault(d.get("layer", "assembled"), []).append(d)
+    items: list[tuple] = []
+    label_for = {"raw": "Raw (upstream)", "assembled": "Assembled"}
+    for layer in ("raw", "assembled"):
+        entries = groups.get(layer, [])
+        if not entries:
+            continue
+        items.append(("__group__", label_for[layer]))
+        for d in entries:
+            items.append((d["id"], f'{prefix}{cfg.dataset_output_subdir}/{d["id"]}.html'))
+    return items
+
+
 def _load_all_datasets(ctx: BuildContext, config_module) -> list[dict]:
-    """Load every cached summary JSON, syncing name/description/category
-    from config so renames don't require a full re-summary."""
-    cache_dir = ctx.project_root / ctx.config.summary_cache_dir_rel
+    """Load every cached summary JSON, syncing fields from DatasetConfig
+    where available (category, name, description, layer, source_script,
+    source_script_external) so renames don't require a full re-summary.
+
+    Iteration order depends on SiteConfig.dataset_iteration_order:
+      "filename" — sorted(glob), fisc's historical order.
+      "declared" — follow DATASETS declaration order; psb's needs."""
+    site_cfg = ctx.config
+    cache_dir = ctx.project_root / site_cfg.summary_cache_dir_rel
     if not cache_dir.exists():
         return []
-    config_by_id = {d.id: d for d in getattr(config_module, "DATASETS", [])}
+    declared = list(getattr(config_module, "DATASETS", []))
+    sync_attrs = (
+        "category", "name", "description", "layer",
+        "source_script", "source_script_external", "grain",
+    )
+    config_by_id = {d.id: d for d in declared}
+
+    def _sync(data: dict, cfg) -> dict:
+        for attr in sync_attrs:
+            if hasattr(cfg, attr):
+                data[attr] = getattr(cfg, attr)
+        return data
+
     out: list[dict] = []
+    if site_cfg.dataset_iteration_order == "declared" and declared:
+        for cfg in declared:
+            p = cache_dir / f"{cfg.id}.json"
+            if p.exists():
+                data = json.loads(p.read_text(encoding="utf-8"))
+                out.append(_sync(data, cfg))
+        return out
+
     for json_path in sorted(cache_dir.glob("*.json")):
         data = json.loads(json_path.read_text(encoding="utf-8"))
         cfg = config_by_id.get(data.get("id"))
         if cfg is not None:
-            data["category"] = cfg.category
-            data["name"] = cfg.name
-            data["description"] = cfg.description
+            data = _sync(data, cfg)
         out.append(data)
     return out
 
 
-def build_dataset_page(ctx: BuildContext, data: dict) -> None:
-    """Build one /datasets/<id>.html from a cached summary."""
+def build_dataset_page(ctx: BuildContext, data: dict, out_subdir: str = "datasets") -> None:
+    """Build one /<out_subdir>/<id>.html from a cached summary."""
     cfg = ctx.config
     template = read_template(cfg, "dataset.html")
     html = template.replace("/* INJECT_TITLE */", data["name"])
     html = html.replace("/* INJECT_DESCRIPTION */", data["description"])
+    if cfg.inject_dataset_source_link:
+        if "/* INJECT_GRAIN */" in html and "grain" in data:
+            html = html.replace("/* INJECT_GRAIN */", data["grain"])
+        if data.get("source_script_external"):
+            html = html.replace("/* INJECT_SOURCE */", data["source_script"])
+        else:
+            rel = data.get("source_script", "")
+            href = "../" + (
+                rel.replace(".py", ".html")
+                   .replace(".R", ".html")
+                   .replace(".sh", ".html")
+                   .replace(".sql", ".html")
+            )
+            html = html.replace(
+                "/* INJECT_SOURCE */",
+                f'<a href="{href}">{rel}</a>')
     html = inject_nav(html, ctx, prefix="../", active="data")
     html = _inject_data(html, data)
 
-    out_dir = ctx.site_dir / "datasets"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = ctx.site_dir / out_subdir
+    out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f'{data["id"]}.html').write_text(html, encoding="utf-8")
-    print(f"  datasets/{data['id']}.html ({data['row_count']:,} rows)")
+    print(f"  {out_subdir}/{data['id']}.html ({data['row_count']:,} rows)")
 
 
 def build_source_page(
@@ -227,19 +307,29 @@ def build_source_page(
 
 
 def build_data_section(ctx: BuildContext) -> list[dict]:
-    """Build all dataset and source-group pages. Returns sources_info."""
+    """Build all dataset and (optionally) source-group pages.
+
+    Returns sources_info (empty list when build_source_group_pages is False
+    — psb-style projects have no source/ overview pages).
+    """
+    cfg = ctx.config
     config_module = _load_summary_config(ctx)
     if config_module is None:
         return []
     sources = getattr(config_module, "SOURCES", [])
     all_datasets = _load_all_datasets(ctx, config_module)
-    if not all_datasets and not any(not s.categories for s in sources):
-        print("  (no summary JSON files found)")
+    if not all_datasets:
+        if cfg.build_source_group_pages and not any(not s.categories for s in sources):
+            print("  (no summary JSON files found)")
+            return []
         return []
 
-    (ctx.site_dir / "datasets").mkdir(exist_ok=True)
+    (ctx.site_dir / cfg.dataset_output_subdir).mkdir(parents=True, exist_ok=True)
     for data in all_datasets:
-        build_dataset_page(ctx, data)
+        build_dataset_page(ctx, data, out_subdir=cfg.dataset_output_subdir)
+
+    if not cfg.build_source_group_pages:
+        return []
 
     (ctx.site_dir / "sources").mkdir(exist_ok=True)
     sources_info = [build_source_page(ctx, src, all_datasets) for src in sources]
@@ -356,12 +446,8 @@ def build_tables_page(ctx: BuildContext) -> dict | None:
     }
 
 
-def build_source_pages(ctx: BuildContext) -> int:
-    """Render source/figure/*.py + source/table/*.py to HTML.
-
-    Uses highlight.js (CDN) for syntax highlighting — kept lightweight; the
-    `pygments` mode lives in sitekit.script_pages for connect-style projects.
-    """
+def _build_source_pages_hljs(ctx: BuildContext) -> int:
+    """Render source/figure/*.py + source/table/*.py with highlight.js."""
     cfg = ctx.config
     template = read_template(cfg, "doc.html")
     total = 0
@@ -413,6 +499,72 @@ def build_source_pages(ctx: BuildContext) -> int:
         print(f"  source/{kind}/ ({count} scripts)")
         total += count
     return total
+
+
+_PERLINE_EXTS = (".py", ".R", ".sh", ".sql")
+
+
+def _build_source_pages_perline(ctx: BuildContext) -> int:
+    """Render every source/**/*.{py,R,sh,sql} with per-line `#L42` anchors.
+
+    No syntax highlighting — keeps the per-line `id` contract simple. Skips
+    source/site/* (the build script itself) and __pycache__.
+    """
+    cfg = ctx.config
+    root = ctx.project_root / "source"
+    if not root.exists():
+        return 0
+    template = read_template(cfg, "doc.html")
+    NOINDEX_LOCAL = '<meta name="robots" content="noindex, nofollow">'
+    count = 0
+    seen: dict[str, Path] = {}
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or path.suffix not in _PERLINE_EXTS:
+            continue
+        rel = path.relative_to(ctx.project_root)
+        if "__pycache__" in rel.parts or rel.parts[:2] == ("source", "site"):
+            continue
+        if path.name in seen:
+            continue
+        seen[path.name] = path
+
+    for path in sorted(seen.values()):
+        rel = path.relative_to(ctx.project_root)
+        depth = len(rel.parts) - 1
+        prefix = "../" * depth
+        text = path.read_text(errors="replace")
+        escaped = _html_lib.escape(text)
+        lines = escaped.split("\n")
+        n_width = max(2, len(str(len(lines))))
+        rendered = "".join(
+            f'<span class="src-line" id="L{i}">'
+            f'<a class="src-ln" href="#L{i}">{i:>{n_width}}</a> '
+            f'<span class="src-code">{line or " "}</span>'
+            f'</span>'
+            for i, line in enumerate(lines, start=1)
+        )
+        content = (
+            f'<p>Source: <code>{rel}</code> '
+            f'(<a href="{prefix}index.html">back to index</a>)</p>'
+            f'<pre class="src-listing">{rendered}</pre>'
+        )
+        page = template.replace("<!-- INJECT_TITLE -->", str(rel))
+        page = page.replace("<!-- INJECT_CONTENT -->", content)
+        page = inject_nav(page, ctx, prefix=prefix, active="")
+        out = ctx.site_dir / str(rel.with_suffix(".html"))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(page, encoding="utf-8")
+        count += 1
+    print(f"  source/**/*.html ({count} scripts)")
+    return count
+
+
+def build_source_pages(ctx: BuildContext) -> int:
+    """Render source-script pages per config mode/scope."""
+    cfg = ctx.config
+    if cfg.source_pages_mode == "perline" or cfg.source_pages_scope == "all_source":
+        return _build_source_pages_perline(ctx)
+    return _build_source_pages_hljs(ctx)
 
 
 # ---------------------------------------------------------------------------

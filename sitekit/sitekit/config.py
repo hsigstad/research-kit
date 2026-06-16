@@ -214,10 +214,43 @@ class SiteConfig:
     table_build_dir_rel: str = "build/table"
     figure_source_dir_rel: str = "source/figure"
     table_source_dir_rel: str = "source/table"
-    # Source-script page mode: "pygments" (default; syntax-highlighted via
-    # the connect-style pages) OR "perline" (plain per-line `#L42` anchors,
-    # poll-sponsor-bias / fisc-style).
-    source_pages_mode: str = "pygments"
+    # Source-script page mode (empirical archetype):
+    #   "hljs"    — highlight.js-styled, with "Outputs:" list (fisc).
+    #   "perline" — plain <pre> with per-line `#L42` anchors, no outputs
+    #               list (poll-sponsor-bias).
+    source_pages_mode: str = "hljs"
+
+    # Which scripts the empirical archetype renders:
+    #   "figure_table" — only source/figure/*.py and source/table/*.py (fisc).
+    #   "all_source"   — every source/**/*.{py,R,sh,sql} except
+    #                    source/site/* and __pycache__ (poll-sponsor-bias).
+    source_pages_scope: str = "figure_table"
+
+    # When True, build_dataset_page substitutes a `/* INJECT_SOURCE */`
+    # placeholder in the dataset template, rewriting the script path to a
+    # link into the rendered source page (or plain text when the cached
+    # `source_script_external` flag is set). Poll-sponsor-bias uses this;
+    # fisc's dataset.html template doesn't have the placeholder.
+    inject_dataset_source_link: bool = False
+
+    # Output dir for per-dataset pages. "datasets" (fisc default) or
+    # "data" (poll-sponsor-bias). Must match the data nav dropdown's
+    # href construction.
+    dataset_output_subdir: str = "datasets"
+
+    # Iteration order when loading the summary cache:
+    #   "filename" (default) — sorted(cache_dir.glob("*.json")), the
+    #                          historical fisc behavior.
+    #   "declared"           — follow the order of DATASETS in the
+    #                          project's summary config module; psb relies
+    #                          on this for nav-dropdown ordering and for
+    #                          tiebreak-stable per-source dataset lists.
+    dataset_iteration_order: str = "filename"
+
+    # When True, build_data_section also builds per-source-group overview
+    # pages under /sources/<id>.html (fisc). False skips them (psb has no
+    # source-group pages — datasets link from the Data dropdown directly).
+    build_source_group_pages: bool = True
     # When True (default), build descriptives and tables pages alongside
     # the data section. Empirical-archetype projects use these.
     build_descriptives: bool = True
