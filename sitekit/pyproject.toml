@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sitekit"
+version = "0.1.0"
+description = "Shared static-site generator for research project sites."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mistune>=3.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+highlight = ["pygments>=2.15"]
+
+[tool.setuptools.packages.find]
+include = ["sitekit*"]
+
+[tool.setuptools.package-data]
+sitekit = ["templates/*.html", "templates/**/*.html"]

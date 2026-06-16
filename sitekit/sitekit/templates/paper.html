@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper — <!-- INJECT_PROJECT_TITLE --></title>
+<style>
+  :root {
+    --bg: #faf9f6; --card: #fffefa; --fg: #374151; --muted: #6b7280;
+    --border: #e5e2db; --accent: #2563eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    background: var(--bg); color: var(--fg); line-height: 1.78; font-size: 1.06rem;
+  }
+  main { padding: 1.5rem 2rem 3rem; max-width: 42rem; margin: 0 auto; }
+  /* Inline footnote tooltips (see sitekit.paper.inline_footnotes) */
+  .fn-inline { position: relative; cursor: help; }
+  .fn-tooltip {
+    display: none; position: absolute; bottom: 1.4em; left: 0; z-index: 50;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    padding: .55rem .8rem; font-size: .82rem; line-height: 1.5; max-width: 32rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12); color: var(--fg);
+  }
+  .fn-inline:hover .fn-tooltip, .fn-inline:focus .fn-tooltip { display: block; }
+</style>
+<style><!-- INJECT_PAPER_CSS --></style>
+<script>
+  window.MathJax = { tex: { inlineMath: [['$','$'],['\\(','\\)']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head>
+<body>
+
+<!-- INJECT_NAV -->
+
+<main>
+<!-- INJECT_CONTENT -->
+</main>
+</body>
+</html>

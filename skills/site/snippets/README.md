@@ -7,6 +7,23 @@ project site. Projects keep their own copies of the surrounding files
 the skill just ensures the bits that should be shared *match the
 snippet here*.
 
+## Migration status
+
+The new `sitekit` package (`research-kit/sitekit/`) supersedes the
+copy-from-snippet workflow for projects that adopt it. As of the most
+recent extraction:
+
+- `inline_footnotes.py` is **in-package** as `sitekit.paper.inline_footnotes`
+  and called automatically by `build_paper_page`. Projects that have
+  migrated to sitekit no longer need to copy from this snippet.
+- The data-page helpers (`detect_binary.py`, `example_value.py`,
+  `verify_grain.py`, `grain_check_badge.html`, `binary_chart_block.html`,
+  `pseudocode_block.md`, `source_pages.py`) are still **snippets**.
+  They'll move into `sitekit/archetypes/empirical/` when fisc migrates
+  (currently the empirical archetype module is a stub).
+- Until a given project migrates to sitekit, the snippet stays the
+  authoritative source for that project.
+
 ## How to use this directory
 
 - **Inside the /site skill:** when scaffolding a new project or
@@ -32,6 +49,8 @@ snippet here*.
 | `grain_check_badge.html` | `source/site/templates/dataset.html` (JS block) | Renders the `DATA.grain_check` block as a colored badge near the page-header grain line — green ✓ when unique, red ✗ when duplicates or null keys are present. |
 | `source_pages.py` | `source/site/build_all.py` (functions) | Renders every `.py` / `.R` / `.sh` / `.sql` under `source/` to its own HTML page with per-line anchors (`#L42`), so the dataset page's "Source:" link lands on the right script and `script.py:42` mentions can hyperlink. |
 | `pseudocode_block.md` | `source/summary/config.py` + `compute.py` + `templates/dataset.html` | Adds an optional `pseudocode: str` field on `DatasetConfig`. The page renders it as a `<pre>` block with bracketed `[name]` tokens rewritten to hyperlinks to `data/<name>.html`. Lets prose blocks stay short — construction logic lives in one place where every input is clickable. |
+| `inline_footnotes.py` | `source/site/build_all.py` (helper block, called from `build_paper_page`) | Inline `make4ht` footnotes from `paper[0-9]*.html` sub-pages as hover tooltips on `paper/index.html` — fixes the 404 that arises because cross-page footnote-mark links point to paper sub-pages the site doesn't ship. Robust to the make4ht 2024+ variant that inserts an extra `<a id='x2-…'></a>` between the `fn` anchor and the `<sup>` (the older `\s*<sup` regex is broken — this one uses `.*?<sup`). |
+| `inline_footnotes_css.html` | `source/site/templates/paper.html` (style block) | Companion CSS for the inline-tooltip spans produced by `inline_footnotes.py`. `.fn-inline` is the wrapper; `.fn-tooltip` is the body that pops on hover/focus. |
 
 ## Why not a pip package?
 

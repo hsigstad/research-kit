@@ -8,6 +8,30 @@ user_invocable: true
 
 Create and build a static HTML site for a research project.
 
+## Status of the canonical implementation
+
+The rendering machinery lives in the **`sitekit`** package under
+`research-kit/sitekit/`. Each project's `source/site/build_all.py` is a
+thin shim that hands a `SiteConfig` to `sitekit.build_site()`.
+
+**Migrated to sitekit (verified byte-equivalent diff against pre-migration
+output):** `serasa`.
+
+**Not yet migrated** (still uses the fork-and-customize pattern described
+below): `connect`, `fisc`, `bind`, `deterrence`, `electoral-justice`,
+`procure`, `saude`, `scheme`, `lawsuit`, `poll-sponsor-bias`.
+
+For unmigrated projects the old archetype-reference workflow is still
+authoritative: copy `build_all.py` + `templates/` from the matching
+canonical reference and customize. For new projects, prefer the sitekit
+path (see "Using sitekit" below).
+
+The package bundles the AN-page machinery, cite-ref machinery, and
+script-page machinery from `connect`, but those code paths haven't been
+exercised by a real project's build yet — they will be when `connect` or
+`fisc` migrates. The empirical and theoretical archetype modules are
+currently stubs and will be filled in as part of those migrations.
+
 ## Arguments
 
 - `/site` -- create site scaffold + build for the current project
@@ -80,6 +104,63 @@ Only include files that actually exist in the project's `docs/` directory.
 If there are `.md` files not in this table, add them with a sensible title and the "Reference" category.
 
 ### 4. Write the files
+
+#### Using sitekit (preferred path for new projects and serasa-style minimal projects)
+
+Two files in `source/site/`:
+
+```python
+# source/site/build_all.py — thin shim
+import sys
+from pathlib import Path
+_SITEKIT = (
+    Path(__file__).resolve().parent.parent.parent.parent.parent
+    / "research-kit" / "sitekit"
+)
+if str(_SITEKIT) not in sys.path:
+    sys.path.insert(0, str(_SITEKIT))
+
+from sitekit import build_site
+from source.site.site import config
+
+if __name__ == "__main__":
+    raise SystemExit(build_site(config))
+```
+
+```python
+# source/site/site.py — config + project-local hooks
+from pathlib import Path
+from sitekit import SiteConfig
+
+config = SiteConfig(
+    project_root=Path(__file__).parent.parent.parent,
+    project_title="…",
+    paper_title="…",
+    archetype="minimal",        # or "empirical" / "theoretical" / "mixed"
+    paper_tex="paper.tex",
+    talk_tex="talk.tex",
+    doc_registry=[
+        ("docs/summary.md", "Research Summary", "...", "Reference"),
+        # ...
+    ],
+)
+```
+
+The sitekit package bundles default `templates/`. A project can override any
+one by placing a same-named file under its `source/site/templates/`: project
+files take precedence over package files.
+
+When the project needs an extra section that doesn't generalize (e.g.
+serasa's specs-for-Ramon dropdown, BCB results gallery), write it as a hook
+callable in `site.py` and add it to `config.hooks`. The hook receives a
+`BuildContext` and may return `{"extra_cards": "<html>"}` to inject content
+above the index's standard doc-group grid.
+
+On `educloud` the system venv is read-only, so the `sys.path` shim in
+`build_all.py` replaces `pip install -e`. On a writable env you can
+substitute `pip install -e ../../research-kit/sitekit` and drop the shim.
+
+#### Using the legacy fork-and-customize pattern (for archetype-rich projects until they migrate)
 
 Pick the canonical reference that matches the project's archetype, then copy
 its `build_all.py` and `templates/` as a starting point. Both archetypes share
