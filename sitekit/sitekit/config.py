@@ -55,11 +55,38 @@ class SiteConfig:
     index_only_subdirs: set[str] = field(default_factory=set)
     guide_briefs: list[GuideBrief] = field(default_factory=list)
 
+    # Folder-mode subdirs: per-entry pages preserve their subfolder in the
+    # output path. E.g. with folder_mode_subdirs=("hypotheses",), the file
+    # docs/hypotheses/H1.md renders to build/site/docs/hypotheses/H1.html
+    # rather than the default flat docs/H1.html. Subdirs NOT listed here
+    # flatten (e.g. docs/briefs/foo.md → docs/foo.html when in the registry).
+    folder_mode_subdirs: tuple[str, ...] = ()
+
+    # Auto-discover .md files under docs/<subdir>/ for each folder_mode_subdirs
+    # entry and append them to the registry at build time with category
+    # f"{Subdir.capitalize()} (folder mode)". index.md is skipped because it's
+    # typically already in the registry.
+    folder_mode_auto_discover: bool = True
+
+    # Extra href prefixes to strip in rewrite_md_links beyond the defaults
+    # ("docs/", "../docs/"). For projects whose registry includes paths in
+    # sibling subdirs (briefs/, notes/) that render flat into docs/.
+    extra_strip_prefixes: tuple[str, ...] = ()
+
     # --- nav extras ---
     # Extra top-level nav links between brand and "Docs" dropdown. Tuples are
     # (label, href, active_key); active_key matches what hooks pass to
     # _inject_nav when rendering their pages.
     nav_extras: list[tuple[str, str, str]] = field(default_factory=list)
+
+    # Additional dropdowns rendered after the Docs dropdown. Each entry is
+    # (label, active_key, items_fn). items_fn receives the BuildContext and
+    # returns a list of nav items. Each item is one of:
+    #   (label, href)              → a plain link
+    #   ("__group__", "Label")     → a group header
+    #   ("__divider__", None)      → a divider line
+    # An empty list suppresses the dropdown entirely.
+    nav_dropdowns: list[tuple[str, str, Callable]] = field(default_factory=list)
 
     # --- features (turn off if not needed) ---
     enable_an_pages: bool = True
@@ -70,6 +97,32 @@ class SiteConfig:
     enable_concept_refs: bool = False
     enable_legal_refs: bool = False
     enable_math_protection: bool = False
+
+    # Cite-ref URL pattern.
+    #   "connect" (default) — links to ../literature/<key>.html or
+    #     ../literature/index.html#cite-<key>; expects literature as a doc
+    #     subdir with per-key .md pages and an index.md.
+    #   "flat" — links to literature.html#cite-<key>; expects a flat
+    #     docs/literature.md with [cite:<key>] bullets.
+    cite_refs_mode: str = "connect"
+
+    # Paper-page extra substitutions. Callable returning a dict of
+    # placeholder → replacement strings, applied to the paper template
+    # after the standard inject (used by poll-sponsor-bias's MathJax
+    # macro injection). Receives the BuildContext.
+    paper_extra_substitutions: Callable | None = None
+
+    # Strip <div class='author'> and <div class='thanks'> from the
+    # make4ht paper body before rendering. Connect's pattern (default on)
+    # because affiliation footnotes were considered sensitive on the
+    # staticrypt-gated site; projects whose paper is publicly listed
+    # already can set this False to keep the author block.
+    paper_strip_author: bool = True
+
+    # Reading-Guide placeholder message when has_talk is False. None
+    # (default) suppresses the placeholder entirely; a string emits a
+    # `<div class="guide-card placeholder">` with that HTML message.
+    talk_placeholder_msg: str | None = None
 
     # --- external resolvers ---
     brazil_institutions_url: str = "https://hsigstad.github.io/brazil-institutions/"

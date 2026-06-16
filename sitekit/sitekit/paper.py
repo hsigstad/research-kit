@@ -82,10 +82,12 @@ def build_paper_page(ctx: BuildContext) -> bool:
     raw_html = html_path.read_text(encoding="utf-8")
     content = _extract_body(raw_html)
 
-    # Strip author names and affiliation footnotes for privacy (the deployed
-    # site is staticrypt-gated but the source HTML still leaks otherwise).
-    content = re.sub(r"<div class='author'>.*?</div>", "", content, flags=re.DOTALL)
-    content = re.sub(r"<div class='thanks'>.*?</div>", "", content, flags=re.DOTALL)
+    if cfg.paper_strip_author:
+        # Strip author names and affiliation footnotes — historically a
+        # privacy default for staticrypt-gated sites where the LaTeX
+        # \thanks line shouldn't ship in the rendered HTML.
+        content = re.sub(r"<div class='author'>.*?</div>", "", content, flags=re.DOTALL)
+        content = re.sub(r"<div class='thanks'>.*?</div>", "", content, flags=re.DOTALL)
 
     content = inline_footnotes(content, make4ht_dir, base_stem)
 
@@ -95,6 +97,9 @@ def build_paper_page(ctx: BuildContext) -> bool:
     template = read_template(cfg, "paper.html")
     html = template.replace("<!-- INJECT_PAPER_CSS -->", css)
     html = html.replace("<!-- INJECT_CONTENT -->", content)
+    if cfg.paper_extra_substitutions is not None:
+        for placeholder, value in cfg.paper_extra_substitutions(ctx).items():
+            html = html.replace(placeholder, value)
     html = inject_nav(html, ctx, prefix="../", active="paper")
 
     paper_dir = ctx.site_dir / "paper"

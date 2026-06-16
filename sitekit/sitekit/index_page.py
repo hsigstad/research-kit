@@ -103,6 +103,8 @@ def build_index(
                 "Paper",
                 "Paper not yet built &mdash; run <code>bash build.sh site</code> on a host with TeX.",
             ))
+        if not has_talk and cfg.talk_placeholder_msg:
+            guide_cards.append(_guide_placeholder("Talk", cfg.talk_placeholder_msg))
         html = html.replace("<!-- INJECT_GUIDE_CARDS -->", "\n".join(guide_cards))
 
     if "<!-- INJECT_PAPER_CARD -->" in template:

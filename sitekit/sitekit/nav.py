@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .config import SiteConfig
 from .context import BuildContext
+from .paths import output_path
 
 
 NAV_CSS = """\
@@ -34,23 +35,24 @@ NAV_CSS = """\
   .nav-dropdown { position: relative; }
   .dropdown-menu {
     display: none; position: absolute; top: 3rem; right: 0;
-    background: #fff; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px;
     box-shadow: 0 4px 16px rgba(0,0,0,.12); min-width: 220px;
     padding: .4rem 0; z-index: 200; max-height: 80vh; overflow-y: auto;
   }
   .nav-dropdown.open .dropdown-menu { display: block; }
   .dropdown-menu a {
-    display: block; padding: .3rem 1rem; color: #1a1a1a;
+    display: block; padding: .3rem 1rem; color: var(--fg);
     text-decoration: none; font-size: .82rem;
   }
-  .dropdown-menu a:hover { background: #f0f4f8; }
+  .dropdown-menu a:hover { background: #f5f3ee; }
   .dropdown-group-label {
     padding: .4rem 1rem .15rem; font-size: .68rem; font-weight: 700;
-    color: #888; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
   }
-  .dropdown-divider { border-top: 1px solid #eee; margin: .3rem 0; }
+  .dropdown-divider { border-top: 1px solid var(--border); margin: .3rem 0; }
   .page-header {
-    padding: .8rem 2rem; border-bottom: 1px solid var(--border); background: #fff;
+    padding: .8rem 2rem; border-bottom: 1px solid var(--border);
+    background: var(--card);
   }
   .page-header h1 { font-size: 1.3rem; font-weight: 600; }
   .page-header p { color: var(--muted); font-size: .85rem; margin-top: .15rem; }
@@ -92,13 +94,15 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
     def _cls(section: str) -> str:
         return ' class="nav-link active"' if active == section else ' class="nav-link"'
 
-    # Docs dropdown items grouped by category
+    # Docs dropdown items grouped by category. Use output_path so
+    # folder-mode entries (docs/hypotheses/index.md → docs/hypotheses/index.html)
+    # get the right href instead of flattening into docs/index.html.
     groups: dict[str, list[tuple[str, str]]] = {}
     for rel_path, title, _desc, category in cfg.doc_registry:
         if not (cfg.project_root / rel_path).exists():
             continue
-        stem = Path(rel_path).stem
-        href = f'{prefix}docs/{stem}.html'
+        _, display, _ = output_path(ctx, rel_path)
+        href = f'{prefix}{display}'
         groups.setdefault(category, []).append((title, href))
 
     # Add subdirectory doc folders if they exist
@@ -143,12 +147,46 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
     </div>
   </div>"""
 
+    # Additional config-supplied dropdowns rendered after Docs (e.g. Data).
+    extra_dropdowns = []
+    for label, key, items_fn in cfg.nav_dropdowns:
+        items = items_fn(ctx, prefix)
+        if not items:
+            continue
+        rendered_items: list[str] = []
+        first_group = True
+        for item in items:
+            if not item:
+                continue
+            marker = item[0]
+            if marker == "__divider__":
+                rendered_items.append('<div class="dropdown-divider"></div>')
+            elif marker == "__group__":
+                if not first_group:
+                    rendered_items.append('<div class="dropdown-divider"></div>')
+                first_group = False
+                rendered_items.append(
+                    f'<div class="dropdown-group-label">{item[1]}</div>')
+            else:
+                item_label, item_href = item
+                rendered_items.append(f'<a href="{item_href}">{item_label}</a>')
+        items_html = "\n    ".join(rendered_items)
+        extra_dropdowns.append(
+            f"""<div class="nav-dropdown">
+    <button{_cls(key)}>{label} &#9662;</button>
+    <div class="dropdown-menu">
+    {items_html}
+    </div>
+  </div>"""
+        )
+    extra_dropdowns_block = ("\n  " + "\n  ".join(extra_dropdowns)) if extra_dropdowns else ""
+
     nav_html = f"""{NAV_CSS}
 <nav class="site-nav">
   <a href="{prefix}index.html" class="nav-brand">{cfg.project_title}</a>
   <a href="{prefix}index.html"{_cls("home")}>Home</a>
 {extras_block}
-  {docs_dropdown}
+  {docs_dropdown}{extra_dropdowns_block}
 </nav>
 {NAV_JS}"""
     return nav_html

@@ -60,18 +60,23 @@ def rewrite_md_links(
     under `build/site/<subdir>/`. From a subdir page, `../theory.md` must
     become `../docs/theory.html`, not `theory.html`.
 
+    Projects that flatten sibling subdirs (briefs/, notes/) into docs/
+    declare those prefixes via SiteConfig.extra_strip_prefixes.
+
     Auto-detection note: callers know whether the current page is in a
     subdir; pass `in_subdir=True` for those. Flat projects (no doc subdirs)
     can leave it False.
     """
-    subdir_names = {s for s, _, _ in ctx.config.doc_subdirs}
+    cfg = ctx.config
+    subdir_names = {s for s, _, _ in cfg.doc_subdirs}
+    strip_prefixes = ("docs/", "../docs/", *cfg.extra_strip_prefixes)
 
     def _replacer(m: re.Match) -> str:
         href = m.group(1)
         if href.startswith(("http://", "https://", "//")):
             return m.group(0)
         new = href.replace(".md", ".html")
-        for prefix in ("docs/", "../docs/"):
+        for prefix in strip_prefixes:
             if new.startswith(prefix):
                 new = new[len(prefix):]
                 break

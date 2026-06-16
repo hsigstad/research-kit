@@ -13,6 +13,7 @@ from typing import Optional
 
 from .context import BuildContext
 from .nav import inject_nav, _brief_title
+from .paths import output_path
 from .render import (
     md_to_html, add_heading_ids, strip_leading_h1, rewrite_md_links,
     protect_math, restore_math,
@@ -83,36 +84,77 @@ def _render_content(
 
 
 def build_doc_page(ctx: BuildContext, rel_path: str, title: str) -> None:
-    """Render a top-level docs/*.md to docs/<stem>.html."""
+    """Render a docs/*.md to its output location.
+
+    Standard top-level docs go to docs/<stem>.html. Folder-mode subdirs
+    preserve their subfolder (docs/hypotheses/H1.md → docs/hypotheses/H1.html).
+    """
     cfg = ctx.config
     md_path = ctx.project_root / rel_path
     text = md_path.read_text(encoding="utf-8")
     stem = Path(rel_path).stem
+    out, display, is_folder_mode = output_path(ctx, rel_path)
     content_html = _render_content(ctx, text, stem, in_subdir=False)
 
+    if cfg.cite_refs_mode == "flat" and stem == "literature":
+        from .links import inject_index_cite_anchors
+        content_html = inject_index_cite_anchors(content_html, ctx)
+
+    nav_prefix = "../../" if is_folder_mode else "../"
     template = read_template(cfg, "doc.html")
     html = template.replace("<!-- INJECT_TITLE -->", title)
     html = html.replace("<!-- INJECT_CONTENT -->", content_html)
-    html = inject_nav(html, ctx, prefix="../", active="docs")
+    html = inject_nav(html, ctx, prefix=nav_prefix, active="docs")
 
-    out = ctx.site_dir / "docs" / f"{stem}.html"
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
-    print(f"  docs/{stem}.html")
+    print(f"  {display}")
+
+
+def _discover_folder_mode_entries(ctx: BuildContext) -> list[tuple[str, str, str, str]]:
+    """Auto-discover .md files under docs/<subdir>/ for folder-mode subdirs.
+
+    Returns DOC_REGISTRY-shaped tuples. Skips index.md (typically already
+    in the registry).
+    """
+    cfg = ctx.config
+    if not cfg.folder_mode_auto_discover:
+        return []
+    discovered: list[tuple[str, str, str, str]] = []
+    for subdir in cfg.folder_mode_subdirs:
+        folder = ctx.project_root / "docs" / subdir
+        if not folder.is_dir():
+            continue
+        for md in sorted(folder.glob("*.md")):
+            if md.stem == "index":
+                continue
+            title = md.stem
+            for line in md.read_text(encoding="utf-8").splitlines():
+                if line.startswith("# "):
+                    title = line[2:].strip()
+                    break
+            rel = str(md.relative_to(ctx.project_root))
+            cat = f"{subdir.capitalize()} (folder mode)"
+            discovered.append((rel, title, "", cat))
+    return discovered
 
 
 def build_docs_section(ctx: BuildContext) -> list[dict]:
-    """Build all top-level doc pages from DOC_REGISTRY. Returns info dicts."""
+    """Build all doc pages from DOC_REGISTRY plus auto-discovered folder-mode entries."""
     cfg = ctx.config
     (ctx.site_dir / "docs").mkdir(parents=True, exist_ok=True)
     docs_info: list[dict] = []
-    for rel_path, title, description, category in cfg.doc_registry:
+    all_entries = list(cfg.doc_registry) + _discover_folder_mode_entries(ctx)
+    for rel_path, title, description, category in all_entries:
         md_path = ctx.project_root / rel_path
         if not md_path.exists():
-            print(f"  docs/{Path(rel_path).stem}.html (skipped — file not found)")
+            print(f"  {rel_path} (skipped — file not found)")
             continue
         build_doc_page(ctx, rel_path, title)
+        _, display, _ = output_path(ctx, rel_path)
+        stem_for_index = display.removeprefix("docs/").removesuffix(".html")
         docs_info.append({
-            "stem": Path(rel_path).stem,
+            "stem": stem_for_index,
             "title": title,
             "description": description,
             "category": category,

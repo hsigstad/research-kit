@@ -105,10 +105,15 @@ def _populate_context(ctx: BuildContext) -> None:
         ctx.h_slugs = load_h_slugs(root)
         ctx.hyp_titles = load_hyp_titles(root)
     if cfg.enable_cite_refs:
-        ctx.cite_map = load_cite_map(root)
+        # In flat mode there's no docs/literature/<key>.md tree, so the
+        # per-page cite map stays empty; INDEX_CITE_MAP carries everything.
+        if cfg.cite_refs_mode == "flat":
+            ctx.cite_map = {}
+        else:
+            ctx.cite_map = load_cite_map(root)
         ctx.bib_authoryear = load_bib_authoryear(root)
         ctx.index_cite_map = load_index_cite_map(
-            root, ctx.cite_map, ctx.bib_authoryear)
+            root, ctx.cite_map, ctx.bib_authoryear, mode=cfg.cite_refs_mode)
     if cfg.enable_anec_refs:
         ctx.anec_map = load_anec_map(root)
 
