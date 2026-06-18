@@ -16,7 +16,7 @@ from .nav import inject_nav, _brief_title
 from .paths import output_path
 from .render import (
     md_to_html, add_heading_ids, strip_leading_h1, rewrite_md_links,
-    protect_math, restore_math,
+    protect_math, restore_math, style_verdict_callouts,
 )
 from .templates import read_template
 from .links import (
@@ -56,6 +56,7 @@ def _render_content(
         placeholders = {}
 
     content_html = md_to_html(text)
+    content_html = style_verdict_callouts(content_html)
     if in_subdir and cfg.strip_subdir_leading_h1:
         content_html = strip_leading_h1(content_html)
     content_html = add_heading_ids(
@@ -64,10 +65,11 @@ def _render_content(
         content_html = cfg.link_rewriter(
             content_html, ctx, in_subdir=in_subdir, prefix=prefix)
     else:
-        content_html = rewrite_md_links(content_html, ctx, in_subdir=in_subdir)
+        content_html = rewrite_md_links(
+            content_html, ctx, in_subdir=in_subdir, prefix=prefix)
 
     if cfg.enable_an_pages:
-        content_html = link_an_refs(content_html, ctx, current_stem)
+        content_html = link_an_refs(content_html, ctx, current_stem, prefix=prefix)
     if cfg.enable_hyp_refs:
         content_html = link_h_refs(content_html, ctx, current_stem)
     if cfg.enable_cite_refs:
@@ -103,11 +105,34 @@ def build_doc_page(ctx: BuildContext, rel_path: str, title: str) -> None:
     text = md_path.read_text(encoding="utf-8")
     stem = Path(rel_path).stem
     out, display, is_folder_mode = output_path(ctx, rel_path)
-    content_html = _render_content(ctx, text, stem, in_subdir=False)
+    # Folder-mode pages render at build/site/docs/<folder>/<stem>.html (depth 2
+    # from site root); top-level docs at build/site/docs/<stem>.html (depth 1).
+    prefix = "../../" if is_folder_mode else "../"
+    content_html = _render_content(
+        ctx, text, stem, in_subdir=False, prefix=prefix)
 
     if cfg.cite_refs_mode == "flat" and stem == "literature":
         from .links import inject_index_cite_anchors
         content_html = inject_index_cite_anchors(content_html, ctx)
+
+    # Hypothesis pages get an auto-generated "Supporting analyses" section
+    # listing every AN whose frontmatter `hypothesis:` matches this page's
+    # slug. Skip the index page (which lists hypotheses themselves).
+    if (cfg.enable_an_pages
+            and rel_path.startswith("docs/hypotheses/")
+            and stem != "index"):
+        from .links import render_supporting_analyses_section
+        content_html += render_supporting_analyses_section(
+            stem, ctx, prefix=prefix)
+
+    # Finding pages get a "Cited analyses" section listing every AN-NNN
+    # mentioned in prose (in first-appearance order), each with its headline.
+    if (cfg.enable_an_pages
+            and rel_path.startswith("docs/findings/")
+            and stem != "index"):
+        from .links.an import render_cited_analyses_section
+        content_html += render_cited_analyses_section(
+            text, ctx, prefix=prefix)
 
     nav_prefix = "../../" if is_folder_mode else "../"
     template = read_template(cfg, "doc.html")

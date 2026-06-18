@@ -162,6 +162,12 @@ class SiteConfig:
     # macro injection). Receives the BuildContext.
     paper_extra_substitutions: Callable | None = None
 
+    # Paper body transformer. Callable `(ctx, content_html) -> str` run
+    # after inline_footnotes and before template injection, so the project
+    # can wrap headings / annotate macros / inject validation UI inside
+    # the make4ht body before it lands in paper/index.html.
+    paper_content_transform: Callable | None = None
+
     # Optional override for the default rewrite_md_links. Signature:
     # `(html: str, ctx: BuildContext, *, in_subdir: bool, prefix: str) -> str`.
     # Receives the standard kwargs the default rewriter uses so projects

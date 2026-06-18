@@ -37,6 +37,25 @@
     border-left: 4px solid var(--accent); background: #f5f3ee;
     color: #555;
   }
+  .md-body blockquote.verdict-callout {
+    border-left-width: 6px;
+    background: #fffefa;
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: .7rem 1rem;
+    border-radius: 0 4px 4px 0;
+    color: var(--fg);
+    margin: 1rem 0 1.2rem;
+  }
+  .md-body blockquote.verdict-callout > p:first-child > strong:first-child {
+    color: #111;
+  }
+  .md-body blockquote.verdict-callout.verdict-refuted   { border-left-color: #dc3545; }
+  .md-body blockquote.verdict-callout.verdict-confirmed { border-left-color: #198754; }
+  .md-body blockquote.verdict-callout.verdict-mixed     { border-left-color: #d39e00; }
+  .md-body blockquote.verdict-callout.verdict-pending   { border-left-color: #6b7280; }
+  .md-body blockquote.verdict-callout.verdict-neutral   { border-left-color: var(--accent); }
   .md-body code {
     font-family: "SFMono-Regular", Consolas, monospace;
     font-size: .85em; background: #f0ede6; padding: .15rem .35rem;

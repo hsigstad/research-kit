@@ -328,11 +328,21 @@ in step 2 and fill in:
 - `## Results` body: if the analysis produced a figure, **embed it**
   (`![caption](<repo-relative path>)`) at the top of the section, then
   give a short prose summary of the headline number(s) with the table
-  reference and the surprise-or-not call. Keep the prose tight — the
-  place for full interpretation is downstream (a finding entry, a
-  hypothesis status block), not the AN page.
-- `## Interpretation` (if the project's schema uses this section):
-  one to three sentences on what the result means for the question.
+  reference and the surprise-or-not call. When the result is a named
+  table (or several panels), use `### Table: <descriptive name>`
+  subheaders so the eye lands on the right block first. Keep the prose
+  tight — the place for full interpretation is downstream (a finding
+  entry, a hypothesis status block), not the AN page.
+- `## Interpretation`: narrative, not a re-listing of the numbers.
+  When there are multiple distinct takeaways, lead each bullet with a
+  short bolded handle (e.g., `- **Direction:** the coefficient flips
+  sign on the runoff sample.`). A single-takeaway result can stay as
+  one paragraph. **Close the section with a `**Confidence rationale
+  (<color>).**` paragraph** justifying the badge in the frontmatter —
+  what made it green vs yellow, what specific concern keeps yellow
+  from being green, what would tip a yellow to green. This is the
+  single most useful sentence on the page for a reader scanning
+  badges; never omit it.
 - `## Follow-ups`: brainstorm using the taxonomy below.
 - Frontmatter: `status: done` (or the project schema's interpreted
   equivalent), `status_date: <today>`, `confidence: <green/yellow/red>`

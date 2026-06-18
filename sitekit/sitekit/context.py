@@ -23,6 +23,8 @@ class BuildContext:
     # Reference maps (populated by sitekit.links.* loaders the first time
     # they're needed).
     an_map: dict[str, str] = field(default_factory=dict)
+    an_by_hypothesis: dict[str, list[dict]] = field(default_factory=dict)
+    an_index: dict[str, dict] = field(default_factory=dict)
     h_slugs: set[str] = field(default_factory=set)
     cite_map: dict[str, str] = field(default_factory=dict)
     bib_authoryear: dict[str, str] = field(default_factory=dict)

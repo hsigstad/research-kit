@@ -91,6 +91,9 @@ def build_paper_page(ctx: BuildContext) -> bool:
 
     content = inline_footnotes(content, make4ht_dir, base_stem)
 
+    if cfg.paper_content_transform is not None:
+        content = cfg.paper_content_transform(ctx, content)
+
     css_path = make4ht_dir / f"{base_stem}.css"
     css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
 

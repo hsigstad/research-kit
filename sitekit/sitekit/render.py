@@ -65,6 +65,7 @@ def rewrite_md_links(
     html: str,
     ctx: BuildContext,
     in_subdir: bool = False,
+    prefix: str = "../",
 ) -> str:
     """Rewrite relative .md hrefs to .html so cross-doc links work.
 
@@ -75,6 +76,12 @@ def rewrite_md_links(
 
     Projects that flatten sibling subdirs (briefs/, notes/) into docs/
     declare those prefixes via SiteConfig.extra_strip_prefixes.
+
+    `prefix` is the relative path from the current page to the site root
+    (e.g. `"../"` for `build/site/docs/foo.html`, `"../../"` for folder-mode
+    pages at `build/site/docs/<folder>/foo.html`). Used to compose paths
+    into doc_subdir outputs which live at `build/site/<subdir>/` rather
+    than under `docs/`.
 
     Auto-detection note: callers know whether the current page is in a
     subdir; pass `in_subdir=True` for those. Flat projects (no doc subdirs)
@@ -89,9 +96,31 @@ def rewrite_md_links(
         if href.startswith(("http://", "https://", "//")):
             return m.group(0)
         new = href.replace(".md", ".html")
-        for prefix in strip_prefixes:
-            if new.startswith(prefix):
-                new = new[len(prefix):]
+        # `extra_strip_prefixes` containing "../" would mangle paths into
+        # doc_subdirs by stripping the leading `../`. Check that case first
+        # and route through prefix instead.
+        sd_match = None
+        for sd in subdir_names:
+            if new.startswith(f"../{sd}/"):
+                sd_match = sd
+                break
+        if sd_match:
+            return f'href="{prefix}{new[3:]}"'
+        # Source path starting directly with a doc_subdir name (e.g.
+        # `analyses/an-001.md` from a top-level docs page) targets the
+        # subdir output at build/site/<subdir>/ — route via prefix.
+        bare_first = new.split("/", 1)[0] if "/" in new else new.rstrip("/")
+        if bare_first in subdir_names:
+            return f'href="{prefix}{new}"'
+        for sp in strip_prefixes:
+            if new.startswith(sp):
+                new = new[len(sp):]
+                # If the strip uncovered a doc_subdir reference, route it
+                # via prefix so the relative path matches the actual output
+                # location (build/site/<subdir>/...).
+                first_seg = new.split("/", 1)[0] if "/" in new else ""
+                if first_seg in subdir_names:
+                    new = f"{prefix}{new}"
                 break
         else:
             if new.startswith("../"):
@@ -103,7 +132,23 @@ def rewrite_md_links(
                     else:
                         new = remainder
         return f'href="{new}"'
-    return re.sub(r'href="([^"]*\.md(?:#[^"]*)?)"', _replacer, html)
+    html = re.sub(r'href="([^"]*\.md(?:#[^"]*)?)"', _replacer, html)
+
+    # Bare directory hrefs targeting a doc_subdir (e.g. href="analyses/" or
+    # href="../analyses/") — route via prefix to the subdir's output root.
+    def _dir_replacer(m: re.Match) -> str:
+        href = m.group(1)
+        if href.startswith("../"):
+            tail = href[3:]
+        else:
+            tail = href
+        seg = tail.rstrip("/")
+        if seg in subdir_names:
+            return f'href="{prefix}{seg}/"'
+        return m.group(0)
+
+    return re.sub(r'href="(\.\./[A-Za-z0-9_-]+/|[A-Za-z0-9_-]+/)"',
+                  _dir_replacer, html)
 
 
 # ---------------------------------------------------------------- math protect
@@ -142,3 +187,48 @@ def restore_math(html: str, placeholders: dict[str, str]) -> str:
     for token, original in placeholders.items():
         html = html.replace(token, original)
     return html
+
+
+_VERDICT_LEAD_PATTERN = re.compile(
+    r'<blockquote>\s*<p><strong>'
+    r'((?:Evidence strength|Verdict|Status)[^<]*)'
+    r'</strong>',
+    re.IGNORECASE,
+)
+
+
+def _classify_verdict(strong_text: str) -> str:
+    """Bucket a verdict label by keyword. Order is intentional:
+    refuted → mixed → confirmed → pending. 'refuted' wins over 'strong'
+    so 'Strong evidence of refutation' reads as refuted; 'mixed' wins
+    over 'pending' so 'Mixed; decisive test pending' reads as mixed."""
+    t = strong_text.lower()
+    if "refut" in t or "against" in t:
+        return "verdict-refuted"
+    if any(k in t for k in ("mixed", "partial", "moderate", "weak", "first descriptive")):
+        return "verdict-mixed"
+    if any(k in t for k in ("confirm", "strong", "support", "very strong")):
+        return "verdict-confirmed"
+    if any(k in t for k in ("not tested", "untested", "pending")):
+        return "verdict-pending"
+    return "verdict-neutral"
+
+
+def style_verdict_callouts(html: str) -> str:
+    """Tag <blockquote>s that open with **Evidence strength:** (or Verdict /
+    Status) so doc.html CSS can render them as a colored verdict card.
+
+    The bolded lead text is classified into one of:
+      verdict-refuted / verdict-mixed / verdict-confirmed /
+      verdict-pending / verdict-neutral
+
+    Match is anchored to the blockquote start to avoid wrapping nested
+    quotes or false positives elsewhere in the body.
+    """
+    def _repl(m: re.Match) -> str:
+        bucket = _classify_verdict(m.group(1))
+        return (
+            f'<blockquote class="verdict-callout {bucket}">'
+            f'<p><strong>{m.group(1)}</strong>'
+        )
+    return _VERDICT_LEAD_PATTERN.sub(_repl, html)

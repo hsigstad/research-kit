@@ -17,7 +17,7 @@ from .analyses import build_analyses_index
 from .script_pages import build_script_pages
 from .archetypes import get_archetype
 from .links import (
-    load_an_map, load_h_slugs, load_hyp_titles,
+    load_an_map, load_an_by_hypothesis, load_h_slugs, load_hyp_titles,
     load_cite_map, load_bib_authoryear, load_index_cite_map,
     load_anec_map, load_script_index,
 )
@@ -107,8 +107,12 @@ def _populate_context(ctx: BuildContext) -> None:
 
     if cfg.enable_an_pages:
         ctx.an_map = load_an_map(root)
+        ctx.an_by_hypothesis = load_an_by_hypothesis(root)
+        from .links.an import _load_an_index_by_stem
+        ctx.an_index = _load_an_index_by_stem(root)
     if cfg.enable_hyp_refs:
         ctx.h_slugs = load_h_slugs(root)
+    if (root / "docs" / "hypotheses").is_dir():
         ctx.hyp_titles = load_hyp_titles(root)
     if cfg.enable_cite_refs:
         # In flat mode there's no docs/literature/<key>.md tree, so the
