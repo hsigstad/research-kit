@@ -54,6 +54,22 @@ Extract:
 - **`personal-dropbox:TCEAndreiHenrik/`** — shared with Andrei Leite (segredo project)
 - Coauthor folders on bi-dropbox follow the pattern `{Surname1}{Surname2}` (e.g., `ArntzenFivaSigstad`, `ChenChoiSigstad`)
 
+### Per-project Dropbox roots
+
+When a project's `path.py` reads `PROJECT_DATA` from `.env`, the rclone
+remote equivalent lives at:
+
+| Project | rclone remote |
+|---------|---------------|
+| electoral-justice | `personal-dropbox:electoraljustice/` (data under `data/`, e.g. `data/eleicao_suplementar/`) |
+| segredo | `personal-dropbox:TCEAndreiHenrik/` (coauthor) |
+| deterrence | `bi-dropbox:ChenChoiSigstad/data/` |
+| serasa | `bi-dropbox:AlencarAmoniMarianiSigstad/` |
+| procure | `bi-dropbox:DarcioHenrik/data/` |
+
+For cross-project shared data under `~/research/data/`, see
+`~/research/data/SYNC_MAP.yaml`.
+
 ## Before destructive operations
 
 Always confirm with the user before:
