@@ -94,7 +94,11 @@ RUN Rscript -e ' \
         "kableExtra", "knitr", "stringr", "forcats", "broom", \
         "modelsummary", "did", "sandwich", "lmtest", \
         "haven", "marginaleffects", "tidyverse", \
-        "Hmisc", "quantreg", "stargazer" \
+        "Hmisc", "quantreg", "stargazer", \
+        "tinytable", "rdrobust", "rdd", "rddensity", \
+        "estimatr", "jsonlite", "boot", \
+        "ggpubr", "gridExtra", "scales", "readxl", \
+        "janitor", "AER", "MatchIt", "clubSandwich" \
     ); \
     install.packages(pkgs, repos = "https://cloud.r-project.org", Ncpus = 4); \
     missing <- pkgs[!pkgs %in% rownames(installed.packages())]; \
@@ -129,6 +133,9 @@ RUN pip install --no-cache-dir \
     requests-cache tenacity \
     pytest scons \
     jupyter ipykernel notebook \
+    playwright \
+    google-cloud-bigquery google-cloud-storage \
+    tabulate tqdm \
     git+https://github.com/DarrenZal/otter-mcp.git
 
 # ── 8. uv (for MCP server envs) ─────────────────────────────────────
