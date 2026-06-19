@@ -19,14 +19,23 @@
     font-family: Georgia, "Times New Roman", serif;
     font-size: 1.06rem; line-height: 1.78; color: var(--fg);
   }
+  .md-body h1, .md-body h2, .md-body h3, .md-body h4, .md-body h5, .md-body h6 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
   .md-body h1 { font-size: 1.5rem; font-weight: 600; margin: 1.8rem 0 .8rem;
-    padding-bottom: .3rem; border-bottom: 1px solid var(--border);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
   .md-body h2 { font-size: 1.25rem; font-weight: 600; margin: 1.6rem 0 .6rem;
-    padding-bottom: .25rem; border-bottom: 1px solid var(--border);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  .md-body h3 { font-size: 1.05rem; font-weight: 600; margin: 1.3rem 0 .5rem;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    padding-bottom: .25rem; border-bottom: 1px solid var(--border); }
+  .md-body h3 { font-size: 1.05rem; font-weight: 600; margin: 1.3rem 0 .5rem; }
+  .md-body h4 { font-size: .95rem; font-weight: 600; margin: 1.1rem 0 .4rem; }
+  .md-body h5, .md-body h6 { font-size: .88rem; font-weight: 600; margin: 1rem 0 .4rem; }
+  .md-body h1:first-child { margin-top: 0; }
+  .md-body strong { font-weight: 600; }
+  .md-body ul li { list-style: disc; }
+  .md-body li > ul, .md-body li > ol { margin-top: .25rem; margin-bottom: 0; }
+  .md-body li input[type="checkbox"] {
+    margin-right: .4rem; vertical-align: middle; position: relative; top: -1px;
+  }
   .md-body p { margin: 0 0 .8rem; }
   .md-body ul, .md-body ol { margin: 0 0 .8rem; padding-left: 1.8rem; }
   .md-body li { margin-bottom: .25rem; }
@@ -56,6 +65,56 @@
   .md-body blockquote.verdict-callout.verdict-mixed     { border-left-color: #d39e00; }
   .md-body blockquote.verdict-callout.verdict-pending   { border-left-color: #6b7280; }
   .md-body blockquote.verdict-callout.verdict-neutral   { border-left-color: var(--accent); }
+
+  /* Analysis page: headline (one-paragraph plain-English finding) */
+  .an-headline {
+    font-size: 1.05rem; line-height: 1.55; font-weight: 500;
+    color: #1f2328; background: #f6f8fa;
+    border-left: 4px solid var(--accent);
+    padding: .8rem 1rem; margin: 0 0 1.2rem;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* Analysis info panel (rendered from .md frontmatter) — three tiers:
+     top (hypothesis/confidence), Design block, provenance footer. */
+  .an-panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; padding: .7rem 1rem; margin-bottom: 1.5rem;
+    font-size: .85rem;
+  }
+  .an-meta {
+    display: grid; grid-template-columns: max-content 1fr;
+    gap: .2rem 1rem; margin: 0;
+  }
+  .an-row { display: contents; }
+  .an-meta dt { color: var(--muted); font-weight: 600; }
+  .an-meta dd { margin: 0; }
+  .an-meta code { font-size: .82em; }
+  .an-meta-top { font-size: .95rem; gap: .35rem 1rem; }
+  .an-meta-top dt { font-weight: 700; }
+  .an-meta-prov {
+    font-size: .75rem; gap: .15rem 1rem;
+    margin-top: .65rem; padding-top: .55rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .an-meta-prov dt { font-weight: 500; }
+  .an-meta-prov dd { color: var(--muted); }
+  .an-meta-prov code { color: var(--muted); }
+  .an-panel-label {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--muted);
+    margin: .65rem 0 .3rem; padding-top: .55rem;
+    border-top: 1px solid var(--border);
+  }
+  .conf-chip {
+    display: inline-block; padding: .05rem .5rem; border-radius: 10px;
+    font-size: .75rem; font-weight: 600; text-transform: capitalize;
+  }
+  .conf-green   { background: #d4edda; color: #155724; }
+  .conf-yellow  { background: #fff3cd; color: #856404; }
+  .conf-red     { background: #f8d7da; color: #721c24; }
+  .conf-pending { background: #e9ecef; color: #495057; }
   .md-body code {
     font-family: "SFMono-Regular", Consolas, monospace;
     font-size: .85em; background: #f0ede6; padding: .15rem .35rem;
@@ -83,6 +142,18 @@
   }
   .md-body a.cite-ref:hover, .md-body a.anec-ref:hover,
   .md-body a.concept-ref:hover { border-bottom-style: solid; }
+  /* Legal citations (`LE.33.IV`, `CPC.144.§3`): tan chip with a
+     browser-native title-tooltip carrying the verbatim statutory text,
+     linking out to the brazil-institutions law page. Rendered by
+     sitekit.links_extra.link_legal_refs when enable_legal_refs=True
+     and the workspace's artigos.db is reachable. */
+  .md-body code.legal-cite, .md-body a.legal-cite {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: .85em; background: #fdf8e8; border: 1px solid #e5d48b;
+    padding: .15rem .35rem; border-radius: 4px; cursor: help;
+  }
+  .md-body a.legal-cite { color: var(--fg); text-decoration: none; }
+  .md-body a.legal-cite:hover { text-decoration: underline; }
   footer {
     text-align: center; padding: 1.5rem; font-size: .8rem; color: var(--muted);
     border-top: 1px solid var(--border); margin-top: 2rem;

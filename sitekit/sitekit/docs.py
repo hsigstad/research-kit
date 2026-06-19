@@ -18,6 +18,7 @@ from .render import (
     md_to_html, add_heading_ids, strip_leading_h1, rewrite_md_links,
     protect_math, restore_math, style_verdict_callouts,
 )
+from .figures import rewrite_img_paths
 from .templates import read_template
 from .links import (
     link_an_refs, link_h_refs, link_cite_refs, link_anec_refs,
@@ -88,6 +89,8 @@ def _render_content(
 
     for postprocess in cfg.content_postprocessors:
         content_html = postprocess(content_html, ctx, current_stem, in_subdir)
+
+    content_html = rewrite_img_paths(content_html, prefix=prefix)
 
     if placeholders:
         content_html = restore_math(content_html, placeholders)

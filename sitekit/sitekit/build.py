@@ -32,6 +32,14 @@ def build_site(config: SiteConfig) -> int:
     ctx = BuildContext(config=config)
     _populate_context(ctx)
 
+    from .figures import copy_site_figures
+    copied, derived = copy_site_figures(ctx)
+    if copied or derived:
+        note = f"Copied {copied} figures into {config.site_dir_rel}/figures/"
+        if derived:
+            note += f" (+ {derived} PNGs derived from PDFs via pdftoppm)"
+        print(note + "\n")
+
     print("Building documentation pages...")
     docs_info = build_docs_section(ctx)
 
