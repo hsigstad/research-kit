@@ -98,7 +98,29 @@ def build_index(
 
     if "<!-- INJECT_GUIDE_CARDS -->" in template:
         guide_cards: list[str] = []
-        if has_paper:
+        if cfg.papers:
+            # Multi-paper: one card per entry. has_paper here is the
+            # disjunction across entries, so the placeholder only fires
+            # if NONE of them built — individual missing builds become
+            # per-paper placeholders below.
+            for key, label, _tex, makeht_dir_rel, title in cfg.papers:
+                paper_html_path = (
+                    ctx.project_root / makeht_dir_rel /
+                    f"{Path(_tex).stem}.html"
+                )
+                built = paper_html_path.exists()
+                desc = title or cfg.paper_title or label
+                if built:
+                    guide_cards.append(_guide_card(
+                        f"paper/{key}/index.html",
+                        f"Paper: {label}", desc,
+                        "Start here", "priority-start",
+                    ))
+                else:
+                    guide_cards.append(_guide_placeholder(
+                        f"Paper: {label}", cfg.paper_placeholder_msg,
+                    ))
+        elif has_paper:
             guide_cards.append(_guide_card(
                 "paper/index.html", "Paper",
                 cfg.paper_title or "Paper",
@@ -108,7 +130,7 @@ def build_index(
             if not (ctx.project_root / rel_path).exists():
                 continue
             guide_cards.append(_guide_card(href, label, desc, priority, pclass))
-        if not has_paper:
+        if not cfg.papers and not has_paper:
             guide_cards.append(_guide_placeholder("Paper", cfg.paper_placeholder_msg))
         if not has_talk and cfg.talk_placeholder_msg:
             guide_cards.append(_guide_placeholder("Talk", cfg.talk_placeholder_msg))

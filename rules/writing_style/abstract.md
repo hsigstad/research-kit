@@ -78,3 +78,15 @@ rules apply.
 - **Numbers, not qualifiers.** "65 percent" beats "substantial". Don't
   hedge in front of a number you have ("a substantial share — almost
   one-third"); just say "almost one-third".
+- **Length: ~150 words is the default target.** Major economics
+  journal caps for context — AER, QJE, ReStud: 150; Econometrica:
+  250; AEJ, JPE: 100. 150 fits everywhere except JPE and AEJ. By
+  general §1's deletion principle ("if a paragraph reads fine when
+  you delete a sentence, delete it"), an abstract running to 300+
+  words is almost always two or three content blocks too long. The
+  abstract carries the question, the headline result with its
+  magnitude, one load-bearing supporting fact (mechanism, robustness,
+  or heterogeneity — pick one), and the takeaway. Secondary findings
+  belong in the introduction, not the abstract. If you find yourself
+  writing a fifth result-sentence, cut it; the reader will find it
+  in the body.

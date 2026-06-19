@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Papers — <!-- INJECT_PROJECT_TITLE --></title>
+<style>
+  :root {
+    --bg: #faf9f6; --card: #fffefa; --fg: #374151; --muted: #6b7280;
+    --border: #e5e2db; --accent: #2563eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--fg); line-height: 1.6;
+  }
+  main { padding: 1.4rem 2rem 2rem; max-width: 900px; margin: 0 auto; }
+  h2 {
+    font-size: 1rem; font-weight: 700; margin: 1.2rem 0 .6rem;
+    border-bottom: 2px solid var(--border); padding-bottom: .25rem;
+  }
+  .paper-grid { display: grid; gap: .6rem; margin: .4rem 0 1.2rem; }
+  .paper-card {
+    display: block; background: var(--card); border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 6px; padding: .8rem 1rem; text-decoration: none; color: var(--fg);
+    transition: box-shadow .15s;
+  }
+  .paper-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); text-decoration: none; }
+  .paper-card-label {
+    font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--accent); margin-bottom: .2rem;
+  }
+  .paper-card-title { font-size: .95rem; font-weight: 600; line-height: 1.35; }
+  .paper-card-cta {
+    display: inline-block; margin-top: .35rem;
+    font-size: .78rem; color: var(--accent);
+  }
+  .paper-card-placeholder {
+    border-left-color: #adb5bd; opacity: .85; cursor: default;
+  }
+  .paper-card-placeholder .paper-card-label { color: var(--muted); }
+  .paper-card-msg {
+    font-size: .78rem; color: var(--muted); margin-top: .35rem;
+  }
+</style>
+</head>
+<body>
+
+<!-- INJECT_NAV -->
+
+<main>
+<h2>Papers</h2>
+<div class="paper-grid">
+<!-- INJECT_PAPER_CARDS -->
+</div>
+</main>
+</body>
+</html>

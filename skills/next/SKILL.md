@@ -250,14 +250,24 @@ header so the source-to-AN back-link is greppable.
 
 Location and naming (per workspace.md "Source and build naming convention"):
 
-- Table outputs → `source/table/X.py` → `build/table/X.{csv,parquet,tex}`
-- Figure outputs → `source/figure/X.py` → `build/figure/X.{pdf,png}`
+- **Analysis backing an AN page (default)** → `source/analysis/an-NNN-<slug>.py`
+  → outputs at `build/table/<slug>.{csv,tex}` and/or `build/figure/<slug>.{pdf,png}`
+  per file extension. The AN-page is the unit; the script location mirrors
+  `docs/analyses/`. Multi-AN scripts that back several AN pages (e.g. a regression
+  module shared across AN-001/002/003) use a descriptive name without the AN
+  prefix and each AN page's `script:` field points at the same path.
+- Paper-table builder → `source/table/X.py` → `build/table/X.{csv,tex}`
+- Paper-figure builder → `source/figure/X.py` → `build/figure/X.{pdf,png}`
+- Legacy projects: `source/table/X.py` is also accepted for analysis scripts on
+  projects that historically organized analyses there. New default for analysis
+  is `source/analysis/`; mixing the two within a project is fine as long as each
+  AN page's `script:` field is accurate.
 - **Multi-output scripts** (more than one output of the same suffix) must
   write into a folder named after the script:
   `source/figure/X.py` → `build/figure/X/<name>.png`, not sibling files like
   `build/figure/X_a.png` + `build/figure/X_b.png`. The script-to-output
   mapping must be recoverable from the path alone.
-- Underscore-prefix (`source/table/_foo_check.py`) for one-shot
+- Underscore-prefix (`source/analysis/_foo_check.py`) for one-shot
   exploratory checks kept for reproducibility but not part of the
   pipeline. Use sparingly — most scripts should not need it.
 
@@ -496,7 +506,7 @@ produces a new script (one not already in the ledger), append a
 `pending` row:
 
 ```yaml
-- script: source/table/<new-script>.py
+- script: source/analysis/<new-script>.py
   layer: <inferred from path>     # e.g. analysis_<topic>, figure_<topic>
   produces: build/table/<new-script>.csv
   depends_on: []                   # filled in by /validate-section later
@@ -538,7 +548,7 @@ cleanly — the project hasn't opted in.
 
 - Append a one-line entry to `docs/done.md` under today's date with the
   script path and the headline number. In AN-mode, lead with the AN id:
-  `AN-019 (source/table/within_mayor_lameduck.py) — within-mayor
+  `AN-019 (source/analysis/an-019-within-mayor-lameduck.py) — within-mayor
   contrast: -0.4pp [CI: -1.2, +0.4], result attenuates to noise.`
 - **Capture tangential leads in `todo.md`.** If steps 3–5 surfaced
   high-value tangential questions — a surprising coefficient, an

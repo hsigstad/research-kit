@@ -11,7 +11,7 @@ import shutil
 from .config import SiteConfig
 from .context import BuildContext
 from .docs import build_docs_section, build_doc_subdir
-from .paper import build_paper_page, build_talk_page
+from .paper import build_paper_page, build_papers_section, build_talk_page
 from .index_page import build_index
 from .analyses import build_analyses_index
 from .script_pages import build_script_pages
@@ -59,7 +59,11 @@ def build_site(config: SiteConfig) -> int:
             docs_info.append(extra)
 
     print("\nBuilding paper page...")
-    has_paper = build_paper_page(ctx)
+    if config.papers:
+        paper_results = build_papers_section(ctx)
+        has_paper = any(paper_results.values())
+    else:
+        has_paper = build_paper_page(ctx)
 
     print("\nBuilding talk page...")
     has_talk = build_talk_page(ctx)

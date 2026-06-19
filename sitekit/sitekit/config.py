@@ -19,6 +19,14 @@ SubdirEntry = tuple[str, str, str]
 # (rel_path, href, label, description, priority, priority_class)
 GuideBrief = tuple[str, str, str, str, str, str]
 
+# (key, label, tex_filename, makeht_dir, title)
+# Multi-paper projects (fisc) declare each first-class paper here. When
+# non-empty, the site renders /paper/<key>/index.html per entry plus a
+# /paper/index.html listing page, and the top-nav "Paper" link becomes a
+# "Papers" dropdown. When empty (default), single-paper layout via
+# `paper_tex` / `paper_makeht_dir` is used.
+PaperEntry = tuple[str, str, str, str, str]
+
 # Hook callable: receives BuildContext, returns whatever the hook produces
 # (typically a list[dict] of items to surface on the index, or a bool).
 # Forward-declared as Any here to avoid a circular import.
@@ -48,6 +56,10 @@ class SiteConfig:
     talk_tex: str = "talk.tex"       # filename under build/make4ht_talk/
     paper_makeht_dir: str = "build/make4ht"
     talk_makeht_dir: str = "build/make4ht_talk"
+
+    # Multi-paper projects: one entry per first-class paper. Non-empty
+    # switches the build into multi-paper layout (see PaperEntry above).
+    papers: list[PaperEntry] = field(default_factory=list)
 
     # --- doc structure ---
     doc_registry: list[DocEntry] = field(default_factory=list)

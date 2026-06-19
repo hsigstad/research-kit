@@ -136,11 +136,34 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
             doc_items.append(f'<a href="{href}">{title}</a>')
     doc_items_html = "\n    ".join(doc_items)
 
-    # Nav extras (Paper is always first; others are project-configured)
+    # Nav extras (Paper(s) is always first; others are project-configured).
+    # Multi-paper projects render a "Papers" dropdown listing each entry;
+    # single-paper projects keep the legacy "Paper" link.
     extras_html: list[str] = []
-    extras_html.append(
-        f'<a href="{prefix}paper/index.html"{_cls("paper")}>Paper</a>'
-    )
+    if cfg.papers:
+        paper_items: list[str] = []
+        for key, label, _tex, _makeht, _title in cfg.papers:
+            paper_items.append(
+                f'<a href="{prefix}paper/{key}/index.html">{label}</a>')
+        # Include the listing page as a header link so users can land on
+        # the index without picking one paper.
+        paper_items_html = (
+            f'<a href="{prefix}paper/index.html">All papers</a>\n    '
+            '<div class="dropdown-divider"></div>\n    '
+            + "\n    ".join(paper_items)
+        )
+        extras_html.append(
+            f"""<div class="nav-dropdown">
+    <button{_cls("paper")}>Papers &#9662;</button>
+    <div class="dropdown-menu">
+    {paper_items_html}
+    </div>
+  </div>"""
+        )
+    else:
+        extras_html.append(
+            f'<a href="{prefix}paper/index.html"{_cls("paper")}>Paper</a>'
+        )
     for label, href_template, key in cfg.nav_extras:
         href = href_template.replace("{prefix}", prefix)
         extras_html.append(f'<a href="{href}"{_cls(key)}>{label}</a>')

@@ -1,0 +1,40 @@
+<!--
+Companion CSS for snippets/inline_footnotes.py.
+
+Drop these rules into templates/paper.html's <style> block (or its
+embedded stylesheet) so the inline-tooltip spans created by
+inline_footnotes() actually surface on hover/focus.
+-->
+<style>
+  .fn-inline {
+    position: relative;
+    cursor: help;
+  }
+  .fn-inline sup { color: var(--accent); }
+  .fn-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+    position: absolute;
+    bottom: 1.6em;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28rem;
+    max-width: 90vw;
+    background: var(--card);
+    color: var(--fg);
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 100;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    text-align: left;
+  }
+  .fn-inline:hover .fn-tooltip,
+  .fn-inline:focus .fn-tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+</style>
