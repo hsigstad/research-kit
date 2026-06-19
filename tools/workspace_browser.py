@@ -465,6 +465,15 @@ def md_path_to_html_path(rel: str) -> str:
     return rel + ".html"
 
 
+def base_href_for(html_path: str) -> str:
+    """Compute a relative <base href> that points to the site root from a
+    page at the given output-relative path. Lets every page use root-
+    relative hrefs ("style.css", "projects/index.html") without baking
+    the host's absolute path into the HTML. The root index gets "./"."""
+    depth = html_path.count("/")
+    return "../" * depth if depth else "./"
+
+
 # ---------------------------------------------------------------------------
 # Navigation / index
 # ---------------------------------------------------------------------------
@@ -770,7 +779,7 @@ def build_page(rel_md: str, md_text: str, registry: dict,
 
     return PAGE_TEMPLATE.format(
         title=html.escape(title),
-        base_href=base_href,
+        base_href=base_href_for(path_to_html[rel_md]),
         nav=nav_html,
         breadcrumb=breadcrumb,
         content=body,
@@ -883,7 +892,7 @@ def build_index_page(registry: dict, path_to_html: dict[str, str],
 
     return PAGE_TEMPLATE.format(
         title="Workspace",
-        base_href=base_href,
+        base_href=base_href_for("index.html"),
         nav=nav_html,
         breadcrumb="<strong>workspace</strong>",
         content=content,
@@ -1038,7 +1047,7 @@ def build_section_index(section: str, groups: dict, registry: dict,
 
     return PAGE_TEMPLATE.format(
         title=title,
-        base_href=base_href,
+        base_href=base_href_for(f"{section}/index.html"),
         nav=nav_html,
         breadcrumb=f'<a href="index.html">workspace</a> / <strong>{section}</strong>',
         content=body,
@@ -1055,7 +1064,7 @@ def build_project_doc_listing(slug: str, files: list[tuple[str, str]],
     content = f'<h1>{slug}</h1>\n<p>No project site built. Documentation pages:</p>\n<ul>{"".join(items)}</ul>'
     return PAGE_TEMPLATE.format(
         title=slug,
-        base_href=base_href,
+        base_href=base_href_for(f"projects/{slug}/index.html"),
         nav=nav_html,
         breadcrumb=f'<a href="index.html">workspace</a> / <a href="projects/index.html">projects</a> / <strong>{slug}</strong>',
         content=content,
@@ -1168,7 +1177,7 @@ def build_law_pages(workspace: Path, out_dir: Path, nav_html: str,
 
         page_html = PAGE_TEMPLATE.format(
             title=law_title,
-            base_href=base_href,
+            base_href=base_href_for(f"laws/{apelido}.html"),
             nav=nav_html,
             breadcrumb=(f'<a href="index.html">workspace</a> / '
                         f'<a href="laws/index.html">laws</a> / '
@@ -1188,7 +1197,7 @@ def build_law_pages(workspace: Path, out_dir: Path, nav_html: str,
     index_content = f'<h1>Laws</h1>\n<ul class="col-list">{items}</ul>'
     index_html = PAGE_TEMPLATE.format(
         title="Laws",
-        base_href=base_href,
+        base_href=base_href_for("laws/index.html"),
         nav=nav_html,
         breadcrumb='<a href="index.html">workspace</a> / <strong>laws</strong>',
         content=index_content,
@@ -1218,7 +1227,7 @@ def build_law_pages(workspace: Path, out_dir: Path, nav_html: str,
                 case_parts.append('</div>')
             juris_html = PAGE_TEMPLATE.format(
                 title="Jurisprudence",
-                base_href=base_href,
+                base_href=base_href_for("jurisprudence.html"),
                 nav=nav_html,
                 breadcrumb='<a href="index.html">workspace</a> / <strong>jurisprudence</strong>',
                 content=f'<h1>Jurisprudence</h1>\n' + "\n".join(case_parts),
@@ -1286,8 +1295,11 @@ def main():
                     path_to_html[p] = hp
                     break
 
-    # Base href for file:// compatibility
-    base_href = out_dir.as_uri() + "/"
+    # base_href is computed per-page as base_href_for(html_path) so the
+    # site is fully portable — every relative href on the page resolves
+    # against the site root regardless of where build/browser/ is opened
+    # (file://, http server, Dropbox sync, etc.). No host path baked in.
+    base_href = None  # legacy slot — every call site below overrides per page
 
     # Build navigation
     file_pairs = [(str(md.relative_to(workspace)), path_to_html[str(md.relative_to(workspace))])
@@ -1356,10 +1368,15 @@ def main():
     # Write workspace_nav.js — project sites can optionally load this
     # to show a small link back to the workspace browser. Only exists
     # on the local machine, so coauthors never see it.
+    # The href derives from the script's own URL at runtime, so the
+    # link works regardless of where build/browser/ lives (file://, http
+    # server, Dropbox-synced copy, etc.) — no host path is baked in.
     nav_js = (
         '(function(){'
+        'var s=document.currentScript;'
+        'if(!s||!s.src)return;'
         'var a=document.createElement("a");'
-        'a.href="' + base_href + 'index.html";'
+        'a.href=s.src.replace(/workspace_nav\\.js.*$/, "index.html");'
         'a.textContent="\\u2302";'  # ⌂
         'a.title="Workspace browser";'
         'a.style.cssText="position:fixed;top:8px;left:8px;z-index:9999;'
@@ -1441,7 +1458,7 @@ def main():
 
             idx_html = PAGE_TEMPLATE.format(
                 title=subdir_name.title(),
-                base_href=base_href,
+                base_href=base_href_for(f"research/{subdir_name}/index.html"),
                 nav=nav_html,
                 breadcrumb=(f'<a href="index.html">workspace</a> / '
                             f'<a href="research/index.html">research</a> / '
