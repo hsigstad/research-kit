@@ -96,10 +96,12 @@ def parse(txt_path: str) -> dict:
             m = _DATE_TITLE_RE.match(line)
             if m:
                 date_str, title = m.group(1), m.group(2).strip()
-                try:
-                    date_iso = datetime.strptime(date_str, "%d %B %Y").strftime("%Y-%m-%d")
-                except ValueError:
-                    date_iso = None
+                for fmt in ("%d %B %Y", "%d %b %Y"):
+                    try:
+                        date_iso = datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+                        break
+                    except ValueError:
+                        date_iso = None
                 section = "after_title"
                 continue
 
