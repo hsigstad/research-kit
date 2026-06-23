@@ -5,6 +5,15 @@ baseline) and [`body.md`](body.md) (body baseline).
 
 ---
 
+- **Introduce the design before naming it.** Don't open a paragraph
+  with "The within-candidate fixed-effects design compares ..." or
+  "The coefficient β in Equation 1 measures ..." before the design or
+  equation has been set up. The first sentence of a methods paragraph
+  should motivate ("To assess whether ...") and then introduce the
+  specification; only after the specification is on the page can the
+  prose refer to its components by name. The fix is one extra
+  sentence and removes a recurring reader-confusion pattern where
+  the formal object is named before it has been defined.
 - **State the identification strategy clearly.** "Identification,
   identification, identification" (Cochrane). Much empirical work boils
   down to a claim that "A causes B" — explain how the causal effect is

@@ -118,6 +118,14 @@ or expand by section. The order matters more than the exact count.
   reader, and result paragraphs cash those promises. When a coauthor
   reads a result and asks "wait, why are we looking at this outcome?",
   the intro is missing a sentence earlier.
+- **State the country and institutional setting before the reader
+  needs them.** If the paper studies Brazil, the first sentence of
+  the first paragraph that names a Brazilian actor (a firm, a
+  politician, an election) must locate the reader in Brazil. "In
+  2022 the polling firm X ..." → "In Brazil's 2022 presidential
+  election, the polling firm X ...". Most readers are not from the
+  country the paper studies, and the intro cannot assume they
+  recognise the names of local politicians, parties, or institutions.
 - **Question-first applies to the intro too.** The opening sentence is
   the question or its concrete motivation, not the contribution and not
   the lit gap. Same rule as `abstract.md`.

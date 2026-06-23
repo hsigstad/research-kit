@@ -185,7 +185,10 @@ prose. State the level of observation, comparison, and fixed effects
 directly. *Within-cell variation* → *variation within race × week*;
 *candidacy grain* → *one observation per candidacy*; *we join X to Y*
 → *we link X to Y* or *we merge X with Y*. The reader is not reading
-the SConstruct.
+the SConstruct. The same rule applies to inline pseudocode: a
+parenthetical like `(matched share = 1)` or `(treated = 1)` is code,
+not prose — state the condition in words ("polls where every candidate
+matched", "the treated cohort").
 
 **Reserve causal verbs for causal designs.** Words like *cause, effect,
 impact, drive, induce, penalize, lead to* claim a causal relationship.
@@ -230,6 +233,17 @@ operation, the variable, or the design choice.
   *"Policy options to reduce poll bias"*. The cost is two more words;
   the gain is a skimmable structure where each heading earns its place
   in the table of contents.
+- **Don't lead an opener with the conclusion.** Paragraph and
+  subsection openers should name the question or the object under
+  discussion, not announce the answer the section is about to derive.
+  "Capture is induced at production stages the registration system
+  does not see" → start by naming what the section is asking ("This
+  section asks where in the production chain the slant is induced"),
+  then derive the answer in the body. Same for subsection openers
+  like "The third lever is the only one currently operating in the
+  data" — lead with the question the subsection answers, not the
+  verdict. Leading with the conclusion robs the body of its work and
+  trains the reader to stop reading after the opener.
 - One idea per paragraph.
 - **State institutional details, sample definitions, and data-construction
   facts once.** Cross-reference rather than re-explain. If the reader
