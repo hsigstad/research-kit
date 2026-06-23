@@ -112,7 +112,7 @@ annotation in numeric order. Each entry should have:
   what TODO logged, or "none — superseded by #X").
 
 This is the document we can hand to the coauthor offline (email, Drive,
-WhatsApp) AND it's the source the posting step (Step 7) will condense
+WhatsApp) AND it's the source the posting step (Step 8) will condense
 into hypothes.is replies. Keep entries faithful to the conversation;
 don't paper over disagreements.
 
@@ -120,7 +120,39 @@ If multiple annotations are addressed by a single edit (e.g. "#10 + #27
 both ask for X"), give them one combined entry under the lowest number,
 and reference it from the higher number (e.g. "#27 — handled under #10").
 
-### 7. Post condensed replies to hypothes.is (optional)
+### 7. Harvest style-flavored feedback to the workspace log (optional)
+
+After the response log is complete, classify each annotation by *kind*:
+
+- **content** — factual correction, methodological pushback, missing
+  citation, "this number is wrong", scope/framing decisions about what
+  to claim. Skip.
+- **style** — rewording, clarity, sentence length, "buries the lede",
+  "too jargony", "intro doesn't motivate", register, punctuation. Append.
+- **mixed** — append the style part only; the content part is already
+  captured in the project response log.
+- **typo** — pure typo/spelling. Skip (noise).
+- **meta** — about the process, not the text ("let's discuss on a call").
+  Skip.
+
+For each `style` and `mixed` entry, append one record to
+`$ROOT/research/rules/writing_feedback_log.md` below the
+`<!-- /fetch-annotations appends below this line -->` marker, in the format
+documented at the top of that file. Use exactly one tag from the fixed
+vocab listed there. Mark `Status: raw`.
+
+Do NOT edit `research/rules/writing_style.md` or the research-kit baseline
+here. The log is harvest; distillation is a separate, manual
+`/distill-style` pass (not yet implemented at time of writing). If you find
+the same annotation keeps appearing across projects and the rule is
+obvious, mention it to the user rather than auto-promoting — they decide
+what becomes a rule.
+
+If the `other` bucket is taking on entries that share a pattern, surface
+that to the user at the end of this step — emerging clusters are the
+trigger to update the vocab in `writing_feedback_log.md`.
+
+### 8. Post condensed replies to hypothes.is (optional)
 
 After the response log is complete, offer the user the option to post
 each response as a threaded reply back to the original annotation. This
@@ -210,7 +242,7 @@ Workflow:
 - **Paper annotations** map to `paper/paper.tex` but the quote is HTML text
   from make4ht output — expect LaTeX macros in the source around the match.
 - **Never delete the coauthor's annotations** via the API. You can only
-  delete your own replies (Step 7), and only with the user's go-ahead.
+  delete your own replies (Step 8), and only with the user's go-ahead.
 - **Don't batch applies.** Walk the user through one at a time; a wrong
   auto-apply on a paragraph is painful to undo.
 - **Token names vary.** Two conventions exist in this workspace:
@@ -228,6 +260,6 @@ Workflow:
 - **Group inheritance.** A reply lands in whatever group the parent
   annotation is in (`__world__` for public, an ID for private groups).
   The script inherits this per entry; don't override unless you mean to.
-- **Condensed-reply rule.** When posting (Step 7), each reply must be
+- **Condensed-reply rule.** When posting (Step 8), each reply must be
   2–4 sentences. The full response log is the long form; hypothes.is
   reply threads read terribly when stuffed with multi-paragraph prose.

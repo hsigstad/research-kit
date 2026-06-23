@@ -74,6 +74,15 @@ tell, and the one that survives surface-level rewriting. After a long
 sentence, write a short one. After two clauses, write one. Read the
 paragraph aloud: if every sentence has the same shape, restructure.
 
+**When revising, prefer deletion to rewriting.** The most common
+failure mode in Claude-drafted prose is *adding* — extra setup
+sentences, explanatory clauses, "by elimination" framings, "across the
+spec ladder" summaries, transition lines that restate the previous
+paragraph. When a coauthor flags a sentence as too long or too
+complicated, the right move is usually to delete a clause or the whole
+sentence, not to rewrite it. Ask first: "does the paragraph still work
+if I cut this?" — and if yes, cut.
+
 - At most two subordinate clauses. Three-clause stacks get split.
 - Em-dashes are fine — used as parenthetical inserts, to introduce examples,
   or to gloss a term.
@@ -141,8 +150,9 @@ seamless, pivotal, intricate, holistic, dynamic landscape, in today's
 world, it is important to note that, it's worth mentioning that. Also:
 crucial, vital, particularly suitable, highly competitive, substantial
 (as filler), severe (as filler intensifier), sizeable, one of the most
-X in the world, a testament to. These are the 2026-vintage promotional
-words that read as AI-drafted scene-setting.
+X in the world, a testament to, "the takeaway:" (as paragraph opener).
+These are the 2026-vintage promotional words that read as AI-drafted
+scene-setting.
 
 **No present-participle tail clauses.** Sentences ending in `…, providing
 / ensuring / reflecting / emphasizing / highlighting / showcasing /
@@ -177,6 +187,25 @@ directly. *Within-cell variation* → *variation within race × week*;
 → *we link X to Y* or *we merge X with Y*. The reader is not reading
 the SConstruct.
 
+**Reserve causal verbs for causal designs.** Words like *cause, effect,
+impact, drive, induce, penalize, lead to* claim a causal relationship.
+Use them only when the design identifies causality (RD, IV, RCT, a
+credible DID). For OLS associations, descriptive correlations, and
+conditional means, use neutral language: *associate, correlate with,
+predict, accompany, coincide with, are linked to*. Compare:
+
+- Causal: "Pre-filing convictions reduce vote share by 8 points."
+- Descriptive: "Pre-filing convictions are associated with an 8-point
+  lower vote share."
+
+**Don't refer to coefficients by Greek letter or estimator name in
+prose.** Describe what the number measures, not how it was computed.
+*Within-firm β* → *within-firm bias*; *β_c = β_a* → *equality of the
+convicted and acquitted estimates*; *the within-candidate sponsor
+coefficient is around +8 pp* → *sponsored polls overstate by about 8
+percentage points*. Greek letters and estimator labels belong in tables
+and the formal specification, not in narrative prose.
+
 **Acronyms.** Define every acronym on first use, including the standard
 ones (OLS, IV, FE, TSE). Acronyms that appear only once or twice in the
 paper should be expanded inline and the abbreviation dropped — the
@@ -193,6 +222,14 @@ operation, the variable, or the design choice.
 ## 5. Paragraph structure
 
 - Topic sentence first. Don't make the reader work to find the point.
+- **Topic sentences and section headings must name the specific
+  subject.** Headings like *"The phenomenon"*, *"Brazilian context"*,
+  or *"What to do about it?"* require the reader to remember the
+  antecedent. Replace with specific labels: *"Sponsorship bias in
+  registered polls"*, *"Brazilian electoral-poll regulation"*,
+  *"Policy options to reduce poll bias"*. The cost is two more words;
+  the gain is a skimmable structure where each heading earns its place
+  in the table of contents.
 - One idea per paragraph.
 - **State institutional details, sample definitions, and data-construction
   facts once.** Cross-reference rather than re-explain. If the reader
@@ -285,6 +322,15 @@ just as bad as lots of footnotes.
 - **Self-contained captions.** A skimming reader should understand the
   table or figure without reading the body. Define every symbol on a
   graph; spell out variable names; state what each column shows.
+  *Captions and table notes are paper prose.* The same rules that apply
+  to body prose apply here: define every acronym on first use in the
+  table (don't assume it was defined in the text); never refer to
+  pipeline-internal variable names (`cpf_proc`, `case-grain sample`);
+  spell out what each column shows in plain English; describe parameter
+  restrictions ("the test that the convicted and acquitted estimates
+  are equal") rather than naming them by symbol ("P β_c = β_a"). A
+  reader who turns straight to the tables should be able to follow them
+  without consulting the body.
 - **Every number is discussed.** No number appears in a table that is
   not discussed in the text. "Row 1 of Table 3 shows a u-shaped pattern"
   is fine; "Table 5 shows summary statistics" alone is not — if it's
@@ -309,6 +355,11 @@ and parentheses across a paragraph — as a tell. The rule is per-paragraph:
 at most one em-dash per paragraph; reserve it for the genuinely
 parenthetical case where the comma or paren would lose structure. Where
 a comma works, use a comma; where a colon works, use a colon.
+
+**Avoid math symbols in prose.** Spell out the relationship: *district
+× filing-year stratum* → *district-by-filing-year stratum* or *strata
+defined by district and filing year*. Symbols (×, ÷, ≤, ≥, ⊆) belong
+in equations and table headers, not in narrative sentences.
 
 Context-specific exceptions may apply (e.g., referee reports often require
 plain ASCII to avoid AI-detection cues). Authors should layer those

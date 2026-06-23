@@ -101,6 +101,23 @@ or expand by section. The order matters more than the exact count.
   the start.** The intro is read top-to-bottom; readers care about your
   question and findings before they care which threads you contribute
   to.
+- **Don't scaffold the intro around "this paper makes three
+  contributions to ...".** A contribution is whatever the paper adds to
+  the field; if there's really only one, say so. Packaging the paper
+  as "X contributes to three literatures" usually produces three padded
+  paragraphs where one would do. State the contribution(s) you actually
+  have, then anchor each one to the two or three closest current papers
+  — not a JEL-style review of the whole literature (Cochrane). If you
+  find yourself stretching for a second or third contribution, the
+  intro is telling you the paper has one.
+- **Every outcome studied must be motivated before it appears as a
+  result.** If the paper analyses vote share, the intro must motivate
+  why vote share matters before the result paragraph that reports the
+  vote-share number. "Out of the blue" outcomes break the contract
+  Shapiro describes in step 4: the intro promises certain things to the
+  reader, and result paragraphs cash those promises. When a coauthor
+  reads a result and asks "wait, why are we looking at this outcome?",
+  the intro is missing a sentence earlier.
 - **Question-first applies to the intro too.** The opening sentence is
   the question or its concrete motivation, not the contribution and not
   the lit gap. Same rule as `abstract.md`.
