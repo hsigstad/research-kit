@@ -1007,6 +1007,37 @@ def check_pseudocode_inline(filepath: str, lines: list[tuple[int, str, str]]) ->
     return violations
 
 
+def check_workflow_jargon(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """§4: internal-workflow language (analysis-ledger IDs, pipeline status,
+    working-note markers) doesn't belong in paper prose."""
+    PATTERNS = [
+        (r"\bAN-\d{2,}\b",
+         "Analysis-ledger ID — describe the operation in research language"),
+        (r"\bqueued\b",
+         "Pipeline status — say what is actually happening"),
+        (r"\bin production\b",
+         "Pipeline status — describe what the system does"),
+        (r"\bthe scrape\b",
+         "Pipeline reference — name what was collected (e.g., 'the registry pull')"),
+        (r"\b(?:TODO|FIXME|XXX)\b",
+         "Working-note marker — strip from paper prose"),
+    ]
+    violations = []
+    for lineno, _raw, prose in lines:
+        if not prose.strip():
+            continue
+        for pat, fix in PATTERNS:
+            for m in re.finditer(pat, prose, re.IGNORECASE):
+                violations.append(Violation(
+                    file=filepath, line=lineno, rule="workflow-jargon",
+                    severity="warning",
+                    message=f"Internal workflow term in prose: \"{m.group()}\"",
+                    suggestion=fix + " (§4)",
+                    context=prose.strip()[:120],
+                ))
+    return violations
+
+
 def check_coding_vocab(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
     """§4: data-engineering vocabulary in published prose."""
     PATTERNS = [
@@ -1167,6 +1198,7 @@ ALL_CHECKS = [
     check_math_in_prose,
     check_pseudocode_inline,
     check_coding_vocab,
+    check_workflow_jargon,
 ]
 
 
