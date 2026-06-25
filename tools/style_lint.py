@@ -79,7 +79,13 @@ def _strip_tex_markup(text: str) -> str:
     # Remove inline math
     text = re.sub(r"\$[^$]+?\$", " MATH ", text)
     # Remove \command{...} but keep the brace content for text commands
-    text = re.sub(r"\\(?:textbf|textit|emph|textsc|textrm)\{([^}]*)\}", r"\1", text)
+    # (formatting + section/caption titles — these are prose worth linting)
+    text = re.sub(
+        r"\\(?:textbf|textit|emph|textsc|textrm|"
+        r"section|subsection|subsubsection|chapter|paragraph|subparagraph|"
+        r"title|caption)\*?\{([^}]*)\}",
+        r"\1", text,
+    )
     # Remove other commands
     text = re.sub(r"\\[a-zA-Z]+\*?(?:\[[^\]]*\])*(?:\{[^}]*\})*", " ", text)
     # Remove remaining braces
@@ -221,7 +227,6 @@ def check_ai_tell(filepath: str, lines: list[tuple[int, str, str]]) -> list[Viol
     """§4: AI-tell vocabulary."""
     WORDS = [
         r"\bdelve(?:s|d)?\s+into\b",
-        r"\bleverage[sd]?\b",
         r"\bnavigate[sd]?\b",
         r"\bunderscore[sd]?\b",
         r"\bmultifaceted\b",
@@ -235,12 +240,17 @@ def check_ai_tell(filepath: str, lines: list[tuple[int, str, str]]) -> list[Viol
         r"\bit is important to note that\b",
         r"\bit'?s worth mentioning that\b",
     ]
-    # "comprehensive" and "robust" only when used as filler (not in
-    # technical contexts like "robust standard errors")
+    # "comprehensive", "robust", and "leverage" only when used as filler
+    # (not in technical contexts like "robust standard errors" or
+    # statistical "high-leverage observation")
     FILLER_ADJ = [
         (r"\bcomprehensive\b", ["comprehensive income", "comprehensive school"]),
         (r"\brobust\b", ["robust standard error", "robust se", "robust variance",
-                         "robust inference", "robust optimization", "robust control"]),
+                         "robust inference", "robust optimization", "robust control",
+                         "robust to", "robust against"]),
+        (r"\bleverage[sd]?\b", ["high-leverage", "low-leverage", "leverage point",
+                                "leverage statistic", "leverage diagnostic",
+                                "leverage score", "leverage and cell"]),
     ]
     pattern = re.compile("|".join(WORDS), re.IGNORECASE)
     violations = []
@@ -783,6 +793,349 @@ def check_cute_quotation(filepath: str, lines: list[tuple[int, str, str]]) -> li
     return violations
 
 
+def check_greek_in_prose(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """Workspace overlay: don't refer to coefficients by Greek letter in prose.
+
+    Catches inline math that's just a Greek letter used as a noun
+    (`$\\beta$`, `$\\beta_c$`, `$\\hat\\beta$`) and bare Greek unicode in
+    prose. Severity is `info` because legitimate equation references on
+    a prose line will also match.
+    """
+    GREEK_CMDS = (r"\\(?:alpha|beta|gamma|delta|epsilon|zeta|eta|theta|"
+                  r"iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|phi|chi|psi|omega)")
+    GREEK_UNICODE = r"[α-ωΑ-Ω]"
+    inline_greek_only = re.compile(
+        r"\$\s*(?:\\hat\s*)?" + GREEK_CMDS +
+        r"(?:_(?:\{[^}]+\}|[a-zA-Z0-9]))?\s*\$"
+    )
+    bare_greek = re.compile(GREEK_UNICODE)
+    violations = []
+    for lineno, raw, prose in lines:
+        if not prose.strip():
+            continue  # math env / comment / blank
+        if inline_greek_only.search(raw):
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="greek-in-prose",
+                severity="info",
+                message="Greek letter used as a coefficient name in prose",
+                suggestion="Describe what the number measures (e.g., 'within-firm bias') "
+                           "instead of naming it by Greek letter",
+                context=raw.strip()[:120],
+            ))
+            continue
+        m = bare_greek.search(raw)
+        if m:
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="greek-in-prose",
+                severity="info",
+                message=f"Greek letter in prose: \"{m.group()}\"",
+                suggestion="Replace with plain-English description of the quantity",
+                context=raw.strip()[:120],
+            ))
+    return violations
+
+
+def _is_inside_parens(text: str, pos: int) -> bool:
+    """True if `pos` falls inside an unclosed `(` on the same line."""
+    return text[:pos].count("(") > text[:pos].count(")")
+
+
+_ITALICS_TEMPLATE = r"\\(?:emph|textit|textsl)\*?\{{[^}}]*{token}[^}}]*\}}"
+
+
+def _is_inside_italics(raw: str, token: str) -> bool:
+    """True if `token` appears inside `\\emph{{...}}` / `\\textit{{...}}` on `raw`."""
+    pat = re.compile(_ITALICS_TEMPLATE.format(token=re.escape(token)), re.IGNORECASE)
+    return bool(pat.search(raw))
+
+
+def check_foreign_language(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """§6: foreign-language terms outside paren-gloss / italics.
+
+    Catches Portuguese tokens (and tokens carrying Portuguese diacritics)
+    used in body prose. The rule allows: gloss-on-first-use (`comarca
+    (judicial district)`), italicized first-use (`\\emph{comarca}`), and
+    a small carve-out list for institutional roles with no English
+    equivalent (`relator`). Hybrid compounds (`comarca-level`,
+    `câmara level`) are always wrong and flagged at warning severity.
+    """
+    # Trimmed to high-signal institutional Portuguese terms that are
+    # rarely proper-noun parts or citation titles. Project-specific
+    # bans (e.g., `plano amostral`, `pesquisa eleitoral` as a sub-genre
+    # term) belong in the workspace overlay banned-phrases table.
+    PT_TOKENS = re.compile(
+        r"(?<![A-Za-zÀ-ÿ\\])"
+        r"(comarcas?|câmaras?|varas?|"
+        r"munic[ií]pios?|"
+        r"prefeit(?:o|ura)s?|vereadores?|"
+        r"sentenças?|improbidade|intimaç(?:ão|ões)|"
+        r"desembargadores?)"
+        r"(?![A-Za-zÀ-ÿ])",
+        re.IGNORECASE,
+    )
+    WHITELIST = {"relator", "relatores"}  # §6 carve-out: no clean English equivalent
+    HYBRID = re.compile(
+        r"\b(comarca|câmara|vara|município|cartório|cidade)[- ]levels?\b",
+        re.IGNORECASE,
+    )
+    violations = []
+    for lineno, raw, prose in lines:
+        if not prose.strip():
+            continue
+        for m in HYBRID.finditer(prose):
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="foreign-language",
+                severity="warning",
+                message=f"Foreign-language hybrid: \"{m.group()}\"",
+                suggestion="Use English equivalent: \"district level\", \"courtroom level\", etc. (§6)",
+                context=prose.strip()[:120],
+            ))
+        for m in PT_TOKENS.finditer(prose):
+            token = m.group()
+            if token.lower() in WHITELIST:
+                continue
+            if _is_inside_parens(prose, m.start()):
+                continue
+            if _is_inside_italics(raw, token):
+                continue
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="foreign-language",
+                severity="info",
+                message=f"Foreign-language term outside paren-gloss: \"{token}\"",
+                suggestion="Gloss in parens on first use, English thereafter (§6)",
+                context=prose.strip()[:120],
+            ))
+    return violations
+
+
+def check_participle_tail(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """§4: present-participle tail clauses (AI-cadence)."""
+    pattern = re.compile(
+        r",\s+(providing|ensuring|reflecting|emphasizing|highlighting|"
+        r"showcasing|fostering|underscoring|contributing to|reinforcing|"
+        r"signaling|demonstrating|illustrating)\b[^.!?]{0,120}[.!?]",
+        re.IGNORECASE,
+    )
+    violations = []
+    for lineno, _raw, prose in lines:
+        for m in pattern.finditer(prose):
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="participle-tail",
+                severity="warning",
+                message=f"Present-participle tail clause: \"{m.group()[:50].rstrip()}…\"",
+                suggestion="Replace with a separate sentence or cut — the substance usually survives (§4)",
+                context=prose.strip()[:120],
+            ))
+    return violations
+
+
+def check_illustrative(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """Quick-ref: \"illustrative test/work\" — do real empirical work or none."""
+    pattern = re.compile(
+        r"\billustrative\s+(empirical work|test|exercise|analysis|evidence)\b",
+        re.IGNORECASE,
+    )
+    violations = []
+    for lineno, _raw, prose in lines:
+        for m in pattern.finditer(prose):
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="illustrative",
+                severity="warning",
+                message=f"\"{m.group()}\" — do real empirical work or none (Cochrane)",
+                suggestion="Drop \"illustrative\" or rewrite to claim what the work actually does",
+                context=prose.strip()[:120],
+            ))
+    return violations
+
+
+def check_em_dash_density(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """§11: at most one em-dash per paragraph."""
+    paragraphs = _get_paragraphs(lines)
+    violations = []
+    for para in paragraphs:
+        first_lineno = para[0][0]
+        total = sum(text.count("---") for _lineno, text in para)
+        # Also count unicode em-dashes that survived markup strip
+        total += sum(text.count("—") for _lineno, text in para)
+        if total >= 2:
+            violations.append(Violation(
+                file=filepath, line=first_lineno, rule="em-dash-density",
+                severity="info",
+                message=f"{total} em-dashes in this paragraph (max 1)",
+                suggestion="Reserve em-dash for the genuinely parenthetical case; use comma or colon where they work (§11)",
+                context=para[0][1][:120],
+            ))
+    return violations
+
+
+def check_math_in_prose(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """§11: don't use math symbols (×, ÷, ≤, ≥, ⊆, ∈, …) in narrative prose."""
+    pattern = re.compile(r"[×÷≤≥⊆⊇⊂⊃∈∉∪∩∧∨≠≈±]")
+    violations = []
+    for lineno, _raw, prose in lines:
+        if not prose.strip():
+            continue
+        m = pattern.search(prose)
+        if m:
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="math-in-prose",
+                severity="info",
+                message=f"Math symbol in prose: \"{m.group()}\"",
+                suggestion="Spell out: × → \"by\" / \"-by-\"; ≥ → \"at least\"; ⊆ → \"a subset of\" (§11)",
+                context=prose.strip()[:120],
+            ))
+    return violations
+
+
+def check_pseudocode_inline(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """§4: don't paste pseudocode parentheticals like `(matched share = 1)`."""
+    # Matches `(identifier = 0/1)` and `(identifier == "...")` in prose.
+    pattern = re.compile(
+        r"\(\s*[a-z_][a-z0-9_ \-]{0,40}\s*(?:==?|!=)\s*"
+        r"(?:[01]|\".{0,40}\"|'.{0,40}')\s*\)"
+    )
+    violations = []
+    for lineno, _raw, prose in lines:
+        for m in pattern.finditer(prose):
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="pseudocode-inline",
+                severity="warning",
+                message=f"Inline pseudocode: \"{m.group()}\"",
+                suggestion="State the condition in words: \"polls where every candidate matched\", \"the treated cohort\" (§4)",
+                context=prose.strip()[:120],
+            ))
+    return violations
+
+
+def check_coding_vocab(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """§4: data-engineering vocabulary in published prose."""
+    PATTERNS = [
+        (r"\bwithin-cell\b", "name the comparison directly (e.g., \"within race × week\")"),
+        (r"\bcell-level\b", "name the level of observation"),
+        (r"\bsame cell\b", "name the cell explicitly (\"same race-week\")"),
+        (r"\bpanel grid\b", "describe the panel layout in words"),
+        (r"\bgrain\b(?! of (?:salt|truth|sand|rice|sugar|wheat))",
+         "name the level of observation (\"one row per …\")"),
+        (r"\bbucket(?:s|ed|ing)?\b", "name the group or bin"),
+        (r"\b(?:left|inner|outer|cross)\s+join\b", "\"link\" or \"merge\""),
+        (r"\bjoin key\b", "\"matching variable\""),
+        (r"\bassemble layer\b", "describe what the layer does"),
+        (r"\bintermediate layer\b", "describe what the layer does"),
+    ]
+    violations = []
+    for lineno, _raw, prose in lines:
+        lower = prose.lower()
+        for pat, fix in PATTERNS:
+            for m in re.finditer(pat, lower):
+                violations.append(Violation(
+                    file=filepath, line=lineno, rule="coding-vocab",
+                    severity="warning",
+                    message=f"Pipeline vocabulary in prose: \"{m.group()}\"",
+                    suggestion=fix + " (§4)",
+                    context=prose.strip()[:120],
+                ))
+    return violations
+
+
+# ---------------------------------------------------------------------------
+# Workspace overlay: banned-phrases table
+# ---------------------------------------------------------------------------
+
+def _find_overlay(start: Path) -> Optional[Path]:
+    """Walk up from `start` looking for research/rules/writing_style.md."""
+    cur = start.resolve()
+    cur = cur.parent if cur.is_file() else cur
+    while cur != cur.parent:
+        candidate = cur / "research" / "rules" / "writing_style.md"
+        if candidate.is_file():
+            return candidate
+        cur = cur.parent
+    return None
+
+
+_PAREN_RE = re.compile(r"\(([^)]*)\)")
+
+
+def _extract_banned_phrases_from_cell(cell: str) -> list[str]:
+    """Pull banned-phrase backticks out of a "Don't write" cell.
+
+    Top-level backticks (outside parens) are always banned. Backticks
+    inside `(incl. ...)` or `(and ...)` parens are also banned — those
+    are variants of the headline phrase. Backticks inside other parens
+    (`(as a noun ...)`, `(in poll context)`, `(meaning a .csv ...)`) are
+    explanatory and dropped, so things like `.csv` / `.parquet` don't
+    get treated as bans on their own.
+    """
+    phrases = list(re.findall(r"`([^`]+)`", _PAREN_RE.sub("", cell)))
+    for m in _PAREN_RE.finditer(cell):
+        inner = m.group(1).strip().lower()
+        if inner.startswith(("incl", "and ")):
+            phrases.extend(re.findall(r"`([^`]+)`", m.group(1)))
+    return phrases
+
+
+def _parse_banned_phrases(overlay_path: Path) -> list[tuple[re.Pattern, str, str]]:
+    """Parse the banned-phrases markdown table from a workspace overlay.
+
+    Returns list of (compiled_pattern, plain_phrase, suggestion).
+    Entries that are too context-dependent for mechanical matching
+    (e.g. the bare word `file`) are skipped entirely.
+    """
+    SKIP = {"file"}
+    text = overlay_path.read_text(errors="replace")
+    m = re.search(r"##\s+Banned phrases\b(.*?)(?=\n##\s|\Z)", text, re.DOTALL)
+    if not m:
+        return []
+    section = m.group(1)
+    rows: list[tuple[re.Pattern, str, str]] = []
+    for line in section.split("\n"):
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        if line.startswith("|--") or line.startswith("| Don't write"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        dont_cell, use_cell = cells[0], cells[1]
+        phrases = _extract_banned_phrases_from_cell(dont_cell)
+        suggestion = re.sub(r"`([^`]+)`", r"\1", use_cell)
+        for phrase in phrases:
+            if phrase.strip().lower() in SKIP:
+                continue
+            esc = re.escape(phrase)
+            left = r"(?<!\w)" if phrase[0].isalnum() else ""
+            right = r"(?!\w)" if phrase[-1].isalnum() else ""
+            try:
+                pat = re.compile(left + esc + right, re.IGNORECASE)
+            except re.error:
+                continue
+            rows.append((pat, phrase, suggestion))
+    return rows
+
+
+def check_banned_phrases(filepath: str, lines: list[tuple[int, str, str]],
+                         banned: list[tuple[re.Pattern, str, str]]) -> list[Violation]:
+    """Workspace overlay: banned phrases. All emit at warning severity."""
+    if not banned:
+        return []
+    violations = []
+    for lineno, _raw, prose in lines:
+        if not prose.strip():
+            continue
+        for pat, phrase, suggestion in banned:
+            m = pat.search(prose)
+            if m:
+                violations.append(Violation(
+                    file=filepath, line=lineno, rule="banned-phrase",
+                    severity="warning",
+                    message=f"Banned phrase: \"{m.group()}\"",
+                    suggestion=f"Use instead: {suggestion}",
+                    context=prose.strip()[:120],
+                ))
+    return violations
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -806,15 +1159,25 @@ ALL_CHECKS = [
     check_decimal_precision,
     check_abstract_first_sentence,
     check_cute_quotation,
+    check_greek_in_prose,
+    check_foreign_language,
+    check_participle_tail,
+    check_illustrative,
+    check_em_dash_density,
+    check_math_in_prose,
+    check_pseudocode_inline,
+    check_coding_vocab,
 ]
 
 
-def lint_file(filepath: Path) -> list[Violation]:
+def lint_file(filepath: Path, overlay_phrases=None) -> list[Violation]:
     """Run all checks on a single file."""
     lines = extract_lines(filepath)
     violations = []
     for check in ALL_CHECKS:
         violations.extend(check(str(filepath), lines))
+    if overlay_phrases:
+        violations.extend(check_banned_phrases(str(filepath), lines, overlay_phrases))
     violations.sort(key=lambda v: (v.line, SEVERITY_RANK.get(v.severity, 0)))
     return violations
 
@@ -870,6 +1233,12 @@ def main():
                         help="Minimum severity to report (default: info)")
     parser.add_argument("--rule", action="append", default=None,
                         help="Only check these rules (repeatable)")
+    parser.add_argument("--overlay", default=None,
+                        help="Path to a workspace overlay (research/rules/writing_style.md) "
+                             "whose banned-phrases table will be enforced. If omitted, "
+                             "auto-detected by walking up from the first linted file.")
+    parser.add_argument("--no-overlay", action="store_true",
+                        help="Disable workspace overlay auto-detection.")
     args = parser.parse_args()
 
     min_rank = SEVERITY_RANK[args.severity]
@@ -890,9 +1259,24 @@ def main():
         print("No files to lint.", file=sys.stderr)
         sys.exit(0)
 
+    # Resolve workspace overlay (banned-phrases table)
+    overlay_phrases: list = []
+    if not args.no_overlay:
+        overlay_path: Optional[Path] = None
+        if args.overlay:
+            overlay_path = Path(args.overlay)
+            if not overlay_path.is_file():
+                print(f"Warning: overlay {args.overlay} not found, skipping",
+                      file=sys.stderr)
+                overlay_path = None
+        else:
+            overlay_path = _find_overlay(files[0])
+        if overlay_path:
+            overlay_phrases = _parse_banned_phrases(overlay_path)
+
     all_violations: list[Violation] = []
     for f in files:
-        vs = lint_file(f)
+        vs = lint_file(f, overlay_phrases=overlay_phrases)
         # Filter by severity
         vs = [v for v in vs if SEVERITY_RANK.get(v.severity, 0) >= min_rank]
         # Filter by rule
