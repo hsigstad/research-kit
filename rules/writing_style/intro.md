@@ -131,6 +131,14 @@ or expand by section. The order matters more than the exact count.
   the lit gap. Same rule as `abstract.md`.
 - **Don't open with a cute quotation.** No epigraphs from literature,
   song lyrics, or famous figures.
+- **No section / appendix cross-references in the intro body.** The
+  intro narrates the paper in its own voice; sending the reader to
+  "Section~5" or "Appendix~B" mid-paragraph breaks the linear read
+  and treats the intro as a summary instead of a contractual standalone
+  statement. The single exception is the roadmap paragraph at the end
+  ("Section~2 describes…"), where the references are the purpose of
+  the paragraph. Same rule applies to forward `Appendix~\ref{...}`
+  pointers — those belong in the body, not the intro.
 - **Submission discipline: contractual, not aspirational.** Shapiro's
   step 1 (aspirational intro — write the intro for the paper you wish
   you had) is a thinking tool for early-stage project formulation. By
