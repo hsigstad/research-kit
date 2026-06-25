@@ -244,6 +244,15 @@ operation, the variable, or the design choice.
   data" — lead with the question the subsection answers, not the
   verdict. Leading with the conclusion robs the body of its work and
   trains the reader to stop reading after the opener.
+- **Don't open a paragraph or subsection with the worry the test
+  addresses.** "A natural worry is that ...", "A concern with this
+  design is ...", "One might object that ..." — these put the alarm
+  before the substance. State what the test does and what it finds;
+  the reader will infer the worry from the choice to run the test.
+  The exception is when the paper genuinely needs to acknowledge a
+  limitation rather than dismiss a concern; in that case lead with
+  the limitation and what cannot be ruled out, not with a rhetorical
+  "natural worry".
 - One idea per paragraph.
 - **State institutional details, sample definitions, and data-construction
   facts once.** Cross-reference rather than re-explain. If the reader

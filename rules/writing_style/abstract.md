@@ -74,7 +74,9 @@ rules apply.
     portfolio-level monitoring across margins."
 - **No self-categorizing prefaces.** Drop "This is a descriptive paper:",
   "This study is theoretical in nature:", "In this paper, we provide a
-  comprehensive overview of:". The reader can tell from the content.
+  comprehensive overview of:", "The actionable response is:". The reader
+  can tell from the content; flagging a finding as "actionable" or a
+  sentence as a "takeaway" reads as scaffolding rather than substance.
 - **Numbers, not qualifiers.** "65 percent" beats "substantial". Don't
   hedge in front of a number you have ("a substantial share — almost
   one-third"); just say "almost one-third".
