@@ -1009,31 +1009,52 @@ def check_pseudocode_inline(filepath: str, lines: list[tuple[int, str, str]]) ->
 
 def check_workflow_jargon(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
     """§4: internal-workflow language (analysis-ledger IDs, pipeline status,
-    working-note markers) doesn't belong in paper prose."""
+    working-note markers) doesn't belong in paper prose.
+
+    Operates on joined paragraphs so multi-token phrases ("the scrape",
+    "in production") still match when LaTeX line-wrapping splits them.
+    """
     PATTERNS = [
         (r"\bAN-\d{2,}\b",
          "Analysis-ledger ID — describe the operation in research language"),
         (r"\bqueued\b",
          "Pipeline status — say what is actually happening"),
-        (r"\bin production\b",
+        (r"\bin\s+production\b",
          "Pipeline status — describe what the system does"),
-        (r"\bthe scrape\b",
+        (r"\bthe\s+scrape\b",
          "Pipeline reference — name what was collected (e.g., 'the registry pull')"),
         (r"\b(?:TODO|FIXME|XXX)\b",
          "Working-note marker — strip from paper prose"),
     ]
     violations = []
-    for lineno, _raw, prose in lines:
-        if not prose.strip():
-            continue
+    for para in _get_paragraphs(lines):
+        # Build joined paragraph text + (offset, lineno) table so multi-line
+        # phrases match but we can still report the line where the match starts.
+        offsets: list[tuple[int, int]] = []
+        chunks: list[str] = []
+        pos = 0
+        for lineno, text in para:
+            offsets.append((pos, lineno))
+            chunks.append(text)
+            pos += len(text) + 1  # +1 for joining space
+        joined = " ".join(chunks)
         for pat, fix in PATTERNS:
-            for m in re.finditer(pat, prose, re.IGNORECASE):
+            for m in re.finditer(pat, joined, re.IGNORECASE):
+                match_pos = m.start()
+                hit_lineno = para[0][0]
+                for offset, ln in offsets:
+                    if offset <= match_pos:
+                        hit_lineno = ln
+                    else:
+                        break
+                left = max(0, match_pos - 40)
+                snippet = joined[left:match_pos + 80].strip()
                 violations.append(Violation(
-                    file=filepath, line=lineno, rule="workflow-jargon",
+                    file=filepath, line=hit_lineno, rule="workflow-jargon",
                     severity="warning",
                     message=f"Internal workflow term in prose: \"{m.group()}\"",
                     suggestion=fix + " (§4)",
-                    context=prose.strip()[:120],
+                    context=snippet[:120],
                 ))
     return violations
 
