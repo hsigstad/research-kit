@@ -295,10 +295,23 @@ operation, the variable, or the design choice.
   footnote or a follow-up sentence.
 - "We do not, however, detect a larger effect..." — fine, qualifies a
   specific finding.
+- Inference-verbs that name the method ("the analyses suggest", "the
+  evidence is consistent with", "the pattern points to") are fine when
+  the conclusion rests on inference rather than direct observation.
+  Distinguish from generic hedges ("perhaps", "it is possible that")
+  which weaken claims without naming the inferential basis.
 - "It is possible that..." opening a paragraph — usually weak; either show
   it's possible with evidence, or cut.
 - Footnotes carry the technical caveats: standard-error clustering,
   alternative specifications, the "this is also true if..." asides.
+- **Operational test for any softener.** Ask: *does removing it
+  change what the reader knows?* If "perhaps" / "to some extent" /
+  "arguably" drops out and the meaning is unchanged, it is a
+  defensive hedge — delete it. If "the analyses suggest", "within
+  candidate and within race-week", or "we do not detect a larger
+  effect for X" drops out and the reader loses the inferential
+  basis, scope, or data limit, the qualifier is doing work — keep
+  it.
 
 ## 8. Signposting
 
