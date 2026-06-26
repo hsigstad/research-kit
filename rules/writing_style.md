@@ -304,6 +304,20 @@ operation, the variable, or the design choice.
   it's possible with evidence, or cut.
 - Footnotes carry the technical caveats: standard-error clustering,
   alternative specifications, the "this is also true if..." asides.
+- **"Ruled out" vs "not detected" vs "cannot be ruled out".** Pick
+  the wording that matches the inferential reach of the test. *Ruled
+  out* is a positive claim that something has been excluded — reserve
+  it for cases where the test would have detected the effect if it
+  were present (adequate power, the right design). *Not detected* is
+  the right wording when a test came back null but the test's
+  resolution doesn't license exclusion (small sample, low-frequency
+  signal, observational data without a clean instrument). *Cannot be
+  ruled out* is the right wording when the design is silent on a
+  channel — the data simply doesn't speak to it. Example: "Crude
+  per-candidate post-fielding tampering is *ruled out*" ⇒ "is *not
+  detected*" if the digit-frequency test is observational; "pre-PDF
+  tampering *would not be detected*" ⇒ "*cannot be ruled out*",
+  because the design has no purchase on it.
 - **Operational test for any softener.** Ask: *does removing it
   change what the reader knows?* If "perhaps" / "to some extent" /
   "arguably" drops out and the meaning is unchanged, it is a
