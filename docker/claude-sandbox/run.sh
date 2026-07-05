@@ -77,9 +77,29 @@ mkdir -p "$APPTAINER_TMPDIR"
 
 if [ ! -f "$SIF" ]; then
     echo "Building $IMAGE_NAME.sif (this takes a while the first time)..."
-    # Build from SCRIPT_DIR so the .def's %files paths (lib/) resolve
-    # relative to it regardless of the caller's working directory.
-    ( cd "$SCRIPT_DIR" && "$RUNTIME" build --fakeroot "$SIF" claude-sandbox.def )
+    # Plain `apptainer build --fakeroot <sif> <def>` SEGFAULTS on this host:
+    # EduCloud/Fox has no /etc/subuid mapping, so apptainer runs mksquashfs under
+    # the libfakeroot shim, which corrupts it (SIGSEGV) even for a trivial image.
+    # Workaround — build a --sandbox (fakeroot %post is fine, no mksquashfs), then
+    # pack it to a SIF ourselves with a direct mksquashfs -no-xattrs (no fakeroot)
+    # plus SIF assembly. The nfs4_acl/rootlesscontainers xattrs that -no-xattrs
+    # drops are meaningless inside a .sif. Build from SCRIPT_DIR so the .def's
+    # %files (lib/) resolve regardless of the caller's cwd. On a host that has
+    # subuid set up, the plain one-line build works and this can be simplified.
+    SBX="$APPTAINER_TMPDIR/$IMAGE_NAME.sbx.$$"
+    SQFS="$APPTAINER_TMPDIR/$IMAGE_NAME.sqfs.$$"
+    MKSQUASHFS="${MKSQUASHFS:-/usr/libexec/apptainer/bin/mksquashfs}"
+    command -v "$MKSQUASHFS" >/dev/null 2>&1 || MKSQUASHFS=mksquashfs
+    trap 'rm -rf "$SBX" "$SQFS" "$SIF"' EXIT
+    rm -rf "$SBX" "$SQFS"
+    ( cd "$SCRIPT_DIR" && "$RUNTIME" build --sandbox "$SBX" claude-sandbox.def )
+    "$MKSQUASHFS" "$SBX" "$SQFS" -noappend -no-xattrs
+    "$RUNTIME" sif new "$SIF"
+    # datatype 4=Partition, parttype 2=PrimSys (bootable rootfs), partfs 1=Squashfs, partarch 2=amd64
+    "$RUNTIME" sif add "$SIF" "$SQFS" --datatype 4 --parttype 2 --partfs 1 --partarch 2
+    rm -rf "$SBX" "$SQFS"
+    trap - EXIT
+    echo "Built $SIF"
 fi
 
 exec "$RUNTIME" run \
