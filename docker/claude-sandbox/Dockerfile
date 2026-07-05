@@ -4,11 +4,11 @@ FROM debian:bookworm-slim
 # Shared with the Apptainer build via lib/install-system.sh — edit that file,
 # not this line, so the laptop (Docker) and educloud (Apptainer) images stay
 # in lockstep. Same applies to lib/install-r.sh and lib/install-python.sh below.
-COPY lib/ /tmp/lib/
-RUN bash /tmp/lib/install-system.sh
+COPY lib/ /opt/lib/
+RUN bash /opt/lib/install-system.sh
 
 # R packages (as root, so they land in the system library visible to henrik).
-RUN bash /tmp/lib/install-r.sh
+RUN bash /opt/lib/install-r.sh
 
 # ── Match host user ─────────────────────────────────────────────────
 RUN useradd -m -u 1000 henrik
@@ -18,7 +18,7 @@ USER henrik
 # Installed to the henrik home as the henrik user. The trailing package is a
 # Docker-only extra (MCP server) the educloud image omits.
 ENV PATH="/home/henrik/venv/bin:$PATH"
-RUN bash /tmp/lib/install-python.sh /home/henrik/venv \
+RUN bash /opt/lib/install-python.sh /home/henrik/venv \
     git+https://github.com/DarrenZal/otter-mcp.git
 
 # ── uv (for MCP server envs) ────────────────────────────────────────

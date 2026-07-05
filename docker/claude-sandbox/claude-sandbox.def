@@ -7,17 +7,22 @@ From: debian:bookworm-slim
 # build CWD; run.sh cds into this directory before building so `lib/` resolves.
 
 %files
-    lib /tmp/lib
+    # Staged under /opt, NOT /tmp: Apptainer bind-mounts the host /tmp over the
+    # container's /tmp during %post, which would shadow anything copied here.
+    # Explicit per-file pairs (a directory source would nest under the dest).
+    lib/install-system.sh /opt/lib/install-system.sh
+    lib/install-r.sh /opt/lib/install-r.sh
+    lib/install-python.sh /opt/lib/install-python.sh
 
 %post
     # System packages, TeX Live, R toolchain, root-level CLIs.
-    bash /tmp/lib/install-system.sh
+    bash /opt/lib/install-system.sh
 
     # R packages (fails the build loudly if any are missing).
-    bash /tmp/lib/install-r.sh
+    bash /opt/lib/install-r.sh
 
     # Python virtualenv at /opt/venv (installed as root; no per-user home here).
-    bash /tmp/lib/install-python.sh /opt/venv
+    bash /opt/lib/install-python.sh /opt/venv
 
 %environment
     export PATH="/opt/venv/bin:$PATH"
