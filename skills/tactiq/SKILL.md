@@ -1,7 +1,7 @@
 ---
 name: tactiq
 description: "Pull recent Tactiq meeting transcripts from Google Drive, route each to the right project, and save as raw markdown under docs/meetings/. Use when the user runs /tactiq or asks to 'grab the tactiq notes' / 'sync meeting transcripts' / 'save the recent tactiq transcripts'."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # Tactiq Notes Sync (Tactiq → projects/<slug>/docs/meetings/)

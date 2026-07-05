@@ -1,7 +1,7 @@
 ---
 name: site
 description: "Generate the static HTML site for a research project. Creates source/site/build_all.py and templates if they don't exist, then builds the site. Use when the user wants to create or rebuild a project site."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # Project Site Generator

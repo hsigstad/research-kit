@@ -1,7 +1,6 @@
 ---
 name: institutions
 description: "Populate or audit a project's docs/institutions.md using the shared institutional reference (research/institutions/brazil/ for Brazil projects). Bootstraps from shared topic files and artigos.db; marks gaps for manual curation."
-user_invocable: true
 ---
 
 # /institutions — Populate or audit institutional background

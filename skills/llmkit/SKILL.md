@@ -1,7 +1,6 @@
 ---
 name: llmkit
 description: "Reference for the llmkit LLM extraction framework — cache design, Pydantic validation, audit workflow, and per-project setup. Use when writing code that does LLM-based structured extraction, setting up new extraction tasks, or working with cached LLM outputs."
-user_invocable: true
 ---
 
 # llmkit — LLM Extraction Framework

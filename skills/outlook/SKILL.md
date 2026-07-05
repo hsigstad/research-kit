@@ -1,7 +1,6 @@
 ---
 name: outlook
 description: "Convert Outlook .eml email exports to clean markdown for project docs. Use when the user wants to save email exchanges to a project's docs/emails/ directory."
-user_invocable: true
 ---
 
 # Outlook Email Converter

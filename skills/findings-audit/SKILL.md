@@ -1,7 +1,7 @@
 ---
 name: findings-audit
 description: "Audit a project's empirical findings against external evidence — anecdotes (news, interviews, court opinions) and aggregate reports (CNJ, IPEA, OECD, FMI). Flags counter-evidence to load-bearing interpretations and surfaces patterns no current finding addresses. Use when the user wants a reality check on findings, before writing up, or after a corpus refresh."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # /findings-audit — Audit findings against external evidence

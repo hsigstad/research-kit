@@ -1,7 +1,6 @@
 ---
 name: dropbox
 description: "Browse, upload, or download files on Dropbox via rclone. Use when the user wants to share files with collaborators or check what's on Dropbox."
-user_invocable: true
 ---
 
 # Dropbox

@@ -1,7 +1,7 @@
 ---
 name: iat
 description: "Audit Python scripts for compliance with the Inline Audit Trail (IAT) convention — INTENT, REASONING, ASSUMES, SOURCE comments and validation guards — AND propose the comment text to add. LLM-driven, judgment-heavy, slower than /check. Use when the user invokes /iat, /iat <script>, /iat <slug>, or asks to 'check IAT compliance', 'audit comments in source/', 'add missing IAT comments'."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # /iat — Inline Audit Trail compliance check (with proposed comments)
@@ -146,7 +146,7 @@ judgment calls that don't roundtrip well as machine data.
 - After writing a new script (`/next` step 3 produces a script and hands
   off to `/iat` for the IAT pass).
 - During the line-by-line review of critical-path scripts (see
-  `meta/ai_research_workflow.md` stage 5).
+  `$ROOT/research-kit/meta/ai_research_workflow.md` stage 5).
 - After a refactor that changed merge semantics or filter logic — the
   ASSUMES/REASONING comments may have drifted out of sync.
 

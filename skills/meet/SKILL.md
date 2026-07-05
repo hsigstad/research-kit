@@ -1,7 +1,6 @@
 ---
 name: meet
 description: "Create a Google Meet meeting as a Google Calendar event. Use when the user wants to schedule a meeting with a Google Meet link, e.g. 'set up meet with Darcio Tue 2pm' or '/meet Gui Friday 10am'."
-user_invocable: true
 ---
 
 # Google Meet Meeting

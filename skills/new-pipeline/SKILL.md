@@ -1,7 +1,7 @@
 ---
 name: new-pipeline
 description: "Scaffold a new data pipeline under pipelines/ with the pipeline directory structure and required docs. Use when the user wants to create a new data processing pipeline."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # Scaffold a new data pipeline
@@ -23,7 +23,7 @@ Ask the user:
 
 ## Step 2: Create the directory structure
 
-Follow the pipeline structure from `$ROOT/research/rules/project_docs_contract.md`:
+Follow the pipeline structure from `$ROOT/research-kit/rules/project_docs_contract.md`:
 
 ```
 $ROOT/pipelines/<slug>/
@@ -62,12 +62,12 @@ Note: pipelines do NOT have `paper/`, `talk/`, or the full set of project docs (
 <cleaned datasets produced>
 
 ## Shared code
-- Uses `diarios` module for court/legal data utilities — check `$ROOT/research/meta/diarios_api.md` before writing new helpers.
+- Uses `diarios` module for court/legal data utilities — check `$ROOT/research-kit/meta/diarios_api.md` before writing new helpers.
 
 ## Conventions
 - Follow workspace rules in `$ROOT/research/rules/workspace.md`
-- Documentation follows `$ROOT/research/rules/project_docs_contract.md` (pipeline section)
-- Scripts follow the Inline Audit Trail (IAT) convention in `$ROOT/research/rules/inline_audit_trail.md`
+- Documentation follows `$ROOT/research-kit/rules/project_docs_contract.md` (pipeline section)
+- Scripts follow the Inline Audit Trail (IAT) convention in `$ROOT/research-kit/rules/inline_audit_trail.md`
 ```
 
 ### .claude/settings.local.json

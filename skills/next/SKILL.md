@@ -1,7 +1,6 @@
 ---
 name: next
 description: "Run one iteration of the project analysis loop: accept (or propose) the next analysis, write the script in the right location with IAT, run it, then propagate to the right docs. Use when the researcher says 'next, do X' or asks 'what's next?'."
-user_invocable: true
 ---
 
 # /next — Run one iteration of the analysis loop
@@ -675,3 +674,27 @@ When to use:
 - **No silent doc edits.** Every doc change must come from invoking a
   named skill or be summarized in the end-of-iteration report.
 - **Don't auto-append `decisions.md`.** Always propose and confirm.
+
+## Completion gate (mandatory, all modes)
+
+An iteration is not finished until every item below passes. Run these
+before writing the end-of-iteration report; do not end the turn with
+any of them failing:
+
+1. **The script ran** and its outputs exist in `build/` at the
+   bijection-correct paths (`source/analysis/X.py` → `build/.../X.*`).
+   A written-but-not-run script is a mid-stream handoff note, not a
+   completed iteration.
+2. **Deterministic lint passes**: run
+   `python3 $ROOT/research-kit/tools/check_docs.py <slug> --json` and
+   `python3 $ROOT/research-kit/tools/citations.py <slug> --json` and fix
+   any NEW errors your edits introduced (pre-existing errors: report,
+   don't fix silently).
+3. **The AN page's `script:` field** points at the actual script path.
+4. **Real-data guard**: if the project runs analyses remotely (e.g.
+   connect), confirm interpreted outputs are real returned artifacts,
+   not stale local/synthetic files, before propagating a single number.
+
+If a gate cannot pass (e.g. the script needs server data), say so
+explicitly in the report and write a handoff note instead of
+presenting the iteration as complete.

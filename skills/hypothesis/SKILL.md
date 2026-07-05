@@ -1,7 +1,6 @@
 ---
 name: hypothesis
 description: "Populate or expand a project's docs/hypotheses.md (or docs/hypotheses/ folder) — testable predictions linking theory (docs/theory.md or docs/literature.md) to evidence and the project's empirical design. Use when the user wants to draft, update, or audit hypotheses."
-user_invocable: true
 ---
 
 # /hypothesis — Populate docs/hypotheses.md

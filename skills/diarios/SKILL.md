@@ -1,7 +1,6 @@
 ---
 name: diarios
 description: "Reference for the shared diarios Python module — API lookup, usage patterns, and gotchas. Use when writing code that involves court data, legal text parsing, Brazilian administrative data cleaning, or when checking if a utility already exists before writing a new one."
-user_invocable: true
 ---
 
 # diarios Module Reference
@@ -12,7 +11,7 @@ The `diarios` package is a shared Python module used across projects for Brazili
 
 The workspace root contains `CLAUDE.md` alongside `projects/`, `pipelines/`, `diarios/`, `research/`. If the current directory is inside a project or pipeline, search upward to find the root.
 
-Read `$ROOT/research/meta/diarios_api.md` for the full module inventory. Key areas:
+Read `$ROOT/research-kit/meta/diarios_api.md` for the full module inventory. Key areas:
 
 ### Text & Data Cleaning (`diarios.clean.text`)
 - `clean_text()` — clean text (character removal, case, accents)
@@ -80,7 +79,7 @@ Read `$ROOT/research/meta/diarios_api.md` for the full module inventory. Key are
 - The module has **optional dependencies**: `ocr` (pytesseract, pdf2image) and `db` (SQLAlchemy). Code using these features needs the optional extras installed.
 - `map_regex()` returns the **first match** — order patterns most-specific-first.
 - `clean_municipio()` and `clean_parte()` handle accent removal internally via Unidecode — don't pre-clean accents before calling them.
-- For the full source code, read files in `$ROOT/diarios/diarios/`. For the API summary, read `$ROOT/research/meta/diarios_api.md`.
+- For the full source code, read files in `$ROOT/packages/diarios/diarios/`. For the API summary, read `$ROOT/research-kit/meta/diarios_api.md`.
 
 ## When this skill triggers automatically
 

@@ -1,7 +1,6 @@
 ---
 name: findings
 description: "Populate, extend, refresh, or audit a project's docs/findings.md — a curated index of headline empirical findings and interpretations with confidence tags and standardized source footers. Use when the user wants to draft a new findings doc, append new entries from recent build artifacts or audit JSONs, refresh load-bearing numbers against the current data, or check completeness."
-user_invocable: true
 ---
 
 # /findings — Populate docs/findings.md

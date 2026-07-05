@@ -1,7 +1,6 @@
 ---
 name: zoom
 description: "Create a Zoom meeting as a Google Calendar event. Use when the user wants to schedule a meeting, e.g. 'set up zoom meeting with Darcio Tue 2pm'."
-user_invocable: true
 ---
 
 # Zoom Meeting

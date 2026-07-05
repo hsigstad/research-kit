@@ -1,7 +1,6 @@
 ---
 name: theory
 description: "Populate or expand a project's docs/theory.md — a structured inventory of formal theoretical frameworks relevant to the project, with testable predictions tied to the project's identification strategy. Use when the user wants to draft, update, or audit theory.md."
-user_invocable: true
 ---
 
 # /theory — Populate docs/theory.md

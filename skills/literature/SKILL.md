@@ -1,7 +1,6 @@
 ---
 name: literature
 description: "Discover academic literature for a project: search APIs, curate relevant papers, write literature.md + bib entries, download PDFs. Use when user wants to find, update, or expand a project's literature review."
-user_invocable: true
 ---
 
 # Literature Discovery
@@ -60,7 +59,7 @@ Save queries to `docs/literature/queries.json` as a JSON array of strings.
 ### 3. Run API searches
 
 ```bash
-python3 $ROOT/research/tools/literature_search.py search \
+python3 $ROOT/research-kit/tools/literature_search.py search \
     --queries $PROJECT/docs/literature/queries.json \
     --outdir $PROJECT/docs/literature
 ```
@@ -86,7 +85,7 @@ For the 5–10 most central papers identified in step 4, expand via citation gra
 Pass multiple DOIs comma-separated:
 
 ```bash
-python3 $ROOT/research/tools/literature_search.py cite-graph \
+python3 $ROOT/research-kit/tools/literature_search.py cite-graph \
     --doi 10.xxxx/yyyy,10.aaaa/bbbb,10.cccc/dddd \
     --outdir $PROJECT/docs/literature
 ```
@@ -194,7 +193,7 @@ ls ~/Dropbox/ | grep -i {slug-or-keywords}
 
 Create `literature/` subdirectory if needed. Then run:
 ```bash
-python3 $ROOT/research/tools/literature_search.py fetch-pdfs \
+python3 $ROOT/research-kit/tools/literature_search.py fetch-pdfs \
     --manifest $PROJECT/docs/literature/manifest.json \
     --outdir ~/Dropbox/{project-folder}/literature
 ```

@@ -1,7 +1,7 @@
 ---
 name: new-project
 description: "Scaffold a new research project from materials the user has placed in a folder under projects/. Reads existing files to extract context instead of asking questions. Use when the user wants to create a new research project."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # Scaffold a new research project
@@ -36,7 +36,7 @@ The user has already created a folder under `projects/<slug>/` and may have plac
 
 ## Step 2: Create the directory structure
 
-Follow the canonical structure from `$ROOT/research/rules/project_docs_contract.md`. **Do not overwrite any files the user already placed in the folder.** Create only what is missing.
+Follow the canonical structure from `$ROOT/research-kit/rules/project_docs_contract.md`. **Do not overwrite any files the user already placed in the folder.** Create only what is missing.
 
 ```
 $ROOT/projects/<slug>/

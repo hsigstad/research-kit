@@ -1,7 +1,6 @@
 ---
 name: fetch-annotations
 description: Pull hypothes.is annotations left by coauthors on a project's rendered site, map each one back to its source .md file, walk the user through applying (or skipping) each as an edit, write a response log, and optionally post condensed replies back as threaded annotations on hypothes.is. Use when the user wants to incorporate feedback left as web annotations.
-user_invocable: true
 ---
 
 # /fetch-annotations — Pull coauthor annotations from hypothes.is and apply them
@@ -46,7 +45,7 @@ annotations only, no group is needed.
 Run the shared tool:
 
 ```bash
-python3 $ROOT/research/tools/fetch_annotations.py \
+python3 $ROOT/research-kit/tools/fetch_annotations.py \
     --url-prefix https://hsigstad.github.io/{slug}/ \
     --group {GROUP_ID} \
     [--since YYYY-MM-DD] \

@@ -1,7 +1,7 @@
 ---
 name: validate-section
 description: "Run AI validation on one subsection of the paper: identify its backing scripts, run the applicable AI checks, and record results in the validation ledger. Use when the user asks to validate a section or asks what AI has verified for a section."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # Validate a paper subsection

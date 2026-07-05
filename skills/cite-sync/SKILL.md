@@ -1,7 +1,7 @@
 ---
 name: cite-sync
 description: "Regenerate each project's docs/refs/manifest.toml from the workspace citation registry. Walks docs/ and paper/ for [ns:key] tokens with external namespaces, looks each up in research/refs/registry.toml, and writes the public-facing subset (title + description, no internal paths) to the project manifest. Use when the user invokes /cite-sync, /cite-sync <slug>, or asks to 'sync the manifest', 'rebuild the refs manifest', 'regenerate citations manifest'."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # /cite-sync — Regenerate project citation manifests

@@ -1,6 +1,7 @@
 ---
 name: anecdotes
 description: Collect anecdotal news evidence about a project's topic from Brazilian news outlets (or broader for non-Brazil projects) using the newsbr package. Discovers articles, fetches full text, appends to references/news/stories.csv, and writes a search audit log.
+disable-model-invocation: true
 ---
 
 # /anecdotes — Collect news evidence for a project

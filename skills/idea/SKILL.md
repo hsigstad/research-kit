@@ -1,7 +1,6 @@
 ---
 name: idea
 description: "Create a new research idea with YAML frontmatter and add it to ideas/index.md. Use when the user wants to record a new research idea."
-user_invocable: true
 ---
 
 # New Research Idea

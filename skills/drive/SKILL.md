@@ -1,7 +1,6 @@
 ---
 name: drive
 description: "Browse, upload, or download files on Google Drive via rclone. Use when the user wants to access or share files on Google Drive."
-user_invocable: true
 ---
 
 # Google Drive

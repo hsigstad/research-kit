@@ -1,7 +1,6 @@
 ---
 name: data
 description: "Search the data catalog, variable dictionary, and data linkages for datasets, variables, or data sources. Use when the user asks about available data, what variables exist, or how datasets connect across projects."
-user_invocable: true
 ---
 
 # Data Catalog Lookup
@@ -19,7 +18,7 @@ Use `git rev-parse --show-toplevel` or search upward for `CLAUDE.md` with `resea
 Search these files in order of relevance:
 
 1. **`$ROOT/data_catalog/DATA_CATALOG.md`** (symlink to sibling repo) — master registry of all raw datasets with provenance, structure, and restrictions
-2. **`$ROOT/data_catalog/codebooks/`** (symlink) — detailed codebooks per dataset
+2. **`$ROOT/data_catalog/docs/codebooks/`** (symlink) — detailed codebooks per dataset
 3. **`$ROOT/research/meta/variable_dictionary.md`** — shared variable definitions used across projects
 4. **`$ROOT/research/meta/data_linkages.md`** — how datasets link across projects (join keys, shared identifiers)
 5. **Project-level `docs/data.md`** files — in `$ROOT/projects/*/docs/data.md`

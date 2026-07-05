@@ -1,7 +1,6 @@
 ---
 name: questions
 description: "Populate or update a project's docs/questions.md — the 3-5 policy-relevant research questions the project answers, each synthesizing evidence from multiple hypotheses. Use when the user wants to draft, update, or audit questions.md."
-user_invocable: true
 ---
 
 # /questions — Populate docs/questions.md

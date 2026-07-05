@@ -1,7 +1,6 @@
 ---
 name: whatsapp
 description: "Send or read WhatsApp messages. Use when the user wants to message a contact or group, e.g. '/whatsapp Andrei hey, check the new data'."
-user_invocable: true
 ---
 
 # WhatsApp

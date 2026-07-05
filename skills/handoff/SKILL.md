@@ -1,7 +1,6 @@
 ---
 name: handoff
 description: "End-of-session: commit and push all changes across projects touched in this session. Write a handoff note only when there's a cognitive thread the rest of the system doesn't capture (mid-stream WIP, noticed-but-not-acted-on, partial verification). Use when the user is done working and wants to wrap up."
-user_invocable: true
 ---
 
 # Session Handoff

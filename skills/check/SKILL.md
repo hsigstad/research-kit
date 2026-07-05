@@ -1,7 +1,7 @@
 ---
 name: check
 description: "Audit a project or pipeline against workspace conventions AND propose fixes for everything found. Three modes: docs (doc-contract + source/build naming), ledgers (artifacts.yaml + validation.yaml + .run.json + cross-refs), cite (citation tokens against the registry + anchors + .bib). All three are fast and deterministic. Default runs all three and proposes changes. Use when the user invokes /check, /check <mode>, /check <slug>, or asks to 'lint the docs', 'audit conventions', 'check citations', 'check the ledgers', 'clean up the docs'."
-user_invocable: true
+disable-model-invocation: true
 ---
 
 # /check — Workspace convention audit (with proposed fixes)
