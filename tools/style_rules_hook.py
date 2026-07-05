@@ -14,10 +14,22 @@ style_lint_hook.py.
 """
 
 import json
+import os
 import sys
 from pathlib import Path
 
-CHEAT_SHEET = Path("/workspace/research-kit/rules/writing_style_judgment.md")
+
+def _workspace() -> Path:
+    env = os.environ.get("RESEARCH_WORKSPACE")
+    if env:
+        return Path(env)
+    for cand in (Path.home() / "research", Path("/workspace")):
+        if (cand / "research-kit").exists():
+            return cand
+    return Path.home() / "research"
+
+
+CHEAT_SHEET = _workspace() / "research-kit" / "rules" / "writing_style_judgment.md"
 MARKER_DIR = Path("/tmp")
 
 

@@ -11,11 +11,23 @@ not blocking.
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-LINTER = Path("/workspace/research-kit/tools/style_lint.py")
+
+def _workspace() -> Path:
+    env = os.environ.get("RESEARCH_WORKSPACE")
+    if env:
+        return Path(env)
+    for cand in (Path.home() / "research", Path("/workspace")):
+        if (cand / "research-kit").exists():
+            return cand
+    return Path.home() / "research"
+
+
+LINTER = _workspace() / "research-kit" / "tools" / "style_lint.py"
 
 
 def main() -> int:
