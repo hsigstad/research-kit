@@ -77,7 +77,9 @@ mkdir -p "$APPTAINER_TMPDIR"
 
 if [ ! -f "$SIF" ]; then
     echo "Building $IMAGE_NAME.sif (this takes a while the first time)..."
-    "$RUNTIME" build --fakeroot "$SIF" "$SCRIPT_DIR/claude-sandbox.def"
+    # Build from SCRIPT_DIR so the .def's %files paths (lib/) resolve
+    # relative to it regardless of the caller's working directory.
+    ( cd "$SCRIPT_DIR" && "$RUNTIME" build --fakeroot "$SIF" claude-sandbox.def )
 fi
 
 exec "$RUNTIME" run \

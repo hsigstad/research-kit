@@ -1,117 +1,23 @@
 Bootstrap: docker
 From: debian:bookworm-slim
 
+# Install logic is shared with the Docker build via the lib/ scripts — edit
+# those, not inline commands here, so the educloud (Apptainer) and laptop
+# (Docker) images stay in lockstep. %files paths are resolved relative to the
+# build CWD; run.sh cds into this directory before building so `lib/` resolves.
+
+%files
+    lib /tmp/lib
+
 %post
-    # ── 1a. Core + ca-certificates first (needed for all curl calls) ────
-    apt-get update && apt-get install -y --no-install-recommends \
-        curl git ca-certificates wget gnupg2 openssh-client \
-        python3 python3-pip python3-venv \
-        nodejs npm \
-        chromium chromium-driver \
-        rsync pandoc \
-    && rm -rf /var/lib/apt/lists/*
+    # System packages, TeX Live, R toolchain, root-level CLIs.
+    bash /tmp/lib/install-system.sh
 
-    apt-get update && apt-get install -y --no-install-recommends \
-        texlive-latex-base texlive-latex-recommended texlive-latex-extra \
-        texlive-fonts-recommended texlive-fonts-extra \
-        texlive-bibtex-extra texlive-extra-utils \
-        texlive-science texlive-luatex \
-        latexmk biber \
-    && rm -rf /var/lib/apt/lists/*
+    # R packages (fails the build loudly if any are missing).
+    bash /tmp/lib/install-r.sh
 
-    # ── 1b. R toolchain (from CRAN apt repo for latest R ≥ 4.4) ─────────
-    # Debian bookworm ships R 4.2.2; newer CRAN packages (Matrix ≥ 1.6, quantreg)
-    # require R ≥ 4.4. Use CRAN's official Debian repo to get a current R.
-    # Key fingerprint 95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7 (Johannes Ranke);
-    # fetched from Ubuntu keyserver since CRAN no longer publishes a stable .asc URL.
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB8F25A8A73EACF41" \
-        -o /etc/apt/keyrings/cran_debian_key.asc
-    echo "deb [signed-by=/etc/apt/keyrings/cran_debian_key.asc] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" \
-        > /etc/apt/sources.list.d/r-cran.list
-    apt-get update && apt-get install -y --no-install-recommends \
-        r-base r-base-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-    # ── 1c. TeX Live (full — bulletproof, no per-package guessing) ─────
-    apt-get update && apt-get install -y \
-        texlive-full \
-    && rm -rf /var/lib/apt/lists/*
-
-    # ── 1d. Tools, DB CLIs, doc conversion, editors ─────────────────────
-    apt-get update && apt-get install -y --no-install-recommends \
-        pandoc \
-        poppler-utils \
-        pdfgrep \
-        sqlite3 \
-        postgresql-client \
-        openssh-client \
-        rsync \
-        rclone \
-        jq \
-        fd-find \
-        parallel \
-        imagemagick \
-        tesseract-ocr \
-        gcc g++ make \
-        libxml2-dev libssl-dev libcurl4-openssl-dev \
-        libfontconfig1-dev libfreetype6-dev \
-        libharfbuzz-dev libfribidi-dev \
-        libpng-dev libtiff5-dev libjpeg-dev \
-        unzip \
-        bash-completion \
-        tmux \
-        vim-tiny \
-        nano \
-    && rm -rf /var/lib/apt/lists/*
-
-    # ── 2. GitHub CLI ────────────────────────────────────────────────────
-    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-        -o /usr/share/keyrings/githubcli-archive-keyring.gpg
-    ARCH=$(dpkg --print-architecture)
-    echo "deb [arch=${ARCH} signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
-        > /etc/apt/sources.list.d/github-cli.list
-    apt-get update && apt-get install -y gh \
-    && rm -rf /var/lib/apt/lists/*
-
-    # ── 3. DuckDB CLI ───────────────────────────────────────────────────
-    curl -fsSL "https://github.com/duckdb/duckdb/releases/latest/download/duckdb_cli-linux-${ARCH}.zip" \
-        -o /tmp/duckdb.zip
-    unzip /tmp/duckdb.zip -d /usr/local/bin
-    rm /tmp/duckdb.zip
-
-    # ── 4. Claude Code ──────────────────────────────────────────────────
-    npm install -g @anthropic-ai/claude-code
-
-    # ── 5. Python virtualenv ────────────────────────────────────────────
-    python3 -m venv /opt/venv
-    /opt/venv/bin/pip install --no-cache-dir \
-        pandas pyarrow polars duckdb \
-        numpy scipy \
-        matplotlib seaborn \
-        statsmodels scikit-learn \
-        unidecode \
-        pyyaml openpyxl \
-        psycopg2-binary sqlalchemy \
-        mistune python-frontmatter \
-        python-dotenv \
-        requests beautifulsoup4 lxml \
-        newspaper3k trafilatura \
-        openai anthropic \
-        pypdf pdfplumber PyMuPDF \
-        pdf2image pytesseract \
-        linearmodels pydantic pyreadr \
-        html2text \
-        requests-cache tenacity \
-        pytest scons \
-        jupyter ipykernel notebook \
-        playwright \
-        google-cloud-bigquery google-cloud-storage \
-        tabulate tqdm
-
-    # ── 6. R packages (CRAN) ────────────────────────────────────────────
-    # Fails loudly: if any package is missing afterwards the build aborts.
-    Rscript -e 'pkgs <- c("dplyr","readr","tidyr","lubridate","arrow","fixest","lfe","data.table","dtplyr","purrr","ggplot2","kableExtra","knitr","stringr","forcats","broom","modelsummary","did","sandwich","lmtest","haven","marginaleffects","tidyverse","Hmisc","quantreg","stargazer","tinytable","rdrobust","rdd","rddensity","estimatr","jsonlite","boot","ggpubr","gridExtra","scales","readxl","janitor","AER","MatchIt","clubSandwich"); install.packages(pkgs, repos="https://cloud.r-project.org", Ncpus=4); missing <- pkgs[!pkgs %in% rownames(installed.packages())]; if (length(missing)) { cat("FAILED to install:", missing, "\n"); quit(status=1) }'
+    # Python virtualenv at /opt/venv (installed as root; no per-user home here).
+    bash /tmp/lib/install-python.sh /opt/venv
 
 %environment
     export PATH="/opt/venv/bin:$PATH"
