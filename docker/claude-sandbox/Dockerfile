@@ -52,7 +52,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     parallel \
     imagemagick \
     tesseract-ocr \
-    gcc g++ make \
+    gcc g++ make cmake \
     libxml2-dev libssl-dev libcurl4-openssl-dev \
     libfontconfig1-dev libfreetype6-dev \
     libharfbuzz-dev libfribidi-dev \
@@ -87,6 +87,9 @@ RUN npm install -g @anthropic-ai/claude-code
 # in the system library /usr/local/lib/R/site-library, visible to henrik.
 # Fails loudly: if any package is missing afterwards the build aborts,
 # so a stale image can never silently ship without its R libraries.
+# rdd was archived on CRAN (orphaned; last release 0.57), so it is not in the
+# current contrib index — install it separately from the CRAN archive by URL.
+# Its deps (AER, sandwich, lmtest, Formula) come from the main list below.
 RUN Rscript -e ' \
     pkgs <- c( \
         "dplyr", "readr", "tidyr", "lubridate", "arrow", \
@@ -95,13 +98,15 @@ RUN Rscript -e ' \
         "modelsummary", "did", "sandwich", "lmtest", \
         "haven", "marginaleffects", "tidyverse", \
         "Hmisc", "quantreg", "stargazer", \
-        "tinytable", "rdrobust", "rdd", "rddensity", \
+        "tinytable", "rdrobust", "rddensity", \
         "estimatr", "jsonlite", "boot", \
         "ggpubr", "gridExtra", "scales", "readxl", \
         "janitor", "AER", "MatchIt", "clubSandwich" \
     ); \
     install.packages(pkgs, repos = "https://cloud.r-project.org", Ncpus = 4); \
-    missing <- pkgs[!pkgs %in% rownames(installed.packages())]; \
+    install.packages("https://cran.r-project.org/src/contrib/Archive/rdd/rdd_0.57.tar.gz", repos = NULL, type = "source"); \
+    all_pkgs <- c(pkgs, "rdd"); \
+    missing <- all_pkgs[!all_pkgs %in% rownames(installed.packages())]; \
     if (length(missing)) { cat("FAILED to install:", missing, "\n"); quit(status = 1) } \
 '
 
