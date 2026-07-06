@@ -42,9 +42,12 @@ def main() -> int:
     ]
     total = 0
     for tool in ("check_docs", "citations"):
+        cmd = ["python3", str(tools / f"{tool}.py"), "--json"]
+        if tool == "citations":
+            cmd += ["--workspace", str(ws)]
         try:
             out = subprocess.run(
-                ["python3", str(tools / f"{tool}.py"), "--json"],
+                cmd,
                 capture_output=True, text=True, timeout=300,
             )
             data = json.loads(out.stdout)
@@ -64,6 +67,24 @@ def main() -> int:
         if len(errs) > MAX_PER_TOOL:
             lines.append(f"- ... and {len(errs) - MAX_PER_TOOL} more")
         lines.append("")
+
+    try:
+        out = subprocess.run(
+            ["python3", str(tools / "skill_links.py"), "--json", "--root", str(ws)],
+            capture_output=True, text=True, timeout=120,
+        )
+        data = json.loads(out.stdout)
+        issues = data.get("issues", [])
+        total += len(issues)
+        lines.append(f"## skill_links: {len(issues)} issue(s)")
+        for issue in issues[:MAX_PER_TOOL]:
+            lines.append(f"- {issue}")
+        if len(issues) > MAX_PER_TOOL:
+            lines.append(f"- ... and {len(issues) - MAX_PER_TOOL} more")
+        lines.append("")
+    except Exception as e:
+        lines += [f"## skill_links: sweep failed ({e})", ""]
+        total += 1
 
     if total > 0:
         report.write_text("\n".join(lines))
