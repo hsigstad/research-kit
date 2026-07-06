@@ -41,10 +41,8 @@ def main() -> int:
         "",
     ]
     total = 0
-    for tool in ("check_docs", "citations"):
-        cmd = ["python3", str(tools / f"{tool}.py"), "--json"]
-        if tool == "citations":
-            cmd += ["--workspace", str(ws)]
+    for tool in ("check_docs", "citations", "check_macros"):
+        cmd = ["python3", str(tools / f"{tool}.py"), "--json", "--workspace", str(ws)]
         try:
             out = subprocess.run(
                 cmd,

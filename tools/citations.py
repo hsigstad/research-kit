@@ -521,6 +521,13 @@ def main():
 
     repos = find_repos(workspace, args.slug)
     workspace_findings = Findings(scope="workspace")
+    if not repos:
+        workspace_findings.err(
+            "workspace.no-repos",
+            f"no projects/ or pipelines/ repos found under {workspace} — "
+            "wrong --workspace / RESEARCH_WORKSPACE? A scan of zero repos "
+            "must not read as a clean workspace.",
+        )
     if not args.slug:
         lint_citations_workspace(workspace, registry, workspace_findings)
 

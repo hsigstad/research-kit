@@ -812,6 +812,58 @@ def lint_stale_runtime_disclaimer(repo: Path, f: Findings, workspace: Path):
                     )
 
 
+CONFIDENCE_EMOJI = ("\U0001f7e2", "\U0001f7e1", "\U0001f534")  # green/yellow/red circles
+FOOTER_CLASSES = ("*Own analysis*", "*Reports*", "*News anchors*", "*Cross-refs*")
+AN_CITE_RE = re.compile(r"\bAN-\d+|\ban-\d+|\[an:")
+
+
+def _lint_findings_entry(name: str, body: str, f: Findings, path: str):
+    """Mechanical claim-unit checks on one findings entry (invariant I1,
+    meta/lab_architecture.md: no claim without provenance). Warnings for
+    now; promote to errors once legacy docs are migrated."""
+    lines = [ln.strip() for ln in body.splitlines() if ln.strip()]
+    head = " ".join(lines[:3])
+    if not any(e in head for e in CONFIDENCE_EMOJI):
+        f.warn("findings.missing-tag",
+               f"entry '{name}' has no confidence tag in its first lines",
+               path=path)
+    if "**Sources.**" not in body:
+        f.warn("findings.missing-footer",
+               f"entry '{name}' has no '**Sources.**' footer", path=path)
+        return
+    missing = [c for c in FOOTER_CLASSES if c not in body]
+    if missing:
+        f.warn("findings.footer-incomplete",
+               f"entry '{name}' footer lacks class(es): {', '.join(missing)} "
+               "(absent classes should read 'none direct')", path=path)
+    own = re.search(r"\*Own analysis\*:(.*)", body)
+    if own and "none" not in own.group(1).lower() and not AN_CITE_RE.search(own.group(1)):
+        f.warn("findings.no-an-cite",
+               f"entry '{name}' cites own analysis without an AN-NNN ledger id",
+               path=path)
+
+
+def lint_findings(repo: Path, f: Findings):
+    docs = repo / "docs"
+    flat = docs / "findings.md"
+    folder = docs / "findings"
+    if flat.is_file():
+        text = read(flat)
+        # entries = ### sections that look like claim units (tag or footer)
+        sections = re.split(r"^### +", text, flags=re.MULTILINE)[1:]
+        for sec in sections:
+            name = sec.splitlines()[0].strip() if sec.splitlines() else "?"
+            body = sec[len(name):]
+            if "**Sources.**" in body or any(e in body[:400] for e in CONFIDENCE_EMOJI):
+                _lint_findings_entry(name, body, f, path="docs/findings.md")
+    elif folder.is_dir():
+        for md in sorted(folder.glob("*.md")):
+            if md.name == "index.md" or md.name.startswith("_"):
+                continue
+            _lint_findings_entry(md.stem, read(md), f,
+                                 path=f"docs/findings/{md.name}")
+
+
 def lint_repo(repo: Path, kind: str, workspace: Path) -> Findings:
     rel = repo.relative_to(workspace)
     f = Findings(scope=str(rel))
@@ -821,6 +873,7 @@ def lint_repo(repo: Path, kind: str, workspace: Path) -> Findings:
     lint_todo_done(repo, f)
     lint_thinking(repo, f)
     lint_analyses(repo, f, workspace)
+    lint_findings(repo, f)
     lint_variables(repo, f, workspace)
     lint_decisions(repo, f)
     lint_handoffs(repo, f)
@@ -844,6 +897,13 @@ def main():
     repos = find_repos(workspace, args.slug)
 
     workspace_findings = Findings(scope="workspace")
+    if not repos:
+        workspace_findings.err(
+            "workspace.no-repos",
+            f"no projects/ or pipelines/ repos found under {workspace} — "
+            "wrong --workspace / RESEARCH_WORKSPACE? A scan of zero repos "
+            "must not read as a clean workspace.",
+        )
     if not args.slug:
         lint_ideas(workspace, workspace_findings)
 
