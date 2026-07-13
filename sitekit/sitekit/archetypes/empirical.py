@@ -504,18 +504,34 @@ def _build_source_pages_hljs(ctx: BuildContext) -> int:
 _PERLINE_EXTS = (".py", ".R", ".sh", ".sql")
 
 
-def _build_source_pages_perline(ctx: BuildContext) -> int:
-    """Render every source/**/*.{py,R,sh,sql} with per-line `#L42` anchors.
+# Fallback CSS for the plain per-line listing (when Pygments is absent).
+# Without it the inline <span> lines collapse onto one line.
+_PERLINE_FALLBACK_CSS = """
+<style>
+.src-listing{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:.8rem;line-height:1.5;overflow-x:auto;border:1px solid var(--border,#d0d7de);
+  border-radius:6px;padding:.6rem .2rem;background:var(--code-bg,#f6f8fa)}
+.src-line{display:block;white-space:pre}
+.src-ln{display:inline-block;width:3em;text-align:right;margin-right:.8em;
+  color:#9aa0a6;text-decoration:none;-webkit-user-select:none;user-select:none}
+.src-code{white-space:pre}
+@media (prefers-color-scheme:dark){.src-listing{background:#161b22}}
+</style>
+"""
 
-    No syntax highlighting — keeps the per-line `id` contract simple. Skips
-    source/site/* (the build script itself) and __pycache__.
+
+def _build_source_pages_perline(ctx: BuildContext) -> int:
+    """Render every source/**/*.{py,R,sh,sql} as its own page with line
+    numbers and per-line anchors. Uses Pygments for syntax highlighting when
+    available (color + line-number anchors); otherwise falls back to a plain
+    per-line `#L42` listing. Skips source/site/* and __pycache__.
     """
     cfg = ctx.config
     root = ctx.project_root / "source"
     if not root.exists():
         return 0
+    from ..links.script import CODE_CSS, _PYGMENTS
     template = read_template(cfg, "doc.html")
-    NOINDEX_LOCAL = '<meta name="robots" content="noindex, nofollow">'
     count = 0
     seen: dict[str, Path] = {}
     for path in sorted(root.rglob("*")):
@@ -528,25 +544,46 @@ def _build_source_pages_perline(ctx: BuildContext) -> int:
             continue
         seen[path.name] = path
 
+    formatter = None
+    if _PYGMENTS:
+        from pygments.formatters import HtmlFormatter
+        # linenos as clickable anchors (#L-42) preserves deep-linking; the
+        # style defs + .highlighttable layout come from CODE_CSS.
+        formatter = HtmlFormatter(cssclass="highlight", linenos="table",
+                                  lineanchors="L", anchorlinenos=True)
+
     for path in sorted(seen.values()):
         rel = path.relative_to(ctx.project_root)
         depth = len(rel.parts) - 1
         prefix = "../" * depth
         text = path.read_text(errors="replace")
-        escaped = _html_lib.escape(text)
-        lines = escaped.split("\n")
-        n_width = max(2, len(str(len(lines))))
-        rendered = "".join(
-            f'<span class="src-line" id="L{i}">'
-            f'<a class="src-ln" href="#L{i}">{i:>{n_width}}</a> '
-            f'<span class="src-code">{line or " "}</span>'
-            f'</span>'
-            for i, line in enumerate(lines, start=1)
-        )
+        if formatter is not None:
+            from pygments import highlight as _pyg
+            from pygments.lexers import get_lexer_for_filename
+            from pygments.lexers.special import TextLexer
+            from pygments.util import ClassNotFound
+            try:
+                lexer = get_lexer_for_filename(str(path))
+            except ClassNotFound:
+                lexer = TextLexer()
+            code_html = _pyg(text, lexer, formatter)
+            css = CODE_CSS
+        else:
+            escaped = _html_lib.escape(text)
+            lines = escaped.split("\n")
+            n_width = max(2, len(str(len(lines))))
+            code_html = '<pre class="src-listing">' + "".join(
+                f'<span class="src-line" id="L{i}">'
+                f'<a class="src-ln" href="#L{i}">{i:>{n_width}}</a>'
+                f'<span class="src-code">{line or " "}</span>'
+                f'</span>'
+                for i, line in enumerate(lines, start=1)
+            ) + "</pre>"
+            css = _PERLINE_FALLBACK_CSS
         content = (
             f'<p>Source: <code>{rel}</code> '
             f'(<a href="{prefix}index.html">back to index</a>)</p>'
-            f'<pre class="src-listing">{rendered}</pre>'
+            f'{css}{code_html}'
         )
         page = template.replace("<!-- INJECT_TITLE -->", str(rel))
         page = page.replace("<!-- INJECT_CONTENT -->", content)
