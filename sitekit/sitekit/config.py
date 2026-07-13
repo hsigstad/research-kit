@@ -242,7 +242,7 @@ class SiteConfig:
     #   "figure_table" — only source/figure/*.py and source/table/*.py (fisc).
     #   "all_source"   — every source/**/*.{py,R,sh,sql} except
     #                    source/site/* and __pycache__ (poll-sponsor-bias).
-    source_pages_scope: str = "figure_table"
+    source_pages_scope: str = "all_source"
 
     # When True, build_dataset_page substitutes a `/* INJECT_SOURCE */`
     # placeholder in the dataset template, rewriting the script path to a
