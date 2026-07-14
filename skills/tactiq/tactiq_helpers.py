@@ -13,9 +13,12 @@ path written. Routing dest_path to the right project is the caller's job; pass
 comma-separated "Attendees:" line is ambiguous (e.g. a single "Lastname, First"
 name that parses as two people).
 
-The Drive access token is read from rclone's config (~/.config/rclone/rclone.conf,
-section [gdrive]). Run any rclone command first (e.g. `rclone about gdrive:`) so
-rclone refreshes the token before this script reads it.
+The Drive access token is read from rclone's config (~/.config/rclone/rclone.conf).
+The remote is $TACTIQ_GDRIVE_REMOTE if set, else the first of [gdrive], [gdrive-ro],
+or any drive-type section found. If the stored access token is stale (Drive returns
+401), the script refreshes it in memory via Google's OAuth token endpoint using the
+refresh_token from the config — no rclone call and no config write needed, so it
+works in sandboxes where rclone.conf is read-only.
 
 Tactiq plaintext format (observed 2026-05-01):
 
@@ -42,34 +45,68 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
 
 RCLONE_CONF = Path(os.environ.get("RCLONE_CONFIG", Path.home() / ".config/rclone/rclone.conf"))
-GDRIVE_REMOTE = os.environ.get("TACTIQ_GDRIVE_REMOTE", "gdrive")
+GDRIVE_REMOTE = os.environ.get("TACTIQ_GDRIVE_REMOTE")
+
+# rclone's built-in Drive app credentials (public constants in the rclone
+# source), used when the config section has no client_id of its own.
+RCLONE_DEFAULT_CLIENT_ID = "202264815644.apps.googleusercontent.com"
+RCLONE_DEFAULT_CLIENT_SECRET = "X4Z3ca8xfWDb1Voo-F9a7ZxJ"
 
 
-def access_token() -> str:
+def _drive_section() -> configparser.SectionProxy:
     cp = configparser.ConfigParser()
     cp.read(RCLONE_CONF)
-    if GDRIVE_REMOTE not in cp:
-        raise SystemExit(f"no [{GDRIVE_REMOTE}] section in {RCLONE_CONF}")
-    tok = json.loads(cp[GDRIVE_REMOTE]["token"])
-    return tok["access_token"]
+    candidates = [GDRIVE_REMOTE] if GDRIVE_REMOTE else ["gdrive", "gdrive-ro"]
+    for name in candidates:
+        if name in cp:
+            return cp[name]
+    if not GDRIVE_REMOTE:
+        for name in cp.sections():
+            if cp[name].get("type") == "drive":
+                return cp[name]
+    raise SystemExit(f"no Drive remote ({', '.join(candidates)}) in {RCLONE_CONF}")
+
+
+def access_token(force_refresh: bool = False) -> str:
+    sec = _drive_section()
+    tok = json.loads(sec["token"])
+    if not force_refresh:
+        return tok["access_token"]
+    body = urllib.parse.urlencode({
+        "grant_type": "refresh_token",
+        "refresh_token": tok["refresh_token"],
+        "client_id": sec.get("client_id") or RCLONE_DEFAULT_CLIENT_ID,
+        "client_secret": sec.get("client_secret") or RCLONE_DEFAULT_CLIENT_SECRET,
+    }).encode()
+    req = urllib.request.Request("https://oauth2.googleapis.com/token", data=body)
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read())["access_token"]
 
 
 def download(file_id: str, out_path: str) -> None:
-    token = access_token()
     url = (
         "https://www.googleapis.com/drive/v3/files/"
         + urllib.parse.quote(file_id, safe="")
         + "/export?mimeType=text/plain"
     )
-    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
-    with urllib.request.urlopen(req) as resp:
-        data = resp.read()
+    data = None
+    for attempt in range(2):
+        token = access_token(force_refresh=attempt > 0)
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+        try:
+            with urllib.request.urlopen(req) as resp:
+                data = resp.read()
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 401 or attempt > 0:
+                raise
     Path(out_path).parent.mkdir(parents=True, exist_ok=True)
     Path(out_path).write_bytes(data)
 

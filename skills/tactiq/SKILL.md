@@ -30,14 +30,13 @@ The user invokes the skill with no required args. Optional:
 
 ## Prerequisites
 
-- rclone configured with a `gdrive` remote (see `~/.config/rclone/rclone.conf`).
-- Run in a non-sandboxed session — the skill needs network access and the rclone config file.
+- rclone configured with a Drive remote — `gdrive` on the host, `gdrive-ro` in sandboxed sessions (see `~/.config/rclone/rclone.conf`). The skill only reads from Drive, so the read-only remote is sufficient; use whichever exists for rclone commands. The helper script finds the remote on its own.
 - Helper script: `research-kit/skills/tactiq/tactiq_helpers.py` (Drive download, Tactiq parser, meeting-file renderer).
 
 ## Step 1 — list Tactiq docs
 
 ```bash
-rclone lsjson gdrive:"Tactiq Transcription/"
+rclone lsjson gdrive:"Tactiq Transcription/"   # sandboxed sessions: gdrive-ro:
 ```
 
 Returns JSON with one entry per doc, including `ID` (Drive file ID) and `ModTime`. Tactiq names every file `Meeting Transcription.docx` regardless of meeting title — the actual title is inside the doc. **Always dedup by Drive `ID`, never by filename.**
@@ -77,19 +76,13 @@ The `ignored` section is for transcripts the user has explicitly marked as not w
 
 ## Step 3 — fetch each unprocessed doc
 
-rclone alone cannot download two files that share a name in the same Drive folder (its source-side dedup keeps only one), so we use the Drive API export-by-ID directly. The `tactiq_helpers.py` script reads the OAuth access token from rclone's config and calls the Drive API.
+rclone alone cannot download two files that share a name in the same Drive folder (its source-side dedup keeps only one), so we use the Drive API export-by-ID directly. The `tactiq_helpers.py` script reads the OAuth token from rclone's config, refreshes it in memory if stale (no rclone call, no config write — works with a read-only `rclone.conf`), and calls the Drive API. It auto-detects the remote (`gdrive`, then `gdrive-ro`, then any drive-type section); set `TACTIQ_GDRIVE_REMOTE` only to override.
 
 ```bash
-# Refresh rclone's access token as a side effect.
-rclone about gdrive: > /dev/null 2>&1
-
-# Download each file by ID.
-SKILL_DIR="$HOME/.claude/skills/tactiq"
+# Download each file by ID (SKILL_DIR = this skill's base directory).
 mkdir -p /tmp/tactiq
 python3 "$SKILL_DIR/tactiq_helpers.py" download <FILE_ID> /tmp/tactiq/<FILE_ID>.txt
 ```
-
-If the Drive call returns 401, run `rclone about gdrive:` again to force a token refresh and retry.
 
 ## Step 4 — parse the Tactiq export
 
@@ -226,10 +219,10 @@ If the user asks to "set up tactiq routing for procure" or similar, add a `## Me
 
 - Tactiq names every doc `Meeting Transcription.docx` — never dedup or address by filename, always by Drive file ID.
 - The first run after a long gap may pull many transcripts. Confirm with the user before processing more than ~10.
-- The Drive access token in `rclone.conf` is short-lived (~1 hour). Run `rclone about gdrive: > /dev/null 2>&1` before reading the token to trigger an rclone-managed refresh.
+- The Drive access token in `rclone.conf` is short-lived (~1 hour). The helper refreshes it in memory on a 401, so no rclone pre-call is needed — but plain rclone commands (Step 1's `lsjson`) refresh via rclone itself; in a sandbox where `rclone.conf` is read-only, rclone logs a "Failed to save config" error while still working for the current command.
 - Drive API quota errors (`RATE_LIMIT_EXCEEDED`) happen surprisingly often with rclone's app credentials. Sleep ~60s and retry.
 - Tactiq exports do not include attendee emails. Email-based `attendee:` routing rules will never match a Tactiq export — use `attendee_name:` instead.
 - Tactiq sometimes uses the literal title `Meeting Transcription` when the Meet event had no name. The slugged filename will collide if multiple such meetings happen on the same day; the `-2`, `-3` suffix logic handles it, but flag the user so they set Meet titles up front.
 - The skill does NOT delete or move docs in Drive. Files stay in `Tactiq Transcription/` indefinitely.
 - If `.tactiq_processed.json` is missing or corrupt, treat as empty and warn the user before reprocessing.
-- This skill must run in a non-sandboxed session; rclone needs network and the config file.
+- Works in both host and sandboxed sessions; the sandbox exposes the read-only `gdrive-ro` remote, which is enough since the skill never writes to Drive.
