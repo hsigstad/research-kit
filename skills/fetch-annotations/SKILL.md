@@ -100,8 +100,9 @@ edits with the Edit tool one at a time so the user can see each change.
 ### 6. Write the response log
 
 As you walk through annotations (Step 5), maintain a markdown log at
-`$PROJECT/docs/responses_{author}_{YYYY-MM-DD}.md`, one entry per
-annotation in numeric order. Each entry should have:
+`$PROJECT/docs/annotations/responses_{author}_{YYYY-MM-DD}.md`, one entry
+per annotation in numeric order (create `docs/annotations/` if absent).
+Each entry should have:
 
 - The annotation number and source location (e.g. `paper/4OLS.tex:42`).
 - A blockquote of the coauthor's selected text.

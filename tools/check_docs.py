@@ -60,9 +60,14 @@ ALLOWED_PIPELINE_DOCS = REQUIRED_PIPELINE_DOCS | OPTIONAL_PIPELINE_DOCS
 ALLOWED_DOC_SUBFOLDERS = {
     "briefs", "reference", "notes", "literature", "anecdotes",
     "emails", "reviews", "specs", "whatsapp", "feedback",
+    # Coauthor-annotation response logs, written by /fetch-annotations
+    # (docs/annotations/responses_<author>_<date>.md).
+    "annotations",
     # Folder-mode doc types (see §5 of the contract): promoted from a flat
-    # file when entries grow numerous or long.
+    # file when entries grow numerous or long. thinking/ and meetings/ are
+    # folder-mode overflow of thinking.md / meetings.md.
     "hypotheses", "findings", "analyses", "sample", "dataframes", "variables",
+    "thinking", "meetings",
     # Canonical-by-tooling locations:
     #   audits/ — output of the /findings-audit skill (docs/audits/findings/<date>.md)
     #   refs/   — citation manifest written by /cite-sync (docs/refs/manifest.toml)

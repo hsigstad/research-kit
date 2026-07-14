@@ -51,6 +51,9 @@ repo/
     reference/       # optional; structured lookup material (mappings, catalogs)
     variables/       # optional; per-variable definition pages (defined_in: lint)
     notes/           # optional; miscellaneous working documents
+    annotations/     # optional; coauthor-annotation response logs (/fetch-annotations)
+    thinking/        # optional; folder-mode overflow of thinking.md
+    meetings/        # optional; folder-mode overflow of meetings.md
 
   source/          # analysis code
   build/           # all code outputs; build/table/ and build/figure/ tracked
@@ -832,6 +835,31 @@ Rules:
 - Claude may create reference documents when producing structured lookup material
 - Claude should not create reference documents for narrative content (use briefs) or for structured memory (use canonical files)
 - No approval needed to add new files under `docs/reference/` (unlike `docs/` root)
+
+---
+
+### docs/annotations/ (optional)
+
+Response logs from coauthor web annotations, written by the
+`/fetch-annotations` skill (one file per author per pass:
+`responses_{author}_{YYYY-MM-DD}.md`).
+
+Each log records, per annotation, the source location, the coauthor's
+selected text and note, our response, and the concrete action taken. It is
+the hand-off document a coauthor can read offline and the source the skill
+condenses into threaded hypothes.is replies.
+
+Rules:
+- Written by `/fetch-annotations`; freely named per the pattern above
+- No approval needed to add new files under `docs/annotations/`
+
+### docs/thinking/ and docs/meetings/ (optional, folder mode)
+
+Folder-mode overflow of `thinking.md` and `meetings.md`, respectively, for
+when a single flat file grows unwieldy. The flat canonical file remains
+(it satisfies the required-file check); the folder holds longer per-topic
+essays (`thinking/`) or per-meeting records (`meetings/`). Same semantic
+role and rules as the flat file.
 
 #### docs/findings.md (recommended for mature projects)
 
