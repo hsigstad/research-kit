@@ -44,8 +44,12 @@ if [ "$RUNTIME" = "docker" ]; then
         WHATSAPP_MOUNT=(-v "$HOME/whatsapp-mcp":/home/henrik/whatsapp-mcp)
     fi
 
+    # R_ENVIRON_USER/R_LIBS_USER: keep the container's R self-contained (see
+    # the note above the Apptainer exec below).
     exec docker run --rm -it \
         -v "$(pwd)":/workspace \
+        -e R_ENVIRON_USER=/dev/null \
+        -e R_LIBS_USER=/tmp/r-sandbox-libs \
         -v "$HOME/Dropbox":/home/henrik/Dropbox:ro \
         -v "$HOME/Dropbox/Transfer_Bocconi":/home/henrik/Dropbox/Transfer_Bocconi \
         -v "$HOME/Screenshots":/home/henrik/Screenshots:ro \
@@ -102,8 +106,17 @@ if [ ! -f "$SIF" ]; then
     echo "Built $SIF"
 fi
 
+# Decouple the container's R from the host home R library. Apptainer auto-mounts
+# $HOME, so ~/.Renviron (which pins R_LIBS_USER to ~/R_libs) and those packages
+# leak in — but ~/R_libs is built against the host's R (4.6.0) while the image
+# ships R 4.5.3, so arrow/ggplot2 fail with "undefined symbol R_MakeMissingBinding".
+# Skip the host .Renviron (it only sets R_LIBS_USER) and point R at a throwaway
+# user lib; arrow/fixest/ggplot2 resolve from the image's system library
+# (/usr/local/lib/R/site-library, populated by lib/install-r.sh). No rebuild needed.
 exec "$RUNTIME" run \
     --bind "$(pwd)":/workspace \
+    --env "R_ENVIRON_USER=/dev/null" \
+    --env "R_LIBS_USER=/tmp/r-sandbox-libs" \
     --bind "$HOME/Screenshots":/home/henrik/Screenshots:ro \
     --bind "$HOME/.claude":/home/henrik/.claude \
     --bind "$HOME/.claude.json":/home/henrik/.claude.json \
