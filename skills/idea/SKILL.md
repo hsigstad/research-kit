@@ -81,7 +81,38 @@ ideas/<slug>/
   paper.tex        ← paper sketch once idea has crystallized
   references.bib   ← bibliography for paper.tex
   literature/      ← lit search artifacts (queries.json, candidates.json, etc.)
+  source/          ← exploratory analysis scripts (optional; see below)
+  build/           ← outputs of those scripts (optional; see below)
 ```
+
+### Exploratory `source/` and `build/` in an idea folder
+
+An idea folder may carry `source/` and `build/` subdirectories to hold
+*exploratory* analysis run before the idea is promoted to a proper
+project — the point is to probe feasibility (does the data support the
+design? is there a sample? is the effect visible?) without paying the
+cost of a full `projects/<slug>/` scaffold.
+
+This is a sanctioned sandbox, deliberately lighter than the project
+docs contract:
+
+- The doc-contract linter (`check_docs.py`) does **not** scan inside
+  idea folders — `find_repos` only walks `projects/*` and
+  `pipelines/*`, and `lint_ideas` only checks flat `ideas/*.md`
+  frontmatter. So the `source/X.py → build/X.ext` bijection, required
+  docs, and merge-`validate=` rules are **not** enforced here. Keep
+  the folder tidy by convention, not by hook.
+- Still follow the light habits that make the work legible: mirror
+  `source/X.py → build/X.<ext>`, keep a short INTENT line at the top of
+  each script (Inline Audit Trail), and read only cleaned pipeline
+  outputs (`pipelines/*/build/`), never raw data.
+- When an idea graduates to `projects/<slug>/`, the exploratory
+  `source/`/`build/` is the seed of the real project tree — move and
+  re-home it under the full docs contract at that point.
+
+Record what the exploration found in `summary.md` (or a `findings.md`
+in the folder) so the conclusion survives even if the scratch scripts
+are later pruned.
 
 To promote a flat idea to a folder:
 
