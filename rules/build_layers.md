@@ -53,6 +53,13 @@ deduplication, key normalisation).
 **Grain.** One row per natural entity: `licitacao`, `contract`,
 `empenho`, `bid`, `firm`, `court_case`, `tce_consulta`, etc.
 
+**Naming.** Exactly one file per grain, named by the entity alone — no
+qualifier and no sample suffix (`licitacao.py` → `licitacao.parquet`,
+never `licitacao__2020.py` or `licitacao_clean.py`). If you find yourself
+wanting a qualifier, the table is a *derived* product: it belongs in
+`intermediate/` or a linking layer (`prep/`, `query/`, `merge/`), not
+`clean/`. See "Derived-table naming" below.
+
 **Who writes it.** Only `source/clean/` may read raw data (from
 `$DATA_DIR` or equivalent). Shared parsers live in
 `source/clean/parse.py`.
@@ -198,6 +205,28 @@ same script may legitimately emit both `build/table/X.csv` and
 One script per primary output. Multi-output scripts are allowed only
 when the outputs genuinely share computation — not as an organizing
 convenience.
+
+### Derived-table naming (`<unit>__<qualifier>`)
+
+`clean/` and `assemble/` tables are named by their grain alone — one file
+per grain (`licitacao.py`, `muni_year.py`). *Derived* tables — in
+`source/intermediate/` and linking layers (`prep/`, `query/`, `merge/`),
+where several tables can legitimately share a grain — are named
+`<unit>__<qualifier>`:
+
+- the **unit of observation** first (`cand`, `proc`, `cand_proc`,
+  `judge_month`, `bairro_cand`),
+- a **double underscore**,
+- then the **sample or column info** that distinguishes this table from
+  others at the same grain (`__2020`, `__receitas`, `__sources`,
+  `__audited`).
+
+Examples: `cand__receitas.py`, `cand_proc__2020.py`, `proc__sources.py`,
+`bairro_cand__2020.py`. Single underscores appear only *within* the unit
+(`cand_proc`, `judge_month`) or *within* the qualifier — the double
+underscore is the sole unit↔qualifier boundary, so the grain is always
+recoverable from the filename by splitting on `__`. An optional
+source/sample prefix may precede the unit (`TRF1_proc__cgu.py`).
 
 ### Multiple outputs of the same suffix
 
