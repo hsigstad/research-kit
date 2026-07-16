@@ -1,9 +1,16 @@
 """Helpers for the /tactiq skill.
 
-Three CLI subcommands:
+Four CLI subcommands:
   download <file_id> <out_path>          export a Google Doc as text/plain via Drive API
   parse <txt_path>                       parse a Tactiq plaintext export → JSON
   save <txt_path> <file_id> <dest_path>  parse + render the meeting markdown file
+  scan-ids [roots...]                    {tactiq_id: path} of every saved meeting
+
+The `scan-ids` subcommand reconstructs the processed set from the committed
+meeting files' frontmatter, so a fresh machine (whose per-machine, untracked
+.tactiq_processed.json cache is empty) skips already-routed meetings instead of
+creating -2 duplicates. Callers treat an ID as processed if it is in the cache
+OR in this scan.
 
 The `save` subcommand is the deterministic format-and-write step. It takes the
 downloaded text, parses it, renders the frontmatter + transcript markdown, and
@@ -253,6 +260,31 @@ def save(txt_path: str, file_id: str, dest_path: str, attendees: str | None = No
     return str(p)
 
 
+_TACTIQ_ID_RE = re.compile(r"^tactiq_id:\s*(\S+)\s*$", re.M)
+
+
+def scan_ids(roots: list[str]) -> dict:
+    """Map every already-saved meeting's tactiq_id -> its file path.
+
+    Scans <root>/projects/*/docs/meetings/*.md and <root>/inbox/meetings/*.md
+    for the `tactiq_id:` frontmatter line. Because every saved meeting records
+    its Drive file ID, this reconstructs the processed set from the committed
+    files alone — so a fresh machine (new laptop, a server) skips already-routed
+    meetings without the .tactiq_processed.json cache, which is per-machine and
+    untracked. Callers should treat a meeting as processed if its ID is in the
+    cache OR in this scan.
+    """
+    out: dict[str, str] = {}
+    for root in roots or ["."]:
+        rp = Path(root)
+        seen = list(rp.glob("projects/*/docs/meetings/*.md")) + list(rp.glob("inbox/meetings/*.md"))
+        for md in seen:
+            m = _TACTIQ_ID_RE.search(md.read_text(encoding="utf-8", errors="ignore"))
+            if m:
+                out[m.group(1)] = str(md)
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -271,6 +303,10 @@ def main() -> None:
     s.add_argument("--attendees", default=None,
                    help="comma-separated override for the frontmatter attendees list")
 
+    si = sub.add_parser("scan-ids")
+    si.add_argument("roots", nargs="*", default=["."],
+                    help="workspace roots to scan (default: current dir)")
+
     args = ap.parse_args()
     if args.cmd == "download":
         download(args.file_id, args.out_path)
@@ -279,6 +315,9 @@ def main() -> None:
         sys.stdout.write("\n")
     elif args.cmd == "save":
         print(save(args.txt_path, args.file_id, args.dest_path, args.attendees))
+    elif args.cmd == "scan-ids":
+        json.dump(scan_ids(args.roots), sys.stdout, ensure_ascii=False, indent=2)
+        sys.stdout.write("\n")
 
 
 if __name__ == "__main__":

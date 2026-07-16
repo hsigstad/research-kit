@@ -72,6 +72,14 @@ Read `.tactiq_processed.json` from the workspace root:
 
 Skip any file ID present in either `processed` or `ignored`. If the file is missing or corrupt, treat as `{"processed": {}, "ignored": {}}` and warn the user.
 
+**Also reconcile against already-saved files.** The cache lives at the workspace root and is **per-machine and untracked** — a fresh checkout (new laptop, a server) starts with no cache even though the meeting files are already committed. So before processing, also scan the committed files for the Drive IDs they already carry in frontmatter:
+
+```bash
+python3 "$SKILL_DIR/tactiq_helpers.py" scan-ids .   # {tactiq_id: path} for every saved meeting
+```
+
+Treat a Drive file as already processed if its ID is in the cache **OR** in this scan. This is what prevents duplicate `-2` files when the cache is absent. Optionally backfill any scan-only IDs into `.tactiq_processed.json` so later runs on this machine are fast.
+
 The `ignored` section is for transcripts the user has explicitly marked as not worth saving anywhere (solo test recordings, unrelated calls, etc.). Add entries when the user invokes `/tactiq ignore <file_id>` or asks to mark specific transcripts as ignored. Never auto-populate `ignored` — only the user decides what to ignore.
 
 ## Step 3 — fetch each unprocessed doc
