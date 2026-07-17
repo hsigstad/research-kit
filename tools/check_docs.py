@@ -43,6 +43,11 @@ OPTIONAL_PROJECT_DOCS = {
     "theory.md", "hypotheses.md", "desiderata.md", "outline.md",
     "archive.md", "results.md", "findings.md", "anecdotes.md",
     "questions.md", "qa.md", "README.md", "CONVENTIONS.md",
+    # Canonical-by-tooling: validation ledger read by tools/coverage.py and
+    # the /validate-section skill at docs/validation.yaml (legacy
+    # fallback paper/validation.yaml), plus its narrative companion
+    # docs/validation.md declared by the /validate-section skill.
+    "validation.yaml", "validation.md",
 }
 
 ALLOWED_PROJECT_DOCS = REQUIRED_PROJECT_DOCS | OPTIONAL_PROJECT_DOCS
