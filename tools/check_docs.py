@@ -62,6 +62,11 @@ OPTIONAL_PIPELINE_DOCS = {
 
 ALLOWED_PIPELINE_DOCS = REQUIRED_PIPELINE_DOCS | OPTIONAL_PIPELINE_DOCS
 
+# Repos exempt from the docs contract, as "<kind>s/<slug>". marcella is
+# RA-owned (Marcella's own working repo — notebooks and scripts at the
+# root); we don't impose the contract structure on it.
+EXEMPT_REPOS = {"pipelines/marcella"}
+
 ALLOWED_DOC_SUBFOLDERS = {
     "briefs", "reference", "notes", "literature", "anecdotes",
     "emails", "reviews", "specs", "whatsapp", "feedback",
@@ -917,7 +922,11 @@ def main():
     if not args.slug:
         lint_ideas(workspace, workspace_findings)
 
-    all_findings = [lint_repo(repo, kind, workspace) for repo, kind in repos]
+    all_findings = [
+        lint_repo(repo, kind, workspace)
+        for repo, kind in repos
+        if f"{kind}s/{repo.name}" not in EXEMPT_REPOS
+    ]
 
     emit(workspace_findings, all_findings, as_json=args.json, full=args.full, title="Doc-contract lint report")
 
