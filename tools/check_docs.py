@@ -75,9 +75,12 @@ ALLOWED_DOC_SUBFOLDERS = {
     "annotations",
     # Folder-mode doc types (see §5 of the contract): promoted from a flat
     # file when entries grow numerous or long. thinking/ and meetings/ are
-    # folder-mode overflow of thinking.md / meetings.md.
+    # folder-mode overflow of thinking.md / meetings.md; methods/ and
+    # institutions/ overflow methods.md / institutions.md the same way
+    # (index.md + one page per method/institution). data/ is the documented
+    # per-source companion to data.md (§5 "Companion folder").
     "hypotheses", "findings", "analyses", "sample", "dataframes", "variables",
-    "thinking", "meetings",
+    "thinking", "meetings", "methods", "institutions", "data",
     # Canonical-by-tooling locations:
     #   audits/ — output of the /findings-audit skill (docs/audits/findings/<date>.md)
     #   refs/   — citation manifest written by /cite-sync (docs/refs/manifest.toml)
