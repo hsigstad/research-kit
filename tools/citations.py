@@ -43,7 +43,17 @@ INTERNAL_NAMESPACES = {
 
 LITERATURE_NAMESPACE = "cite"
 
-ALL_NAMESPACES = EXTERNAL_NAMESPACES | INTERNAL_NAMESPACES | {LITERATURE_NAMESPACE}
+# Namespaces that resolve to a per-slug page file rather than an `- id:` anchor
+# line. `[anec:<slug>]` resolves iff docs/anecdotes/<slug>.md exists (matching
+# sitekit's load_anec_map); project-scoped like the other internal namespaces.
+FILE_NAMESPACES = {
+    "anec": "docs/anecdotes",
+}
+
+ALL_NAMESPACES = (
+    EXTERNAL_NAMESPACES | INTERNAL_NAMESPACES | set(FILE_NAMESPACES)
+    | {LITERATURE_NAMESPACE}
+)
 
 INTERNAL_ANCHOR_FILES = {
     "hyp":          "docs/hypotheses.md",
@@ -344,6 +354,13 @@ def lint_citations(repo: Path, f: Findings, kind: str, registry: dict[str, dict[
             if full_id not in internal_anchors:
                 f.err("cite.unresolved-internal",
                       f"[{ns}:{key}] has no matching anchor (expected '- id: {ns}:{key}' or \\label{{{ns}:{key}}})",
+                      path=path_ref)
+
+        elif ns in FILE_NAMESPACES:
+            page = repo / FILE_NAMESPACES[ns] / f"{key}.md"
+            if not page.exists():
+                f.err("cite.unresolved-file",
+                      f"[{ns}:{key}] has no page (expected {FILE_NAMESPACES[ns]}/{key}.md)",
                       path=path_ref)
 
         else:
