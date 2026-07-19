@@ -3,10 +3,10 @@ name: hypothesis
 description: "Populate or expand a project's docs/hypotheses.md (or docs/hypotheses/ folder) — testable predictions linking theory (docs/theory.md or docs/literature.md) to evidence and the project's empirical design. Use when the user wants to draft, update, or audit hypotheses."
 ---
 
-# /hypothesis — Populate docs/hypotheses.md
+# /hypothesis — Populate docs/hypotheses/
 
-Draft or extend a project's `docs/hypotheses.md` (or `docs/hypotheses/`
-folder): a structured mapping of theoretical predictions to pre-existing
+Draft or extend a project's `docs/hypotheses/` folder (or a legacy flat
+`docs/hypotheses.md`): a structured mapping of theoretical predictions to pre-existing
 evidence and concrete empirical tests the project can run. Each
 hypothesis is a single testable claim with its theory, evidence,
 specification, and data requirement spelled out.
@@ -15,11 +15,15 @@ specification, and data requirement spelled out.
 
 Discovery order, first hit wins:
 
-1. `$PROJ/docs/hypotheses.md` (flat file)
-2. `$PROJ/docs/hypotheses/index.md` (folder mode)
+1. `$PROJ/docs/hypotheses/index.md` (folder mode — default)
+2. `$PROJ/docs/hypotheses.md` (flat file — legacy)
 
-If neither exists, ask the user which to create. Default to flat file for
-<15 hypotheses, folder for 15+.
+If neither exists, create **folder mode** (`docs/hypotheses/`, `index.md` + one
+file per hypothesis) regardless of entry count — it is the default per
+`project_docs_contract.md` §5 and matches the sibling `docs/findings/` layout.
+The flat file is **legacy**: keep maintaining existing `docs/hypotheses.md`
+files, but do not create new ones — migrate them to a folder when convenient
+(see "Folder mode" below).
 
 ## Arguments
 

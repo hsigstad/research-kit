@@ -178,7 +178,7 @@ __pycache__/
 ## Gotchas
 
 - **Never overwrite files the user placed in the folder.** The user's materials are the source of truth.
-- Do NOT create optional docs files (theory.md, hypotheses.md, results.md, etc.) unless the user asks or the materials clearly warrant them.
+- Do NOT create optional docs files (theory.md, hypotheses, results.md, etc.) unless the user asks or the materials clearly warrant them. When hypotheses *are* warranted, create folder mode (`docs/hypotheses/index.md` + one `<slug>.md` per hypothesis), never a flat `docs/hypotheses.md` — folder mode is the default per `project_docs_contract.md` §5 (same as `docs/findings/`).
 - Do NOT create `talk/` or `references/` directories unless requested.
 - Pipeline repos are different — they have fewer docs files and no `paper/`. If the user actually wants a pipeline, tell them and use the pipeline structure from the contract.
 - Always use today's date (from system context) for created dates.
