@@ -47,6 +47,7 @@ def _render_content(
     current_stem: str,
     in_subdir: bool,
     prefix: str = "../",
+    is_folder_mode: bool = False,
 ) -> str:
     """Run text through the render + link-rewrite pipeline."""
     cfg = ctx.config
@@ -67,7 +68,8 @@ def _render_content(
             content_html, ctx, in_subdir=in_subdir, prefix=prefix)
     else:
         content_html = rewrite_md_links(
-            content_html, ctx, in_subdir=in_subdir, prefix=prefix)
+            content_html, ctx, in_subdir=in_subdir, prefix=prefix,
+            is_folder_mode=is_folder_mode)
 
     if cfg.enable_an_pages:
         content_html = link_an_refs(content_html, ctx, current_stem, prefix=prefix)
@@ -112,7 +114,8 @@ def build_doc_page(ctx: BuildContext, rel_path: str, title: str) -> None:
     # from site root); top-level docs at build/site/docs/<stem>.html (depth 1).
     prefix = "../../" if is_folder_mode else "../"
     content_html = _render_content(
-        ctx, text, stem, in_subdir=False, prefix=prefix)
+        ctx, text, stem, in_subdir=False, prefix=prefix,
+        is_folder_mode=is_folder_mode)
 
     if cfg.cite_refs_mode == "flat" and stem == "literature":
         from .links import inject_index_cite_anchors

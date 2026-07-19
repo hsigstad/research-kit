@@ -66,6 +66,7 @@ def rewrite_md_links(
     ctx: BuildContext,
     in_subdir: bool = False,
     prefix: str = "../",
+    is_folder_mode: bool = False,
 ) -> str:
     """Rewrite relative .md hrefs to .html so cross-doc links work.
 
@@ -112,6 +113,15 @@ def rewrite_md_links(
         bare_first = new.split("/", 1)[0] if "/" in new else new.rstrip("/")
         if bare_first in subdir_names:
             return f'href="{prefix}{new}"'
+        if is_folder_mode:
+            # Folder-mode pages render at build/site/docs/<folder>/<stem>.html
+            # and preserve the docs/ tree, so a source-relative link already
+            # matches the output layout: e.g. `../hypotheses.md` from
+            # docs/findings/x.md → `../hypotheses.html` (up to docs/), and a
+            # sibling `other-slug.md` stays same-dir. Only .md→.html (done
+            # above) plus the doc_subdir routing (handled above) apply; do not
+            # strip the leading `../`.
+            return f'href="{new}"'
         for sp in strip_prefixes:
             if new.startswith(sp):
                 new = new[len(sp):]
