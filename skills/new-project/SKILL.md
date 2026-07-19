@@ -56,6 +56,8 @@ $ROOT/projects/<slug>/
     data.md
     methods.md
     decisions.md
+    findings/
+      index.md     # folder-mode findings — the default per project_docs_contract.md §864
   source/
   build/
     .gitkeep
@@ -132,6 +134,7 @@ Populate with research question, motivation, and conceptual framework extracted 
 - **literature.md** — populate if the materials cite papers
 - **institutions.md** — populate if the materials describe institutional context
 - **thinking.md** — place any speculative or exploratory content from the materials here
+- **findings/index.md** — seed the folder-mode findings page even for a new project, so the first finding lands compliant instead of drifting into an ad-hoc flat file. Copy the `## How to read the confidence tags` block (🟢/🟡/🔴 Replicated/Single source/Provisional; Strong/Plausible/Speculative) verbatim from `project_docs_contract.md` §864, then leave empty `## Findings overview` (with `### Empirical findings` / `### Interpretations` subheads) and `## Open items` sections. Individual findings become sibling `docs/findings/<slug>.md` files with the required four-class **Sources footer**. Do NOT create a flat `docs/findings.md`.
 - Remaining files: create with header and empty template sections per the contract formats in `project_docs_contract.md` section 6.
 
 ### README.md
