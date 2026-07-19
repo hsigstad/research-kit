@@ -62,7 +62,14 @@ Read these files to build context. If one is missing, note it and move on; never
 
 ## Document structure
 
-### Flat-file mode (`docs/findings.md`)
+**Default: folder mode** (`docs/findings/`, one file per finding). It matches the
+canonical `project_docs_contract.md` §5 and the sibling `docs/hypotheses/` layout, and
+is what nearly every project uses. Create it for new projects regardless of entry
+count. The flat-file mode below is **legacy**: keep maintaining existing flat
+`docs/findings.md` files, but do not create new ones — migrate them to a folder when
+convenient (see "Migrating from flat to folder").
+
+### Flat-file mode (`docs/findings.md`) — legacy
 
 Required sections (in order):
 
@@ -121,11 +128,12 @@ underlying data.">
 candidates>
 ```
 
-### Folder mode (`docs/findings/`)
+### Folder mode (`docs/findings/`) — the default
 
-When the project has 20+ entries, use one file per finding. See the
-"Folder mode" section below for the full specification. The `index.md`
-carries the overview and links; each `<slug>.md` carries one entry.
+Use one file per finding — this is the default layout for every project (see the
+note under "Document structure"). See the "Folder mode" section below for the full
+specification. The `index.md` carries the overview and links; each `<slug>.md`
+carries one entry.
 
 ## Confidence-tag scheme (verbatim — copy into `## How to read the confidence tags`)
 
@@ -222,8 +230,8 @@ For news anchors that carry a load-bearing quote, append the quote inline:
 
 ## Folder mode (`docs/findings/`)
 
-When a project has 20+ findings entries and the single file becomes
-unwieldy, promote to a folder structure:
+The default layout — one file per finding (used for every new project and by
+nearly all existing ones):
 
 ```
 docs/findings/
@@ -233,11 +241,12 @@ docs/findings/
 
 ### When to use folder vs flat file
 
-- **Flat file** (`docs/findings.md`): projects with <20 entries. Simpler,
-  everything searchable in one place.
-- **Folder** (`docs/findings/`): projects with 20+ entries. Per-finding
-  pages on the site, cleaner diffs, easier to edit one entry without
-  touching others.
+- **Folder** (`docs/findings/`): **the default.** One file per finding — per-finding
+  pages on the site, cleaner diffs, and you can edit one entry without touching
+  others. Use it for every new project and any project going forward, regardless of
+  entry count (it matches `project_docs_contract.md` §5 and `docs/hypotheses/`).
+- **Flat file** (`docs/findings.md`): **legacy only.** A few early projects still use
+  it; migrate to a folder when convenient. Do not create new flat findings docs.
 
 ### index.md structure
 
