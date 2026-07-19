@@ -90,6 +90,7 @@ def rewrite_md_links(
     """
     cfg = ctx.config
     subdir_names = {s for s, _, _ in cfg.doc_subdirs}
+    folder_mode_names = set(cfg.folder_mode_subdirs)
     strip_prefixes = ("docs/", "../docs/", *cfg.extra_strip_prefixes)
 
     def _replacer(m: re.Match) -> str:
@@ -107,6 +108,13 @@ def rewrite_md_links(
                 break
         if sd_match:
             return f'href="{prefix}{new[3:]}"'
+        # Folder-mode subdirs (findings/, anecdotes/) render UNDER docs/ at
+        # build/site/docs/<folder>/. A `../<folder>/x.md` link from a page
+        # outside that folder (e.g. an AN page at build/site/analyses/, or a
+        # different folder-mode page) must route to `{prefix}docs/<folder>/x`.
+        for fm in folder_mode_names:
+            if new.startswith(f"../{fm}/"):
+                return f'href="{prefix}docs/{new[3:]}"'
         # Source path starting directly with a doc_subdir name (e.g.
         # `analyses/an-001.md` from a top-level docs page) targets the
         # subdir output at build/site/<subdir>/ — route via prefix.
