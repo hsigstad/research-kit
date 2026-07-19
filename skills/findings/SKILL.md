@@ -119,13 +119,6 @@ underlying data.">
 ### <Interpretation headline 1>
 
 ...
-
----
-
-## Open items for this page
-
-<bulleted list of known gaps, pending replications, confidence-upgrade
-candidates>
 ```
 
 ### Folder mode (`docs/findings/`) — the default
@@ -273,12 +266,6 @@ docs/findings/
 **Interpretations**
 
 - 🟢 [Interpretation headline](interp-slug.md) — one-line summary
-
----
-
-## Open items
-
-<bulleted list of gaps, same as flat-file mode>
 ```
 
 ### Per-finding file structure (`<slug>.md`)

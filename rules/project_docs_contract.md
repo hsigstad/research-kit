@@ -880,7 +880,9 @@ Required structure:
 - `## Findings overview` — scannable index of every entry with one-line summaries and anchor links
 - `## Empirical findings — detail` — descriptive findings, one entry each
 - `## Interpretations — detail` — readings of the evidence; each must name the empirical premises it draws on
-- `## Open items for this page` — known gaps and pending replications
+
+Known gaps and pending replications do **not** get a findings section — they are
+task items and belong in `todo.md`.
 
 Confidence-tag scheme (used in both empirical and interpretive sections):
 
@@ -930,9 +932,9 @@ docs/findings/
   <slug>.md          # one file per finding (short slug, ≤40 chars)
 ```
 
-- `index.md` carries the intro, confidence-tag scheme, `## Findings overview`
-  (with bullets linking to individual files, e.g. `[headline](slug.md)`),
-  and `## Open items`.
+- `index.md` carries the intro, confidence-tag scheme, and `## Findings overview`
+  (with bullets linking to individual files, e.g. `[headline](slug.md)`). Known
+  gaps / pending replications go in `todo.md`, not an Open-items section.
 - Each `<slug>.md` carries one finding: `# Headline`, confidence tag + body,
   Sources footer. Heading is `#` (top-level) since the file is standalone.
 - Entry schema and Sources footer are identical to flat-file mode.
