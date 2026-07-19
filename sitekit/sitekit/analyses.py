@@ -30,13 +30,16 @@ AN_TYPE_DESC = {
 }
 
 
-def render_analysis_panel(meta: dict, ctx: BuildContext) -> tuple[str, str]:
+def render_analysis_panel(meta: dict, ctx: BuildContext,
+                          prefix: str = "../") -> tuple[str, str]:
     """Render analysis-page frontmatter as (headline_html, panel_html).
 
     Headline is a one-paragraph plain-English statement of the finding,
     rendered above the panel. The panel is tiered: top (hypothesis,
     confidence, type), design (sample, specification, etc.), provenance
     (script, target, commit, status, created) as a small muted footer.
+    `prefix` is the relative path from the AN page to the site root; hypothesis
+    pages render folder-mode under docs/hypotheses/.
     """
 
     def _dl(pairs: list[tuple[str, str]]) -> str:
@@ -51,7 +54,7 @@ def render_analysis_panel(meta: dict, ctx: BuildContext) -> tuple[str, str]:
         title = ctx.hyp_titles.get(slug)
         if title:
             top_rows.append(("Hypothesis",
-                f'<a href="../hypotheses/{_html.escape(slug)}.html">'
+                f'<a href="../docs/hypotheses/{_html.escape(slug)}.html">'
                 f'{_html.escape(title)}</a>'))
         else:
             top_rows.append(("Hypothesis", _html.escape(slug)))
@@ -281,7 +284,7 @@ def build_analyses_index(
 
             def _meta_item(x: str) -> str:
                 if x.startswith("H:") and x[2:] in ctx.h_slugs:
-                    return f'<a href="../hypotheses/{x[2:]}.html">{_esc(x)}</a>'
+                    return f'<a href="../docs/hypotheses/{x[2:]}.html">{_esc(x)}</a>'
                 return _esc(x)
 
             meta_html = (
