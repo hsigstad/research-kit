@@ -40,8 +40,16 @@ def load_anec_map(project_root: Path) -> dict[str, str]:
     return out
 
 
-def link_anec_refs(html: str, ctx: BuildContext, current_stem: str = "") -> str:
-    """Auto-link [anec:<slug>] tokens to their anecdote page under anecdotes/."""
+def link_anec_refs(
+    html: str, ctx: BuildContext, current_stem: str = "", prefix: str = "../"
+) -> str:
+    """Auto-link [anec:<slug>] tokens to their anecdote page.
+
+    Anecdote pages render at ``build/site/docs/anecdotes/<slug>.html``. ``prefix``
+    is the relative path from the citing page to the site root (``"../"`` for a
+    flat ``docs/<page>.html``, ``"../../"`` for a folder-mode page one level
+    deeper), so the href resolves from any page depth.
+    """
     if not ctx.anec_map:
         return html
     pattern = re.compile(
@@ -55,7 +63,7 @@ def link_anec_refs(html: str, ctx: BuildContext, current_stem: str = "") -> str:
         label = ctx.anec_map.get(slug)
         if not label or slug == current_stem:
             return token
-        return (f'<a class="anec-ref" href="../anecdotes/{slug}.html">'
+        return (f'<a class="anec-ref" href="{prefix}docs/anecdotes/{slug}.html">'
                 f'{_html.escape(label)}</a>')
 
     return pattern.sub(_replacer, html)
