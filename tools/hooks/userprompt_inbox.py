@@ -7,8 +7,15 @@ This hook runs on every user prompt, and injects any message this
 session hasn't seen yet into context — so delivery is automatic and
 nobody has to relay or be told to "check the inbox".
 
-Addressing is by environment in the filename: to = host | sandbox | all.
-Files that don't match the naming pattern are delivered everywhere.
+Addressing has two layers:
+  - By environment in the filename: to = host | sandbox | all. Files that
+    don't match the naming pattern are delivered everywhere.
+  - By session (optional): a `To-Session: <id-or-prefix>` line in the first
+    ~20 lines of the message restricts delivery to the one session whose id
+    matches (prefix match, since ids are truncated). This overrides the
+    env addressing and is how a sender reaches ONE specific session rather
+    than every session of a type.
+
 The RECEIVING session deletes a message file once acted on. Delivered
 filenames are tracked per session in ~/.claude/state/ so a message is
 injected at most once per session. Fails open on any error.
@@ -22,6 +29,9 @@ from pathlib import Path
 MAX_FILES = 3
 MAX_BYTES = 4000
 NAME_RE = re.compile(r"^(?P<frm>[^_]+)-to-(?P<to>[A-Za-z]+)_.*\.md$")
+# `To-Session:` / `Session:` / `Target-Session:` header, scanned in the head of the file.
+TO_SESSION_RE = re.compile(r"^\s*(?:to-session|target-session|session)\s*:\s*(\S+)",
+                           re.IGNORECASE | re.MULTILINE)
 
 
 def workspace() -> Path:
@@ -32,6 +42,12 @@ def workspace() -> Path:
         if (cand / "research-kit").exists():
             return cand
     return Path.home() / "research"
+
+
+def targeted_session(head: str):
+    """Return the To-Session target declared in the message head, or None."""
+    m = TO_SESSION_RE.search(head)
+    return m.group(1).strip() if m else None
 
 
 def main() -> None:
@@ -54,24 +70,40 @@ def main() -> None:
     except Exception:
         seen = set()
 
+    existing = {p.name for p in candidates}
     deliver = []
     for p in candidates:
         if p.name in seen:
             continue
-        m = NAME_RE.match(p.name)
-        to = (m.group("to").lower() if m else "all")
-        if to in (here, "all", "any") or not m:
-            deliver.append(p)
+        body = p.read_text(errors="replace")[:MAX_BYTES]
+        target = targeted_session(body[:1500])
+        if target is not None:
+            # Session-targeted: deliver only to the matching session (or the
+            # broadcast tokens). A non-matching session skips it AND does not
+            # mark it seen, so the intended session still receives it.
+            if not (session == target or session.startswith(target)
+                    or target.lower() in (here, "all", "any")):
+                continue
+        else:
+            m = NAME_RE.match(p.name)
+            to = (m.group("to").lower() if m else "all")
+            if not (to in (here, "all", "any") or not m):
+                continue
+        deliver.append((p, body))
 
     if not deliver:
-        # prune state to existing files so it can't grow forever
-        state_file.write_text(json.dumps(sorted(seen & {p.name for p in candidates})))
+        state_file.write_text(json.dumps(sorted(seen & existing)))
         return
 
-    print(f"## Inter-session message(s) in inbox/messages/ (you are: {here})")
+    print(f"## Inter-session message(s) in inbox/messages/")
+    print(f"You are the **{here}** session, id `{session}`. "
+          f"Host and sandbox share the SAME /workspace filesystem and git repo — "
+          f"files another session changed are already on disk for you. Do NOT ask for "
+          f"(or perform) a `git pull`, re-clone, or rerun of code that already ran; "
+          f"just read the files. To reach one specific session, a sender can add a "
+          f"`To-Session: <id>` line (ids appear in commit trailers).")
     print()
-    for p in deliver[:MAX_FILES]:
-        body = p.read_text(errors="replace")[:MAX_BYTES]
+    for p, body in deliver[:MAX_FILES]:
         print(f"### {p.name}")
         print(body.rstrip())
         print()
@@ -79,11 +111,12 @@ def main() -> None:
     if len(deliver) > MAX_FILES:
         print(f"...and {len(deliver) - MAX_FILES} more message file(s) — read them directly.")
     print(
-        "Act on what is relevant, then DELETE each consumed message file "
-        "(git-ignored plain files; `rm` is fine). If you are the author of a "
-        "message shown above, ignore it."
+        "Act ONLY on messages relevant to your current work. If a message is clearly "
+        "for a different task or session, do not act on it and do NOT delete it — leave "
+        "it for the intended session. Delete (with `rm`) only the messages you actually "
+        "consumed; they are git-ignored plain files. If you are the author, ignore it."
     )
-    state_file.write_text(json.dumps(sorted((seen & {p.name for p in candidates}) | seen)))
+    state_file.write_text(json.dumps(sorted(seen & existing)))
 
 
 if __name__ == "__main__":
