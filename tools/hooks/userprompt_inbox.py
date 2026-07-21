@@ -32,6 +32,8 @@ NAME_RE = re.compile(r"^(?P<frm>[^_]+)-to-(?P<to>[A-Za-z]+)_.*\.md$")
 # `To-Session:` / `Session:` / `Target-Session:` header, scanned in the head of the file.
 TO_SESSION_RE = re.compile(r"^\s*(?:to-session|target-session|session)\s*:\s*(\S+)",
                            re.IGNORECASE | re.MULTILINE)
+# `From-Session:` return address, stamped by send_message.py.
+FROM_SESSION_RE = re.compile(r"^\s*from-session\s*:\s*(\S+)", re.IGNORECASE | re.MULTILINE)
 
 
 def workspace() -> Path:
@@ -106,6 +108,10 @@ def main() -> None:
     for p, body in deliver[:MAX_FILES]:
         print(f"### {p.name}")
         print(body.rstrip())
+        fm = FROM_SESSION_RE.search(body[:1500])
+        if fm:
+            print(f"\n_↩ to reply to this one, run "
+                  f"`research-kit/tools/send_message.py --to-session {fm.group(1)}`._")
         print()
         seen.add(p.name)
     if len(deliver) > MAX_FILES:
@@ -114,7 +120,9 @@ def main() -> None:
         "Act ONLY on messages relevant to your current work. If a message is clearly "
         "for a different task or session, do not act on it and do NOT delete it — leave "
         "it for the intended session. Delete (with `rm`) only the messages you actually "
-        "consumed; they are git-ignored plain files. If you are the author, ignore it."
+        "consumed; they are git-ignored plain files. If you are the author, ignore it. "
+        "Send messages with `research-kit/tools/send_message.py` — it stamps your session "
+        "id automatically so replies can route back."
     )
     state_file.write_text(json.dumps(sorted(seen & existing)))
 
