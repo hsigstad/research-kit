@@ -7,18 +7,20 @@ This hook runs on every user prompt, and injects any message this
 session hasn't seen yet into context — so delivery is automatic and
 nobody has to relay or be told to "check the inbox".
 
-Addressing has two layers:
-  - By environment in the filename: to = host | sandbox | all. Files that
-    don't match the naming pattern are delivered everywhere.
-  - By session (optional): a `To-Session: <id-or-prefix>` line in the first
-    ~20 lines of the message restricts delivery to the one session whose id
-    matches (prefix match, since ids are truncated). This overrides the
-    env addressing and is how a sender reaches ONE specific session rather
-    than every session of a type.
+Addressing (most specific wins):
+  - By session name: a `To-Name: <name>` line delivers only to the session a
+    user named with /rename (matched against this session's own name, looked
+    up in ~/.claude/sessions/). Lets a user say "message the 'CGU pipeline'
+    session".
+  - By session id: a `To-Session: <id-or-prefix>` line delivers only to the
+    session whose id matches (prefix match, since ids are truncated).
+  - By environment (filename): to = host | sandbox | all — any session of that
+    env. Files that don't match the naming pattern are delivered everywhere.
 
-The RECEIVING session deletes a message file once acted on. Delivered
-filenames are tracked per session in ~/.claude/state/ so a message is
-injected at most once per session. Fails open on any error.
+A non-matching session skips a targeted message AND does not mark it seen, so
+the intended session still receives it. The RECEIVING session deletes a file
+once acted on. Delivered filenames are tracked per session in ~/.claude/state/
+so a message is injected at most once per session. Fails open on any error.
 """
 import json
 import os
@@ -29,11 +31,11 @@ from pathlib import Path
 MAX_FILES = 3
 MAX_BYTES = 4000
 NAME_RE = re.compile(r"^(?P<frm>[^_]+)-to-(?P<to>[A-Za-z]+)_.*\.md$")
-# `To-Session:` / `Session:` / `Target-Session:` header, scanned in the head of the file.
 TO_SESSION_RE = re.compile(r"^\s*(?:to-session|target-session|session)\s*:\s*(\S+)",
                            re.IGNORECASE | re.MULTILINE)
-# `From-Session:` return address, stamped by send_message.py.
+TO_NAME_RE = re.compile(r"^\s*to-name\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 FROM_SESSION_RE = re.compile(r"^\s*from-session\s*:\s*(\S+)", re.IGNORECASE | re.MULTILINE)
+FROM_NAME_RE = re.compile(r"^\s*from-name\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 
 
 def workspace() -> Path:
@@ -46,16 +48,35 @@ def workspace() -> Path:
     return Path.home() / "research"
 
 
-def targeted_session(head: str):
-    """Return the To-Session target declared in the message head, or None."""
-    m = TO_SESSION_RE.search(head)
+def own_name(session_id):
+    """This session's /rename name from ~/.claude/sessions/, or None."""
+    best = None
+    try:
+        files = list((Path.home() / ".claude" / "sessions").glob("*.json"))
+    except Exception:
+        return None
+    for f in files:
+        try:
+            s = json.loads(f.read_text())
+        except Exception:
+            continue
+        if s.get("sessionId") == session_id and s.get("name"):
+            if best is None or s.get("updatedAt", 0) > best[0]:
+                best = (s.get("updatedAt", 0), s["name"])
+    return best[1] if best else None
+
+
+def head_match(rx, text):
+    m = rx.search(text)
     return m.group(1).strip() if m else None
 
 
 def main() -> None:
     data = json.load(sys.stdin)
-    session = re.sub(r"[^A-Za-z0-9-]", "", data.get("session_id", "unknown"))[:40]
+    raw_sid = data.get("session_id", "unknown")
+    session = re.sub(r"[^A-Za-z0-9-]", "", raw_sid)[:40]
     here = "sandbox" if Path("/workspace").exists() else "host"
+    myname = own_name(raw_sid)
 
     msg_dir = workspace() / "inbox" / "messages"
     if not msg_dir.is_dir():
@@ -78,13 +99,17 @@ def main() -> None:
         if p.name in seen:
             continue
         body = p.read_text(errors="replace")[:MAX_BYTES]
-        target = targeted_session(body[:1500])
-        if target is not None:
-            # Session-targeted: deliver only to the matching session (or the
-            # broadcast tokens). A non-matching session skips it AND does not
-            # mark it seen, so the intended session still receives it.
-            if not (session == target or session.startswith(target)
-                    or target.lower() in (here, "all", "any")):
+        head = body[:1500]
+        to_name = head_match(TO_NAME_RE, head)
+        to_session = head_match(TO_SESSION_RE, head)
+        if to_name is not None:
+            # Name-targeted: deliver only to the session with this name.
+            if not (myname and myname.strip().lower() == to_name.lower()):
+                continue
+        elif to_session is not None:
+            # Session-targeted: deliver only to the matching session id.
+            if not (session == to_session or session.startswith(to_session)
+                    or to_session.lower() in (here, "all", "any")):
                 continue
         else:
             m = NAME_RE.match(p.name)
@@ -97,21 +122,25 @@ def main() -> None:
         state_file.write_text(json.dumps(sorted(seen & existing)))
         return
 
+    who = f'the **{here}** session' + (f' ("{myname}")' if myname else f", id `{session}`")
     print(f"## Inter-session message(s) in inbox/messages/")
-    print(f"You are the **{here}** session, id `{session}`. "
+    print(f"You are {who}. "
           f"Host and sandbox share the SAME /workspace filesystem and git repo — "
           f"files another session changed are already on disk for you. Do NOT ask for "
           f"(or perform) a `git pull`, re-clone, or rerun of code that already ran; "
-          f"just read the files. To reach one specific session, a sender can add a "
-          f"`To-Session: <id>` line (ids appear in commit trailers).")
+          f"just read the files.")
     print()
     for p, body in deliver[:MAX_FILES]:
         print(f"### {p.name}")
         print(body.rstrip())
-        fm = FROM_SESSION_RE.search(body[:1500])
-        if fm:
-            print(f"\n_↩ to reply to this one, run "
-                  f"`research-kit/tools/send_message.py --to-session {fm.group(1)}`._")
+        fname = head_match(FROM_NAME_RE, body[:1500])
+        fsid = head_match(FROM_SESSION_RE, body[:1500])
+        if fname:
+            print(f"\n_↩ to reply, run `research-kit/tools/send_message.py "
+                  f'--to-name "{fname}"`._')
+        elif fsid:
+            print(f"\n_↩ to reply, run `research-kit/tools/send_message.py "
+                  f"--to-session {fsid}`._")
         print()
         seen.add(p.name)
     if len(deliver) > MAX_FILES:
@@ -121,8 +150,8 @@ def main() -> None:
         "for a different task or session, do not act on it and do NOT delete it — leave "
         "it for the intended session. Delete (with `rm`) only the messages you actually "
         "consumed; they are git-ignored plain files. If you are the author, ignore it. "
-        "Send messages with `research-kit/tools/send_message.py` — it stamps your session "
-        "id automatically so replies can route back."
+        "Send messages with `research-kit/tools/send_message.py` (address by `--to-name`, "
+        "`--to-session`, or `--to host|sandbox`); it stamps your id/name so replies route back."
     )
     state_file.write_text(json.dumps(sorted(seen & existing)))
 
