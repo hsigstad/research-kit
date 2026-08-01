@@ -562,6 +562,14 @@ cleanly — the project hasn't opted in.
   finding from a section, changed a load-bearing number, demoted a
   hypothesis), **propose a `decisions.md` entry** and ask before writing.
   Do not auto-append to `decisions.md`.
+- **If the repo has convention-guard scripts (`source/diagnostic/*.py`
+  that exit non-zero on a violation), run them and confirm green before
+  the close-out commit.** These are the project's own drift guards (e.g.
+  a canonical-spec / superseded-citation check). A red guard means this
+  iteration introduced a NEW violation — fix it before committing. Run it
+  here at the checkpoint rather than as a blocking commit hook: in a
+  shared repo a repo-wide guard can go red for another session's change,
+  so read the `[FAIL]` line and act only on your own.
 - If the session is ending: invoke `/handoff`. Otherwise the session
   continues — the researcher can call `/next` again.
 

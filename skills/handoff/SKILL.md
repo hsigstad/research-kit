@@ -17,6 +17,14 @@ Always do these:
 
 2. **For each repo with uncommitted changes**, separately:
    - Review `git status` and `git diff` to inventory the changes.
+   - **If the repo has convention-guard scripts (`source/diagnostic/*.py`
+     that exit non-zero on a violation), run them and confirm green
+     before committing.** These are the project's own drift/lint guards
+     (e.g. a canonical-spec or superseded-citation check); a red guard
+     means this session introduced a NEW violation to fix first. Run at
+     the checkpoint, not as a blocking commit hook — in a shared repo a
+     repo-wide guard can go red for another session's change, so read the
+     `[FAIL]` line and only act on your own.
    - Stage relevant files — prefer naming specific files over `git add .`
      to avoid sweeping in unrelated WIP.
    - Draft a commit message and confirm with the user.
