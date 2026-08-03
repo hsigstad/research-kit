@@ -601,12 +601,26 @@ def lint_variables(repo: Path, f: Findings, workspace: Path):
                   path=str(md.relative_to(workspace)))
 
 
+CLAUDE_MD_MAX_LINES = 200
+
+
 def lint_claude_md(repo: Path, f: Findings, kind: str):
-    if kind != "project":
+    claude = repo / "CLAUDE.md"
+    if not claude.is_file():
+        if kind == "project":
+            f.warn("project.no-claude-md",
+                   "project root has no CLAUDE.md (required by workspace.md 'How to proceed in a session')",
+                   path="CLAUDE.md")
         return
-    if not (repo / "CLAUDE.md").is_file():
-        f.warn("project.no-claude-md",
-               "project root has no CLAUDE.md (required by workspace.md 'How to proceed in a session')",
+    # Keep CLAUDE.md lightweight and gotcha-focused; discoverable reference
+    # (directory trees, script/table catalogs) belongs behind progressive
+    # disclosure in docs/reference/. See research/rules/claude_md.md.
+    n = len(read(claude).splitlines())
+    if n > CLAUDE_MD_MAX_LINES:
+        f.warn("claude-md.oversized",
+               f"CLAUDE.md is {n} lines (>{CLAUDE_MD_MAX_LINES}) — likely carrying "
+               "discoverable reference material; keep it gotcha-focused and move "
+               "catalogs to docs/reference/ (see research/rules/claude_md.md)",
                path="CLAUDE.md")
 
 
