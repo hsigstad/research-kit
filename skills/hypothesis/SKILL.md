@@ -104,15 +104,16 @@ path conventions, and per-mode folder behavior are in
 [`reference/entry-format.md`](reference/entry-format.md) — **read it before
 creating or editing entries.**
 
-## Guardrails (these are the quality bar — do not relax)
+## Guardrails
 
-- **Never fabricate a reference.** If the citation is not in literature.md, paper/*.bib, or the body of an existing doc, write `[ref needed: ...]`. Placeholder refs are fine; fake refs are not.
-- **Never state evidence without a specific source.** Every bullet in "pre-existing evidence" must end with a bracketed source pointer. A bullet without a source is a failure — delete or source it.
-- **Every hypothesis must be testable with project data.** If `docs/data.md` does not contain a source that can measure the outcome and variation involved, either (a) refine the hypothesis to fit available data, (b) flag with `[requires: dataset X — not yet accessed]`, or (c) drop it.
-- **Every hypothesis must reference a theory.** Either an entry in theory.md or a formal citation to a paper. "We expect X" without theoretical backing is a prior, not a hypothesis — cut it.
-- **Preserve existing content.** If `docs/hypotheses.md` exists, read it first. In extend/normal mode, never rewrite existing entries. Append new entries after the last existing one, marked with a `Status: drafted YYYY-MM-DD` line.
+- **Cite only real references.** If a citation isn't in literature.md, paper/*.bib, or an existing doc, write `[ref needed: ...]` — placeholders are fine, invented refs are not. Don't name-drop Kleven/Pomeranz/Galanter because they sound apt; cite only what the paper actually uses.
+- **Source every evidence claim.** Every "pre-existing evidence" bullet ends with a bracketed source pointer; "X is well-documented" without one isn't evidence — source it or drop it.
+- **Testable with project data.** If `docs/data.md` has no source that can measure the outcome and variation, refine the hypothesis to fit, flag `[requires: dataset X — not yet accessed]`, or drop it. "Firms respond strategically to enforcement" is unmeasurable; "firms close the targeted CNPJ within 18 months of an execução fiscal filing" is testable.
+- **Theory-backed.** Every hypothesis links a theory.md entry or a formal citation. "We expect X" without theory is a prior, not a hypothesis — cut it.
+- **Preserve existing content.** Read `docs/hypotheses.md` first; in extend/normal mode append rather than rewrite existing entries, marking new ones with a `Status: drafted YYYY-MM-DD` line.
 - **No padding.** If a section would be generic, leave it empty with a brief TODO.
-- **Honest tier assignment.** Pushing a weakly-supported hypothesis into Tier 1 because it's the paper's central claim is a failure mode. Tier reflects *existing* evidence, not the paper's ambition.
+- **Honest tier assignment.** Tier reflects *existing* evidence, not the paper's ambition — don't push a weakly-supported hypothesis into Tier 1 because it's the central claim.
+- **Don't transplant across projects.** Hypotheses from saude or procure don't carry over; each project's are grounded in its own evidence and data.
 
 ## Output protocol
 
@@ -209,10 +210,3 @@ When summary.md signals "research question not yet fixed" (or the project is gen
 
 The file's purpose in this mode is to *inform the choice of research question*, not to lock in a test plan. Label it as such in the document's header.
 
-## Common failure modes to avoid
-
-- **Unsourced evidence.** Writing "X is well-documented" without a citation. Every evidence claim cites something the reader can open.
-- **Fake erudition.** Citing Kleven, Pomeranz, Galanter because they sound appropriate. Only cite if the paper actually uses the result and the reference exists in project materials.
-- **Untestable predictions.** "Firms respond strategically to enforcement" — unmeasurable. "Firms close the targeted CNPJ within 18 months of an execução fiscal filing, more so when the firm has a related CNPJ receiving worker transfers" — measurable.
-- **Theory-free hypotheses.** A prior masquerading as a hypothesis. Every hypothesis earns its place by connecting theory to a testable prediction.
-- **Copy-paste from other projects.** Hypotheses from saude or procure do not transfer. Each project's hypotheses must be grounded in its own evidence and data.

@@ -213,15 +213,18 @@ When `/findings-audit` finds a corroboration or weak counter-evidence, the audit
 - **`/literature`**: when a finding's headline number is being compared across studies (e.g., INSPER 16% vs IPEA 6.5% vs own 1.6%), the supporting studies should appear in literature.md. The Sources footer's `*Reports*` and `*News anchors*` classes are not a substitute for academic literature — they're the institutional and current-events parallel.
 - **`/anecdotes`**: when a finding leans on news anecdotes, those rows must exist in `references/news/stories.csv` (populated by `/anecdotes`). Don't cite news that isn't in the curated corpus.
 
-## Guardrails (these are the quality bar — do not relax)
+## Guardrails
 
-- **Never fabricate a number.** Every load-bearing number in the body must be traceable to a build artifact or an external source linked in the Sources footer. If a number from memory doesn't appear in any artifact, drop it or run the analysis first.
-- **Never invent a page number.** Report citations with `#page=N` must be verified — open the PDF or grep its plaintext for the cited content. Better to write `[CNJ-DEF24 — page tbd]` than to invent.
-- **Anchor every quote.** News-anchor quotes must be exact substrings of the linked `texts/NNN.txt`. Paraphrases are not anchor quotes — drop the italics or paraphrase elsewhere.
-- **Date every update.** Sub-paragraphs, footer changes, confidence upgrades — all carry a parenthetical `(added YYYY-MM-DD)` or `(refreshed YYYY-MM-DD)` so future readers can date the claim.
-- **Preserve prior versions of changed numbers.** When refreshing, write the new number first, then a brief note: "*(refreshed YYYY-MM-DD; previously stated as X under <pre-fix universe>)*". This keeps the audit trail without burying the current truth.
-- **No padding.** A finding without anchored evidence is not a finding — it's a hypothesis or a guess. Move it to `hypotheses.md` or delete it.
-- **Honest confidence tags.** Do not push a 🟡 to 🟢 because the paper needs it. Do upgrade only when independent replication actually arrives.
+- **Ground every number.** Every load-bearing number traces to a build artifact or a source linked in the Sources footer. If it's only from memory, drop it or run the analysis first.
+- **Verify page numbers.** Check `#page=N` citations against the PDF (open it or grep its text); write `[CNJ-DEF24 — page tbd]` rather than guess. A report cite without a working page link just makes the reader hunt.
+- **Anchor every quote.** News-anchor quotes are exact substrings of the linked `texts/NNN.txt` — a bare `[stories.csv #310]` tells the reader nothing. Paraphrases aren't anchor quotes.
+- **Date every update.** Sub-paragraphs, footer changes, and confidence upgrades carry `(added YYYY-MM-DD)` / `(refreshed YYYY-MM-DD)`.
+- **Preserve superseded numbers on refresh.** Write the new number first, then `*(refreshed YYYY-MM-DD; previously stated as X under <pre-fix universe>)*` — keeps the audit trail without burying the current value.
+- **Refresh after pipeline changes.** Reruns and parser fixes drift build numbers away from the entry text; run `--refresh`, and don't carry a stale "fix moved X%→Y%" note once it no longer matches the data (move it to `done.md`).
+- **Every claim is anchored.** A finding without anchored evidence is a hypothesis — move it to `hypotheses.md`. Every interpretation names its empirical premises in the Draws-on paragraph; one without them is op-ed.
+- **Keep empirical and interpretation separate.** A descriptive cut ("X is 27% of cases") is empirical; the reading of it ("X is the modal channel") is the interpretation.
+- **Keep the overview in sync.** Adding an entry means adding it to `## Findings overview`, or it's unreachable from the top of the page.
+- **Honest confidence tags.** Don't push 🟡→🟢 because the paper needs it; upgrade only on real independent replication.
 
 ## Output protocol
 
@@ -229,13 +232,3 @@ When `/findings-audit` finds a corroboration or weak counter-evidence, the audit
 2. **Refresh:** print a per-entry diff showing stated vs current numbers. Wait for confirmation per entry before applying. Refreshed entries get a parenthetical date stamp.
 3. **Audit:** print a bulleted list of gaps. Suggest next mode (`--refresh` if numbers drifted, `--extend` if new artifacts orphaned, `/findings-audit` if external corroboration is the gap).
 4. **Footer:** show the diff for the one entry; confirm; write.
-
-## Common failure modes to avoid
-
-- **Number drift.** A pipeline rerun changes the headline number in build/, but the entry text isn't refreshed. Catch this with `--refresh` after every pipeline change.
-- **Stale parser-fix artifacts.** A paragraph documenting "fix moved X% to Y%" gets carried through subsequent runs even though X and Y no longer match the current data. Either update both the prose and the parser-fix-note, or move the parser-fix audit trail to `done.md` once superseded.
-- **Sources without page anchors.** "[CNJ-DIAG22 p.198]" without a clickable PDF link forces the reader to open the PDF and find p.198 manually. Always use `#page=N` deep links when citing reports.
-- **News anchors without quotes.** A news citation like "[stories.csv #310]" tells the reader the row exists but not what it says. For load-bearing news anchors, include the anchor quote inline.
-- **Interpretation without empirical anchor.** Interpretations that don't draw on specific empirical findings are op-ed, not analysis. Every interpretation entry must list its empirical premises in the Draws-on / Cross-refs paragraph.
-- **Index drift.** New entries are added to the body but the `## Findings overview` index isn't updated, so the entry is unreachable from the top of the page. Always update the index when adding entries.
-- **Empirical findings filed as interpretations.** A descriptive cut of the data ("X is 27% of cases") is empirical, not interpretive. The interpretation is the *reading* ("this implies X is the modal channel"). Keep the partition clean.
