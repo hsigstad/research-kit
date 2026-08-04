@@ -179,10 +179,15 @@ were introduced.
 | `/style-check`         | file           | yes (`style_lint.py`)   | no  | no     |
 | `/style-review` (this) | file (whole)   | yes (`style_lint.py`)   | yes | no     |
 | `/validate-section`    | one section    | yes (`style_lint.py`)   | yes | yes    |
+| `/style-revise`        | paragraph      | yes (lints its rewrite) | yes | no     |
 
 Same patterns underneath. This skill is for whole-document review when
 the document is worth a thorough pass; `/validate-section` is for
-section-scoped pre-submission validation with ledger writes.
+section-scoped pre-submission validation with ledger writes. `/style-revise`
+is the earlier-pipeline counterpart: it *reshapes* a rough draft's idea
+flow and offers alternative structures, rather than auditing near-final
+prose against the guide. Route by draft maturity — rough → `/style-revise`,
+near-final → this skill.
 
 ## Cost
 

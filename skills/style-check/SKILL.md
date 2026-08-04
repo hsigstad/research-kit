@@ -68,8 +68,11 @@ inline code, URLs, case/docket numbers, YAML frontmatter.
 | `/style-check` (this)  | file           | yes                     | no  | no            |
 | `/style-review`        | file (whole)   | yes (calls `style_lint.py`) | yes | no        |
 | `/validate-section`    | one section    | yes (calls `style_lint.py`) | yes | yes       |
+| `/style-revise`        | paragraph      | yes (lints its rewrite) | yes | no        |
 
-Same patterns underneath. Different scopes and depths.
+Same patterns underneath. Different scopes and depths. `/style-revise`
+reshapes a rough draft's idea flow rather than auditing finished prose —
+use it when the draft is still unpolished, the others when it's near-final.
 
 ## Implementation
 
