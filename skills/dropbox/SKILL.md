@@ -7,6 +7,11 @@ description: "Browse, upload, or download files on Dropbox via rclone. Use when 
 
 Browse, upload, and download files on Dropbox using rclone.
 
+> **Backing up a pipeline/project artifact** (corpus, cache, scraped raw) rather than
+> sharing an ad-hoc file? Use the **`backup`** skill — it covers the format (per-file
+> ZSTD vs `tar.zst`) and location (`data/` shared lake vs `pipelines/<slug>/`) decisions,
+> plus verify + audit steps.
+
 ## Available remotes
 
 - **`bi-dropbox:`** — BI/work Dropbox. Contains shared coauthor folders and `data/` directory.
