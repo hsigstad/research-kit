@@ -28,6 +28,21 @@ fi
 # --- Claude args ---
 CLAUDE_ARGS=(--dangerously-skip-permissions)
 
+# --- Optional: Claude Code channels (e.g. the Telegram household bot) ---
+# CS_CHANNELS=telegram cs   →  launch with the Telegram plugin channel so a
+# bot session (Valborg) runs prompt-free inside the sandbox. Run it from the
+# household repo (~/me/household) so /workspace jails her to the household brain
+# and nothing else. Accepts the convenience alias `telegram`
+# or a full channel spec. The token (~/.claude/channels/telegram/.env) and
+# plugin cache live on the mounted, real ~/.claude, so they persist across runs.
+if [ -n "${CS_CHANNELS:-}" ]; then
+    case "$CS_CHANNELS" in
+        telegram) CHANNELS_SPEC="plugin:telegram@claude-plugins-official" ;;
+        *)        CHANNELS_SPEC="$CS_CHANNELS" ;;
+    esac
+    CLAUDE_ARGS+=(--channels "$CHANNELS_SPEC")
+fi
+
 if [ $# -gt 0 ]; then
     CLAUDE_ARGS+=(-p "$*")
 fi

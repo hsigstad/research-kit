@@ -88,3 +88,14 @@ rm /tmp/duckdb.zip
 
 # ── 4. Claude Code ──────────────────────────────────────────────────
 npm install -g @anthropic-ai/claude-code
+
+# ── 5. Bun (runtime for Claude Code plugins, e.g. the Telegram channel) ──
+# The Telegram plugin's MCP server is Bun-based, so a bot session (Valborg)
+# launched with `--channels plugin:telegram@...` needs bun on PATH. The shell
+# installer defaults to $HOME/.bun — as root that lands in /root/.bun, invisible
+# to the henrik user. BUN_INSTALL=/usr/local relocates the binary to
+# /usr/local/bin/bun, on PATH for everyone. (Baking it in — rather than
+# installing per-container — avoids the ephemeral-home trap: the container's
+# home is overlay/throwaway, so a runtime `bun install` would vanish each run.)
+export BUN_INSTALL=/usr/local
+curl -fsSL https://bun.sh/install | bash
