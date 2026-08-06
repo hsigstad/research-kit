@@ -13,6 +13,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 IMAGE_NAME="claude-sandbox"
 
+# gmail-dl MCP server lives OUTSIDE any single project tree (me/personal/gmail-mcp),
+# so a session launched from elsewhere (e.g. Valborg's cron, cwd=household/) doesn't
+# get it via the cwd auto-mount and its user-scope registration dangles. Bind it into
+# EVERY sandbox at its real path so the registration resolves regardless of launch dir.
+# Guarded by existence so it's a no-op where the dir isn't present (e.g. the laptop).
+# NOTE: this mounts a raw read-only Gmail token (token.json) into every sandbox
+# session — a deliberate breadth choice, not an opt-in gate.
+GMAIL_MCP_DIR=/projects/ec113/henrik/personal/me/personal/gmail-mcp
+
 # --- Detect container runtime ---
 if command -v docker &>/dev/null; then
     RUNTIME=docker
@@ -68,6 +77,11 @@ if [ "$RUNTIME" = "docker" ]; then
         WHATSAPP_MOUNT=(-v "$HOME/whatsapp-mcp":/home/henrik/whatsapp-mcp)
     fi
 
+    GMAIL_MOUNT=()
+    if [ -e "$GMAIL_MCP_DIR" ]; then
+        GMAIL_MOUNT=(-v "$GMAIL_MCP_DIR":"$GMAIL_MCP_DIR")
+    fi
+
     # R_ENVIRON_USER/R_LIBS_USER: keep the container's R self-contained (see
     # the note above the Apptainer exec below).
     exec docker run --rm -it \
@@ -83,6 +97,7 @@ if [ "$RUNTIME" = "docker" ]; then
         -v "$HOME/.ssh":/home/henrik/.ssh:ro \
         -v "$HOME/.config/rclone-sandbox/rclone.conf":/home/henrik/.config/rclone/rclone.conf:ro \
         "${WHATSAPP_MOUNT[@]}" \
+        "${GMAIL_MOUNT[@]}" \
         -e TERM=xterm-256color \
         -e COLORTERM=truecolor \
         -e DATA_DIR=/workspace/data \
@@ -137,8 +152,14 @@ fi
 # Skip the host .Renviron (it only sets R_LIBS_USER) and point R at a throwaway
 # user lib; arrow/fixest/ggplot2 resolve from the image's system library
 # (/usr/local/lib/R/site-library, populated by lib/install-r.sh). No rebuild needed.
+GMAIL_BIND=()
+if [ -e "$GMAIL_MCP_DIR" ]; then
+    GMAIL_BIND=(--bind "$GMAIL_MCP_DIR":"$GMAIL_MCP_DIR")
+fi
+
 exec "$RUNTIME" run \
     --bind "$(pwd)":/workspace \
+    "${GMAIL_BIND[@]}" \
     --env "R_ENVIRON_USER=/dev/null" \
     --env "R_LIBS_USER=/tmp/r-sandbox-libs" \
     --bind "$HOME/Screenshots":/home/henrik/Screenshots:ro \
