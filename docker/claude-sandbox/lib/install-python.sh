@@ -14,6 +14,10 @@ shift
 EXTRA_PKGS=("$@")
 
 python3 -m venv "$VENV_DIR"
+# NB: fastmcp + the three google-auth/api packages below are deps for the gmail-dl
+# MCP server (me/personal/gmail-mcp). Once a rebuilt image carries them in /opt/venv,
+# gmail-mcp/run-server.sh prefers this venv and its repo-local .venv-sbx fallback
+# can be deleted.
 "$VENV_DIR/bin/pip" install --no-cache-dir \
     pandas pyarrow polars duckdb \
     numpy scipy \
@@ -31,6 +35,7 @@ python3 -m venv "$VENV_DIR"
     pdf2image pytesseract \
     linearmodels pydantic pyreadr \
     html2text \
+    fastmcp google-api-python-client google-auth google-auth-oauthlib \
     requests-cache tenacity \
     pytest scons \
     jupyter ipykernel notebook \
