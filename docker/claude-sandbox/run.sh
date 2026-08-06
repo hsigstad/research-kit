@@ -41,6 +41,15 @@ if [ -n "${CS_CHANNELS:-}" ]; then
         *)        CHANNELS_SPEC="$CS_CHANNELS" ;;
     esac
     CLAUDE_ARGS+=(--channels "$CHANNELS_SPEC")
+    # The plugin's MCP server is a bun process, and claude spawns it as a NON-login
+    # subprocess — so the host ~/.bun/bin that .bashrc puts on PATH never reaches it
+    # inside the container (verified on educloud: it can't find bun and the bot goes
+    # silent). Inject bun onto the container PATH for every process. (Apptainer path
+    # only; the Docker image bakes bun in and ignores these.)
+    if [ -d "$HOME/.bun/bin" ]; then
+        export APPTAINERENV_PREPEND_PATH="$HOME/.bun/bin${APPTAINERENV_PREPEND_PATH:+:$APPTAINERENV_PREPEND_PATH}"
+        export SINGULARITYENV_PREPEND_PATH="$APPTAINERENV_PREPEND_PATH"
+    fi
 fi
 
 if [ $# -gt 0 ]; then
