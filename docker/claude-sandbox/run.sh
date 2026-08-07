@@ -46,7 +46,15 @@ CLAUDE_ARGS=(--dangerously-skip-permissions)
 # plugin cache live on the mounted, real ~/.claude, so they persist across runs.
 if [ -n "${CS_CHANNELS:-}" ]; then
     case "$CS_CHANNELS" in
-        telegram) CHANNELS_SPEC="plugin:telegram@claude-plugins-official" ;;
+        telegram) CHANNELS_SPEC="plugin:telegram@claude-plugins-official"
+                  # This is the household bot (Valborg). Enable Remote Control so the
+                  # session can be driven/watched from the Claude app (--remote-control
+                  # names the RC connection), and set the session DISPLAY name with --name
+                  # so it reads "Valborg" in the prompt box / /resume picker / terminal
+                  # title — same thing `/rename Valborg` does. Interactive only — safe here
+                  # since the bot launches without -p. Skipped for cron (channel-less, print
+                  # mode) which must never hold a Remote Control seat.
+                  CLAUDE_ARGS+=(--remote-control Valborg --name Valborg) ;;
         *)        CHANNELS_SPEC="$CS_CHANNELS" ;;
     esac
     CLAUDE_ARGS+=(--channels "$CHANNELS_SPEC")
