@@ -69,6 +69,7 @@ apt-get update && apt-get install -y --no-install-recommends \
     tmux \
     vim-tiny \
     nano \
+    emacs-nox elpa-org-contrib \
   && rm -rf /var/lib/apt/lists/*
 
 # ── 2. GitHub CLI ────────────────────────────────────────────────────
