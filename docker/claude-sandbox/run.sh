@@ -69,6 +69,20 @@ if [ -n "${CS_CHANNELS:-}" ]; then
     fi
 fi
 
+# --- Optional: extra read-write bind mounts (space-separated host:container specs) ---
+# CS_BIND="/host/a:/workspace/a /host/b:/workspace/b" → appended as --bind (apptainer) / -v (docker).
+# Used by the `saga` launcher to bind the sibling research/ + teach/ workbenches (and the Saga⇄Valborg
+# mailbox) INTO a work-rooted jail, so the raw-data lake and personal/ stay out by absence. No-op when
+# unset, so `cs` and the Valborg launcher are unaffected.
+EXTRA_BIND_APPT=()
+EXTRA_BIND_DOCK=()
+if [ -n "${CS_BIND:-}" ]; then
+    for spec in $CS_BIND; do
+        EXTRA_BIND_APPT+=(--bind "$spec")
+        EXTRA_BIND_DOCK+=(-v "$spec")
+    done
+fi
+
 if [ $# -gt 0 ]; then
     CLAUDE_ARGS+=(-p "$*")
 fi
@@ -94,6 +108,7 @@ if [ "$RUNTIME" = "docker" ]; then
     # the note above the Apptainer exec below).
     exec docker run --rm -it \
         -v "$(pwd)":/workspace \
+        "${EXTRA_BIND_DOCK[@]}" \
         -e R_ENVIRON_USER=/dev/null \
         -e R_LIBS_USER=/tmp/r-sandbox-libs \
         -v "$HOME/Dropbox":/home/henrik/Dropbox:ro \
@@ -167,6 +182,7 @@ fi
 
 exec "$RUNTIME" run \
     --bind "$(pwd)":/workspace \
+    "${EXTRA_BIND_APPT[@]}" \
     "${GMAIL_BIND[@]}" \
     --env "R_ENVIRON_USER=/dev/null" \
     --env "R_LIBS_USER=/tmp/r-sandbox-libs" \
