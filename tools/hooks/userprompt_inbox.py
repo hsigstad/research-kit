@@ -28,8 +28,14 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import presence
+except Exception:  # presence is optional — the inbox works without it
+    presence = None
+
 MAX_FILES = 3
-MAX_BYTES = 4000
+MAX_BYTES = 12000   # per message; over this, deliver the head + a pointer to the file
 NAME_RE = re.compile(r"^(?P<frm>[^_]+)-to-(?P<to>[A-Za-z]+)_.*\.md$")
 TO_SESSION_RE = re.compile(r"^\s*(?:to-session|target-session|session)\s*:\s*(\S+)",
                            re.IGNORECASE | re.MULTILINE)
@@ -78,6 +84,24 @@ def main() -> None:
     here = "sandbox" if Path("/workspace").exists() else "host"
     myname = own_name(raw_sid)
 
+    # Heartbeat + roster. Done here rather than as a separate UserPromptSubmit
+    # hook so the refresh always precedes the render — two hooks would race and
+    # this session could read a roster written before its own heartbeat landed.
+    if presence is not None:
+        prompt = data.get("prompt")
+        focus = " ".join(prompt.split())[:presence.FOCUS_MAX] if prompt else None
+        presence.touch(raw_sid, focus=focus, event="UserPromptSubmit")
+        peers = presence.roster(raw_sid)
+        if peers:
+            print("## Live sessions (presence registry)")
+            print("Other Claude sessions active in the last 10 minutes. Consult one when it "
+                  "owns the area you're working in — `research-kit/tools/send_message.py "
+                  '--to-name "<name>"`. Stale entries can linger if a session crashed, so a '
+                  "name here is a hint, not a guarantee anyone is listening.")
+            for line in peers:
+                print(line)
+            print()
+
     msg_dir = workspace() / "inbox" / "messages"
     if not msg_dir.is_dir():
         return
@@ -98,8 +122,18 @@ def main() -> None:
     for p in candidates:
         if p.name in seen:
             continue
-        body = p.read_text(errors="replace")[:MAX_BYTES]
-        head = body[:1500]
+        full = p.read_text(errors="replace")
+        # Truncate LOUDLY. Silently cutting at the cap once cost us a design
+        # doc: the sender saw "delivered", the reader got a fragment with no
+        # sign anything was missing, and the file was deleted on consume.
+        if len(full) > MAX_BYTES:
+            body = (full[:MAX_BYTES].rstrip()
+                    + f"\n\n**[TRUNCATED — {len(full) - MAX_BYTES} of {len(full)} bytes not shown. "
+                      f"Read the full message with `Read {p}` before acting on it, "
+                      f"and do NOT delete it until you have.]**")
+        else:
+            body = full
+        head = full[:1500]
         to_name = head_match(TO_NAME_RE, head)
         to_session = head_match(TO_SESSION_RE, head)
         if to_name is not None:
