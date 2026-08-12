@@ -33,6 +33,10 @@ try:
     import presence
 except Exception:  # presence is optional — the inbox works without it
     presence = None
+try:
+    import peer_turn
+except Exception:
+    peer_turn = None
 
 MAX_FILES = 3
 MAX_BYTES = 12000   # per message; over this, deliver the head + a pointer to the file
@@ -77,12 +81,36 @@ def head_match(rx, text):
     return m.group(1).strip() if m else None
 
 
+def addressed_to_me(filename, head, session, here, myname):
+    """Does this message target this session? Most specific addressing wins.
+
+    Shared with stop_inbox.py so the drain can never disagree with delivery
+    about who a message is for.
+    """
+    to_name = head_match(TO_NAME_RE, head)
+    to_session = head_match(TO_SESSION_RE, head)
+    if to_name is not None:
+        return bool(myname and myname.strip().lower() == to_name.lower())
+    if to_session is not None:
+        return (session == to_session or session.startswith(to_session)
+                or to_session.lower() in (here, "all", "any"))
+    m = NAME_RE.match(filename)
+    if not m:
+        return True
+    return m.group("to").lower() in (here, "all", "any")
+
+
 def main() -> None:
     data = json.load(sys.stdin)
     raw_sid = data.get("session_id", "unknown")
     session = re.sub(r"[^A-Za-z0-9-]", "", raw_sid)[:40]
     here = "sandbox" if Path("/workspace").exists() else "host"
     myname = own_name(raw_sid)
+
+    # A human is typing, so whatever peer turn was in flight is over — release
+    # the irreversible-action lock this session was holding.
+    if peer_turn is not None:
+        peer_turn.clear(raw_sid)
 
     # Heartbeat + roster. Done here rather than as a separate UserPromptSubmit
     # hook so the refresh always precedes the render — two hooks would race and
@@ -134,22 +162,10 @@ def main() -> None:
         else:
             body = full
         head = full[:1500]
-        to_name = head_match(TO_NAME_RE, head)
-        to_session = head_match(TO_SESSION_RE, head)
-        if to_name is not None:
-            # Name-targeted: deliver only to the session with this name.
-            if not (myname and myname.strip().lower() == to_name.lower()):
-                continue
-        elif to_session is not None:
-            # Session-targeted: deliver only to the matching session id.
-            if not (session == to_session or session.startswith(to_session)
-                    or to_session.lower() in (here, "all", "any")):
-                continue
-        else:
-            m = NAME_RE.match(p.name)
-            to = (m.group("to").lower() if m else "all")
-            if not (to in (here, "all", "any") or not m):
-                continue
+        # A non-matching session skips the message AND leaves it unseen, so the
+        # intended session still receives it.
+        if not addressed_to_me(p.name, head, session, here, myname):
+            continue
         deliver.append((p, body))
 
     if not deliver:

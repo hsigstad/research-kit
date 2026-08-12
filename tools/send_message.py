@@ -31,6 +31,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+def peer_turn_state():
+    """Active peer-turn record for this session, or None if not in one."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent / "hooks"))
+        import peer_turn
+        return peer_turn.current()
+    except Exception:
+        return None
+
+
 def workspace() -> Path:
     env = os.environ.get("RESEARCH_WORKSPACE")
     if env:
@@ -136,7 +146,14 @@ def main() -> int:
 
     msg_dir = workspace() / "inbox" / "messages"
     msg_dir.mkdir(parents=True, exist_ok=True)
+    # Second-granularity names collide: two messages sent in the same second
+    # overwrote each other, silently losing one. Harmless at human pace, not
+    # once sessions auto-reply — so disambiguate rather than clobber.
     path = msg_dir / f"{here}-to-{to}_{ts}.md"
+    n = 2
+    while path.exists():
+        path = msg_dir / f"{here}-to-{to}_{ts}-{n}.md"
+        n += 1
 
     lines = [f"From-Session: {from_session}"]
     if from_name:
@@ -145,6 +162,13 @@ def main() -> int:
         lines.append(f"To-Session: {to_session}")
     if to_name:
         lines.append(f"To-Name: {to_name}")
+    # Sent from a turn a peer started: carry the chain forward so stop_inbox can
+    # stop auto-draining it. Without this the hop counter resets every message
+    # and two sessions can trade replies indefinitely.
+    peer = peer_turn_state()
+    if peer:
+        lines.append(f"Hop: {int(peer.get('hop', 0)) + 1}")
+        lines.append(f"Thread: {peer.get('thread') or peer.get('origin')}")
     lines.append("")
     if args.subject:
         lines += [f"# {args.subject}", ""]
