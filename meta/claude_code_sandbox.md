@@ -122,16 +122,27 @@ the appropriate image format:
 | Server (RHEL) | Apptainer | Built from `.def` → `.sif` | `claude-sandbox.def` |
 
 ```bash
-# Interactive session
+# Interactive session — auto-named <launchdir>-<pid>, Remote Control enabled
 ./research/docker/claude-sandbox/run.sh
 
-# Non-interactive task
-./research/docker/claude-sandbox/run.sh "collect news stories about corruption from Brazilian media"
+# Interactive, explicitly named so other sessions can address it by name
+./research/docker/claude-sandbox/run.sh govspend
+
+# Non-interactive task (print mode). Needs -p, and never takes a Remote Control seat.
+./research/docker/claude-sandbox/run.sh -p "collect news stories about corruption from Brazilian media"
 
 # Or use the alias (add to .bashrc):
 #   alias cs="/path/to/research/docker/claude-sandbox/run.sh"
-cs "collect news stories"
+cs govspend
+cs -p "collect news stories"
 ```
+
+A bare positional is the **session name**, not the task — that changed on 2026-08-12,
+when Remote Control became the default for interactive runs. Naming matters because every
+sandbox has cwd `/workspace`, so Claude would otherwise derive the same display name for
+all of them and concurrent sessions could not be told apart by `ListAgents`/`SendMessage`.
+Old-style `run.sh "some task"` is a hard error rather than a session oddly named after the
+task; `CS_NO_RC=1` opts a single interactive run out of Remote Control.
 
 The container has full internet but only the current working directory is mounted.
 No SSH keys, git credentials, or home directory exposed.

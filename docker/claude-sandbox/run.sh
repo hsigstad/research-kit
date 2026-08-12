@@ -5,8 +5,9 @@
 # Auto-detects Docker or Apptainer (for HPC/RHEL servers).
 #
 # Usage:
-#   ./run.sh                    # interactive session
-#   ./run.sh "collect news"     # non-interactive task
+#   ./run.sh                    # interactive, auto-named <launchdir>-<pid>, Remote Control on
+#   ./run.sh govspend           # interactive, named "govspend", Remote Control on
+#   ./run.sh -p "collect news"  # non-interactive task, NO Remote Control seat
 
 set -euo pipefail
 
@@ -37,6 +38,47 @@ fi
 # --- Claude args ---
 CLAUDE_ARGS=(--dangerously-skip-permissions)
 
+# --- Arguments ---------------------------------------------------------------
+# BREAKING CHANGE 2026-08-12: a bare positional used to be the print-mode TASK; it is
+# now the session NAME, and the task moved behind -p. Rationale: naming a session is the
+# common interactive case (concurrent sandboxes are otherwise indistinguishable to
+# ListAgents/SendMessage), while print mode is a handful of cron lines. Every known
+# caller — Valborg's five cron jobs and the template in household/brain-up.sh — was
+# migrated in the same commit. As a backstop against an unmigrated caller silently
+# opening an interactive session named "act as Valborg and run daily-job.md", a
+# positional containing whitespace is a hard error rather than a name.
+CS_TASK=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -p|--print)
+            [ $# -ge 2 ] || { echo "run.sh: -p needs a task string" >&2; exit 2; }
+            CS_TASK="$2"; shift 2 ;;
+        -n|--name)
+            [ $# -ge 2 ] || { echo "run.sh: -n needs a name" >&2; exit 2; }
+            CS_NAME="$2"; shift 2 ;;
+        -h|--help)
+            sed -n '2,10p' "$0"; exit 0 ;;
+        -*)
+            echo "run.sh: unknown option '$1' (interactive: run.sh [name]; task: run.sh -p \"…\")" >&2
+            exit 2 ;;
+        *[[:space:]]*)
+            echo "run.sh: '$1' looks like a task, not a session name." >&2
+            echo "        Print mode now needs -p:  run.sh -p \"$1\"" >&2
+            exit 2 ;;
+        *)
+            CS_NAME="$1"; shift ;;
+    esac
+done
+
+# Interactive iff no task was given. Print mode must never hold a Remote Control seat,
+# so this single flag gates every RC decision below.
+INTERACTIVE=true
+[ -n "$CS_TASK" ] && INTERACTIVE=false
+
+# Resolved once at the bottom: display name, and the RC connection name (empty = no RC).
+SESSION_NAME=""
+RC_NAME=""
+
 # --- Optional: Claude Code channels (e.g. the Telegram household bot) ---
 # CS_CHANNELS=telegram cs   →  launch with the Telegram plugin channel so a
 # bot session (Valborg) runs prompt-free inside the sandbox. Run it from the
@@ -47,14 +89,11 @@ CLAUDE_ARGS=(--dangerously-skip-permissions)
 if [ -n "${CS_CHANNELS:-}" ]; then
     case "$CS_CHANNELS" in
         telegram) CHANNELS_SPEC="plugin:telegram@claude-plugins-official"
-                  # This is the household bot (Valborg). Enable Remote Control so the
-                  # session can be driven/watched from the Claude app (--remote-control
-                  # names the RC connection), and set the session DISPLAY name with --name
-                  # so it reads "Valborg" in the prompt box / /resume picker / terminal
-                  # title — same thing `/rename Valborg` does. Interactive only — safe here
-                  # since the bot launches without -p. Skipped for cron (channel-less, print
-                  # mode) which must never hold a Remote Control seat.
-                  CLAUDE_ARGS+=(--remote-control Valborg --name Valborg) ;;
+                  # This is the household bot (Valborg). Name the session "Valborg" (in the
+                  # prompt box / /resume picker / terminal title) and name its Remote Control
+                  # connection the same, so it can be driven/watched from the Claude app.
+                  # The RC half is dropped automatically in print mode by the resolver below.
+                  SESSION_NAME=Valborg; RC_NAME=Valborg ;;
         *)        CHANNELS_SPEC="$CS_CHANNELS" ;;
     esac
     CLAUDE_ARGS+=(--channels "$CHANNELS_SPEC")
@@ -69,14 +108,13 @@ if [ -n "${CS_CHANNELS:-}" ]; then
     fi
 fi
 
-# --- Optional: Remote Control seat without a channel (e.g. Saga, the work brain) ---
-# CS_REMOTE_CONTROL=Saga  →  enable Remote Control and set the session DISPLAY name to
-# "Saga" (same --remote-control/--name pair the Valborg branch above uses, but with NO
-# plugin channel — Saga has no Telegram poller; she's reached only via Remote Control).
-# Interactive only: skipped when a positional task is given (print mode below), which must
-# never hold a Remote Control seat. No-op when unset, so `cs` and Valborg are unaffected.
-if [ -n "${CS_REMOTE_CONTROL:-}" ] && [ $# -eq 0 ]; then
-    CLAUDE_ARGS+=(--remote-control "$CS_REMOTE_CONTROL" --name "$CS_REMOTE_CONTROL")
+# --- Optional: pin the Remote Control / display name (e.g. Saga, the work brain) ---
+# CS_REMOTE_CONTROL=Saga  →  force both names to "Saga" (no plugin channel — Saga has no
+# Telegram poller; she's reached only via Remote Control). Since RC is now the default for
+# every interactive session, this env var no longer *enables* anything; it only pins the
+# name, and is kept because work/brain-up.sh sets it. No-op when unset.
+if [ -n "${CS_REMOTE_CONTROL:-}" ]; then
+    SESSION_NAME="$CS_REMOTE_CONTROL"; RC_NAME="$CS_REMOTE_CONTROL"
 fi
 
 # --- Optional: extra read-write bind mounts (space-separated host:container specs) ---
@@ -93,23 +131,30 @@ if [ -n "${CS_BIND:-}" ]; then
     done
 fi
 
-if [ $# -gt 0 ]; then
-    CLAUDE_ARGS+=(-p "$*")
+if [ "$INTERACTIVE" = false ]; then
+    CLAUDE_ARGS+=(-p "$CS_TASK")
 elif [ -n "${CS_SEED:-}" ]; then
     # Interactive initial prompt (a BARE positional, NOT -p): claude starts by processing this
     # seed and then STAYS interactive. Used by the Saga daemon to seed her always-on Remote
-    # Control session. Only when no positional task is given (a task means print mode above).
+    # Control session. Only when no -p task is given (a task means print mode above).
     CLAUDE_ARGS+=("$CS_SEED")
 fi
 
-# --- Session name for cross-session messaging (native ListAgents/SendMessage) ---
-# Every `cs` launches with cwd=/workspace inside the container, so Claude auto-derives
-# the same display name for all of them, leaving concurrent sessions ambiguous to
-# address by name. Give each a distinct, addressable name. Explicit CS_NAME wins (use
-# `CS_NAME=govspend cs`); otherwise fall back to the host launch dir + PID, which is
-# unique per session. Skipped when an earlier branch (Valborg/Saga) already set --name.
-if [[ " ${CLAUDE_ARGS[*]} " != *" --name "* ]]; then
-    CLAUDE_ARGS+=(--name "${CS_NAME:-$(basename "$(pwd)")-$$}")
+# --- Session name + Remote Control -------------------------------------------
+# Every launch has cwd=/workspace inside the container, so Claude would auto-derive the
+# SAME display name for all of them, leaving concurrent sessions ambiguous to address via
+# ListAgents/SendMessage. So always name the session: an explicit name (positional, -n, or
+# CS_NAME) wins; otherwise fall back to the host launch dir + PID, unique per session.
+SESSION_NAME="${SESSION_NAME:-${CS_NAME:-$(basename "$(pwd)")-$$}}"
+CLAUDE_ARGS+=(--name "$SESSION_NAME")
+
+# Remote Control on by default for INTERACTIVE sessions, so any sandbox can be driven or
+# watched from the Claude app without deciding at launch. Print mode never gets a seat:
+# a cron job that exits would leave a dangling connection, and headless runs are exactly
+# what the Valborg/Saga comments meant by "must never hold a Remote Control seat".
+# CS_NO_RC=1 opts a one-off out.
+if [ "$INTERACTIVE" = true ] && [ -z "${CS_NO_RC:-}" ]; then
+    CLAUDE_ARGS+=(--remote-control "${RC_NAME:-$SESSION_NAME}")
 fi
 
 # --- Docker path ---

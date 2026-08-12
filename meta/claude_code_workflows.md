@@ -174,7 +174,8 @@ The container:
 - Memory and CPU limited
 - Auto-detects Docker (laptop) or Apptainer/Singularity (HPC server)
 
-Usage: `./run.sh "collect news stories about corruption from Brazilian media"`
+Usage: `./run.sh -p "collect news stories about corruption from Brazilian media"`
+(a bare positional is the session name: `./run.sh govspend`)
 
 **Files:** `docker/` directory with Dockerfile, run.sh, Apptainer .def file.
 
