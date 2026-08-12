@@ -7,6 +7,17 @@ description: "Send or read WhatsApp messages. Use when the user wants to message
 
 Send and read WhatsApp messages via the whatsapp-mcp bridge.
 
+> **Implementation: use the maintained fork `verygoodplugins/whatsapp-mcp`, not upstream `lharries/whatsapp-mcp`.**
+> Same architecture (Go whatsmeow bridge + Python MCP server, QR linked-device auth, local
+> `whatsapp.db`), but upstream went quiet after ~April 2025 (~91 open issues / ~131 open PRs); the fork
+> is actively maintained (CI/CD, call capture, media, LID resolution). This is still the *only* mature
+> way to reach a **personal** WhatsApp number — every 2025–26 alternative (Meta Business Agent,
+> Composio/Wati/360dialog MCP gateways) is Business-Cloud-API-only and can't touch personal threads.
+> Tradeoffs are real and unchanged: unofficial → violates ToS + genuine account-ban risk, ~20-day QR
+> re-auth, and protocol breakage that halts messaging until a maintainer fix is pulled + redeployed.
+> See memory `[[reference_whatsapp_connection_options]]`. Not yet installed on Educloud (needs Go in
+> the sandbox image).
+
 ## Before any WhatsApp tool call
 
 Check if the bridge is running:
