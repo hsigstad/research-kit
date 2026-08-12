@@ -40,6 +40,7 @@ except Exception:
 
 MAX_FILES = 3
 MAX_BYTES = 12000   # per message; over this, deliver the head + a pointer to the file
+WAKE_SENTINEL = "[peer-wake]"   # inbox_waker.py types this; not a human prompt
 NAME_RE = re.compile(r"^(?P<frm>[^_]+)-to-(?P<to>[A-Za-z]+)_.*\.md$")
 TO_SESSION_RE = re.compile(r"^\s*(?:to-session|target-session|session)\s*:\s*(\S+)",
                            re.IGNORECASE | re.MULTILINE)
@@ -109,7 +110,13 @@ def main() -> None:
 
     # A human is typing, so whatever peer turn was in flight is over — release
     # the irreversible-action lock this session was holding.
-    if peer_turn is not None:
+    #
+    # Except when the "human" is inbox_waker.py: it wakes an idle session by
+    # typing into its tmux pane, which is indistinguishable from a real prompt.
+    # Clearing here would let a woken turn escape the lockout entirely — the
+    # guard defeated by the wake mechanism. The waker sets the flag before
+    # typing and marks the prompt, so a woken turn stays locked down.
+    if peer_turn is not None and not (data.get("prompt") or "").lstrip().startswith(WAKE_SENTINEL):
         peer_turn.clear(raw_sid)
 
     # Heartbeat + roster. Done here rather than as a separate UserPromptSubmit

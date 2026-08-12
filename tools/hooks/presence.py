@@ -112,6 +112,10 @@ def touch(session_id, *, focus=None, event=None):
             "session_id": session_id,
             "env": "sandbox" if Path("/workspace").exists() else "host",
             "cwd": str(Path.cwd()),
+            # The tmux pane is how inbox_waker.py reaches an idle session: the
+            # pane's stdin IS the containerized claude's stdin, so send-keys
+            # crosses the container boundary that breaks socket messaging.
+            "tmux_pane": os.environ.get("TMUX_PANE") or prev.get("tmux_pane"),
             "started": prev.get("started", now),
             "last_seen": now,
             # Keep the last known focus when the event carries none (Stop,
