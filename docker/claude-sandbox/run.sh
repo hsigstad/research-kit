@@ -69,6 +69,16 @@ if [ -n "${CS_CHANNELS:-}" ]; then
     fi
 fi
 
+# --- Optional: Remote Control seat without a channel (e.g. Saga, the work brain) ---
+# CS_REMOTE_CONTROL=Saga  →  enable Remote Control and set the session DISPLAY name to
+# "Saga" (same --remote-control/--name pair the Valborg branch above uses, but with NO
+# plugin channel — Saga has no Telegram poller; she's reached only via Remote Control).
+# Interactive only: skipped when a positional task is given (print mode below), which must
+# never hold a Remote Control seat. No-op when unset, so `cs` and Valborg are unaffected.
+if [ -n "${CS_REMOTE_CONTROL:-}" ] && [ $# -eq 0 ]; then
+    CLAUDE_ARGS+=(--remote-control "$CS_REMOTE_CONTROL" --name "$CS_REMOTE_CONTROL")
+fi
+
 # --- Optional: extra read-write bind mounts (space-separated host:container specs) ---
 # CS_BIND="/host/a:/workspace/a /host/b:/workspace/b" → appended as --bind (apptainer) / -v (docker).
 # Used by the `saga` launcher to bind the sibling research/ + teach/ workbenches (and the Saga⇄Valborg
@@ -85,6 +95,21 @@ fi
 
 if [ $# -gt 0 ]; then
     CLAUDE_ARGS+=(-p "$*")
+elif [ -n "${CS_SEED:-}" ]; then
+    # Interactive initial prompt (a BARE positional, NOT -p): claude starts by processing this
+    # seed and then STAYS interactive. Used by the Saga daemon to seed her always-on Remote
+    # Control session. Only when no positional task is given (a task means print mode above).
+    CLAUDE_ARGS+=("$CS_SEED")
+fi
+
+# --- Session name for cross-session messaging (native ListAgents/SendMessage) ---
+# Every `cs` launches with cwd=/workspace inside the container, so Claude auto-derives
+# the same display name for all of them, leaving concurrent sessions ambiguous to
+# address by name. Give each a distinct, addressable name. Explicit CS_NAME wins (use
+# `CS_NAME=govspend cs`); otherwise fall back to the host launch dir + PID, which is
+# unique per session. Skipped when an earlier branch (Valborg/Saga) already set --name.
+if [[ " ${CLAUDE_ARGS[*]} " != *" --name "* ]]; then
+    CLAUDE_ARGS+=(--name "${CS_NAME:-$(basename "$(pwd)")-$$}")
 fi
 
 # --- Docker path ---

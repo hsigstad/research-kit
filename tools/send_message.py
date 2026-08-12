@@ -35,7 +35,16 @@ def workspace() -> Path:
     env = os.environ.get("RESEARCH_WORKSPACE")
     if env:
         return Path(env)
-    for cand in (Path("/workspace"), Path.home() / "research"):
+    # Self-locating: this script lives at <workspace>/research-kit/tools/, so its
+    # own path resolves the workspace regardless of cwd or mount point (fixes the
+    # host case where neither /workspace nor ~/research exists — educloud is at
+    # /projects/ec113/henrik/research). Ordered candidates, first with research-kit/ wins.
+    self_root = Path(__file__).resolve().parents[2]
+    proj = os.environ.get("CLAUDE_PROJECT_DIR")
+    candidates = [Path("/workspace"), Path.home() / "research", self_root]
+    if proj:
+        candidates.append(Path(proj))
+    for cand in candidates:
         if (cand / "research-kit").exists():
             return cand
     return Path("/workspace")
