@@ -17,6 +17,13 @@ truncation logic already used everywhere else.
 
 Runs on the HOST (tmux lives there), from cron, like the Saga watchdog:
     * * * * * /projects/.../research-kit/tools/inbox_waker.py >> ~/.claude/state/waker.log 2>&1
+
+Cron exports no environment, so the workspace is resolved by tools/workspace_root.py
+(self-locating) — never from RESEARCH_WORKSPACE, which only hooks receive. Health is
+reported in ~/.claude/state/waker.heartbeat as JSON: see heartbeat(). Two signals here
+are known liars, both learned from the 2026-08-13 outage — waker.log is silent on
+no-op runs, and a bare heartbeat timestamp says only that cron fired. The tell for
+"has this EVER woken anyone" is whether any ~/.claude/state/wake_*.json exists.
 """
 import argparse
 import json
@@ -57,6 +64,29 @@ def panes():
             line.split("\t", 1) for line in out.stdout.splitlines() if "\t" in line)
     except Exception:
         return {}
+
+
+def heartbeat(ws, inbox_ok, n_panes):
+    """Report whether a wake COULD land, not merely that cron fired.
+
+    Contract agreed with Saga's meta/health_check.py (2026-08-13):
+        {"ts": <int epoch>, "workspace": "<resolved root>", "inbox_ok": <bool>}
+    `panes` is extra — tmux being unreachable is the other way a wake cannot land,
+    and only this process can see it (the sandbox has no tmux).
+
+    A bare timestamp was the false-green that hid a day-long outage: it was written
+    before workspace resolution, so it ticked happily while the waker was resolving
+    a root with no inbox/ and waking nobody. Never fatal.
+    """
+    try:
+        (state_dir() / "waker.heartbeat").write_text(json.dumps({
+            "ts": int(time.time()),
+            "workspace": str(ws),
+            "inbox_ok": bool(inbox_ok),
+            "panes": int(n_panes),
+        }))
+    except Exception:
+        pass
 
 
 def complain(msg, *, every=3600):
@@ -124,26 +154,22 @@ def main():
                     help="report what would be woken; type nothing")
     args = ap.parse_args()
 
-    # Liveness heartbeat — overwrite a tiny file every run so a monitor can tell the cron is firing
-    # even on a no-op (waker.log only gets output on an actual wake/skip/error). A fresh heartbeat
-    # proves the cron fires, NOT that wakes can happen — see the complain() call below. Never fatal.
-    try:
-        _hb = state_dir() / "waker.heartbeat"
-        _hb.write_text(str(int(time.time())))
-    except Exception:
-        pass
-
+    # Resolve everything a wake DEPENDS on before reporting health, so the heartbeat can
+    # answer "could a wake land?" rather than only "did cron fire?".
     ws = inbox.workspace()
     msg_dir = ws / "inbox" / "messages"
     pdir = ws / "inbox" / "presence"
-    if not msg_dir.is_dir() or not pdir.is_dir():
+    inbox_ok = msg_dir.is_dir() and pdir.is_dir()
+    live_panes = panes()
+    heartbeat(ws, inbox_ok, len(live_panes))
+
+    if not inbox_ok:
         # Resolving a workspace with no inbox/ means the waker is running but can
         # never wake anyone. It did exactly that for a day, silently, because
         # this returned 0 like an ordinary no-op. Say so — hourly, not 1440x/day.
         complain(f"no inbox at {ws} — resolved the wrong workspace root; "
                  f"RESEARCH_WORKSPACE={os.environ.get('RESEARCH_WORKSPACE') or '(unset)'}")
         return 0
-    live_panes = panes()
     if not live_panes:
         return 0  # no tmux here; nothing to wake
 

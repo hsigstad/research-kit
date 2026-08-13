@@ -125,6 +125,41 @@ else:
     check("--dry-run never consumes budget",
           inbox_waker.wake_budget_ok(SID, commit=False) is False)
 
+print("=== heartbeat reports reachability, not just liveness ===")
+# Contract with Saga's meta/health_check.py: {"ts", "workspace", "inbox_ok"} (+ "panes").
+# A bare timestamp was the false-green that hid the 2026-08-13 outage.
+HB = STATE / "waker.heartbeat"
+saved = HB.read_text() if HB.is_file() else None
+
+
+def beat(env_override):
+    subprocess.run([sys.executable, str(WAKER), "--dry-run"], cwd="/",
+                   env={"PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+                        "HOME": os.environ["HOME"], **env_override},
+                   capture_output=True, text=True)
+    try:
+        return json.loads(HB.read_text())
+    except Exception as e:
+        return {"<unparseable>": str(e)}
+
+
+hb = beat({"RESEARCH_WORKSPACE": str(WS)})
+check("healthy run reports inbox_ok=true", hb.get("inbox_ok") is True, f"| {hb}")
+check("healthy run names the resolved root", hb.get("workspace") == str(WS))
+check("ts is a fresh epoch int",
+      isinstance(hb.get("ts"), int) and abs(time.time() - hb["ts"]) < 120)
+
+hb = beat({"RESEARCH_WORKSPACE": "/tmp/nope-not-a-workspace"})
+check("a wrong root reports inbox_ok=FALSE (would have read green before)",
+      hb.get("inbox_ok") is False, f"| {hb}")
+check("...and names the wrong root it resolved, so the fix is obvious",
+      hb.get("workspace") == "/tmp/nope-not-a-workspace")
+
+beat({"RESEARCH_WORKSPACE": str(WS)})   # leave the live heartbeat truthful
+(STATE / "waker_complaint.json").unlink(missing_ok=True)
+if saved is not None and not HB.is_file():
+    HB.write_text(saved)
+
 print("=== sentinel keeps a woken turn locked ===")
 clean()
 peer_turn.begin(SID, origin="peer-to-host_x.md", hop=0)
