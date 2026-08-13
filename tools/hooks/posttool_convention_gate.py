@@ -20,14 +20,10 @@ import sys
 from pathlib import Path
 
 
-def _workspace() -> Path:
-    env = os.environ.get("RESEARCH_WORKSPACE")
-    if env:
-        return Path(env)
-    for cand in (Path.home() / "research", Path("/workspace")):
-        if (cand / "research-kit").exists():
-            return cand
-    return Path.home() / "research"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from workspace_root import workspace  # noqa: E402  (one resolver; see its docstring)
+
+_workspace = workspace
 
 
 WORKSPACE = _workspace()

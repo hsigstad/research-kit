@@ -49,14 +49,8 @@ from pathlib import Path
 RCLONE_TIMEOUT = 3600
 
 
-def workspace() -> Path:
-    env = os.environ.get("RESEARCH_WORKSPACE")
-    if env:
-        return Path(env)
-    for cand in (Path.home() / "research", Path("/workspace")):
-        if (cand / "research-kit").exists():
-            return cand
-    return Path.home() / "research"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workspace_root import workspace  # noqa: E402  (cron gives us no env; see module docstring)
 
 
 def sha256(path: Path) -> str:

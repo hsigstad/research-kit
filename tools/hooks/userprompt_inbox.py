@@ -49,24 +49,8 @@ FROM_SESSION_RE = re.compile(r"^\s*from-session\s*:\s*(\S+)", re.IGNORECASE | re
 FROM_NAME_RE = re.compile(r"^\s*from-name\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
 
 
-def workspace() -> Path:
-    """Workspace root. `self_root` is what makes this work outside a session.
-
-    Hooks always have RESEARCH_WORKSPACE because run_hook.sh exports it, so the
-    $HOME/research fallback was never exercised — until inbox_waker.py ran from
-    cron, which strips the env and the cwd. On this host $HOME/research is an
-    unrelated stub, so the waker resolved a workspace with no inbox/ and no-oped
-    every minute for a day while looking alive. The script's own path is the one
-    thing cron cannot take away.
-    """
-    env = os.environ.get("RESEARCH_WORKSPACE")
-    if env:
-        return Path(env)
-    self_root = Path(__file__).resolve().parents[3]
-    for cand in (Path.home() / "research", Path("/workspace"), self_root):
-        if (cand / "research-kit").exists():
-            return cand
-    return Path.home() / "research"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from workspace_root import workspace  # noqa: E402  (one resolver; see its docstring)
 
 
 def own_name(session_id):

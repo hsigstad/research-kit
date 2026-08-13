@@ -15,6 +15,9 @@ import sys
 from datetime import date
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workspace_root import workspace  # noqa: E402  (one resolver; see its docstring)
+
 
 def parse_desc_toml(text: str) -> dict:
     """Minimal parser for this file's constrained TOML subset:
@@ -48,7 +51,7 @@ def scan(root: Path) -> list[str]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--workspace", default=str(Path.home() / "research"))
+    ap.add_argument("--workspace", default=str(workspace()))
     args = ap.parse_args()
     ws = Path(args.workspace)
     rules = ws / "research" / "rules"

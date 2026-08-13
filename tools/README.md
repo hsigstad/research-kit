@@ -35,6 +35,25 @@ public surface.
 
 ## Other tools in this directory
 
+- **`workspace_root.py`** — the single workspace-root resolver. Import it;
+  never re-derive the root. Anything that can run outside a Claude session
+  (cron, a bare CLI invocation) has no `RESEARCH_WORKSPACE`, because only
+  `hooks/run_hook.sh` exports it — and the old `$HOME/research` fallback is
+  an unrelated stub on educloud, so a miss was silent. That cost two
+  outages: the nightly sweep scanned zero repos and read as clean
+  (2026-07-06), and `inbox_waker.py` fired every minute for a day and woke
+  nobody (2026-08-13). Resolution order: `RESEARCH_WORKSPACE`, then
+  `~/research`, `/workspace`, and finally this module's own tree — cron can
+  strip the environment and the cwd, not `__file__`.
+
+  ```python
+  sys.path.insert(0, str(Path(__file__).resolve().parent))  # or parents[1] from hooks/
+  from workspace_root import workspace
+  ```
+
+  `hooks/tests/test_workspace_root.py` checks every consumer under cron's
+  environment and fails if a private copy of the resolver reappears.
+
 - **`coverage.py`** — workspace-conventions health dashboard for a
   project. Read-only audit emitting a single-screen report on
   `artifacts.yaml` coverage and integrity, IAT presence in scripts,

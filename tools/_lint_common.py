@@ -9,19 +9,8 @@ from collections import defaultdict
 from pathlib import Path
 
 
-def _detect_workspace() -> Path:
-    """Workspace root: RESEARCH_WORKSPACE env var, else first root that
-    actually contains research-kit. A bare ~/research default silently
-    lints zero repos on hosts where the workspace lives elsewhere
-    (observed 2026-07-06: the nightly sweep reported a false clean)."""
-    env = os.environ.get("RESEARCH_WORKSPACE")
-    if env:
-        return Path(env).expanduser()
-    for cand in (Path("~/research").expanduser(), Path("/workspace")):
-        if (cand / "research-kit").exists():
-            return cand
-    return Path("~/research").expanduser()
-
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workspace_root import workspace as _detect_workspace  # noqa: E402
 
 WORKSPACE = _detect_workspace()
 

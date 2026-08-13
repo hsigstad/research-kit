@@ -29,7 +29,10 @@ import mistune
 # Defaults
 # ---------------------------------------------------------------------------
 
-WORKSPACE = Path("~/research").expanduser()
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workspace_root import workspace  # noqa: E402  (one resolver; see its docstring)
+
+WORKSPACE = workspace()
 DEFAULT_OUT = WORKSPACE / "build" / "browser"
 
 # Directories to walk (relative to workspace root)

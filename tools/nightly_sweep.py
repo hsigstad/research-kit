@@ -34,14 +34,8 @@ DOC_TOOLS = ("check_docs", "citations", "check_macros")
 _LINE_SUFFIX = re.compile(r":\d+$")
 
 
-def workspace() -> Path:
-    env = os.environ.get("RESEARCH_WORKSPACE")
-    if env:
-        return Path(env)
-    for cand in (Path.home() / "research", Path("/workspace")):
-        if (cand / "research-kit").exists():
-            return cand
-    return Path.home() / "research"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from workspace_root import workspace  # noqa: E402  (cron gives us no env; see module docstring)
 
 
 def baseline_path(ws: Path) -> Path:
