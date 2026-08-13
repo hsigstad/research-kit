@@ -93,7 +93,10 @@ if [ -n "${CS_CHANNELS:-}" ]; then
                   # prompt box / /resume picker / terminal title) and name its Remote Control
                   # connection the same, so it can be driven/watched from the Claude app.
                   # The RC half is dropped automatically in print mode by the resolver below.
-                  SESSION_NAME=Valborg; RC_NAME=Valborg ;;
+                  SESSION_NAME=Valborg; RC_NAME=Valborg
+                  # Bound over /workspace/.claude/settings.local.json below — the only place the
+                  # Telegram plugin is enabled. See the CS_TELEGRAM_ENABLE_SRC block.
+                  CS_TELEGRAM_ENABLE_SRC="${CS_TELEGRAM_ENABLE_SRC:-$HOME/.claude/channels/telegram/enable-plugin.json}" ;;
         *)        CHANNELS_SPEC="$CS_CHANNELS" ;;
     esac
     CLAUDE_ARGS+=(--channels "$CHANNELS_SPEC")
@@ -129,6 +132,22 @@ if [ -n "${CS_BIND:-}" ]; then
         EXTRA_BIND_APPT+=(--bind "$spec")
         EXTRA_BIND_DOCK+=(-v "$spec")
     done
+fi
+
+# --- Telegram plugin: enable it HERE and nowhere else ---
+# The plugin's MCP server starts long-polling getUpdates the moment it loads, and it SIGTERMs
+# whoever holds ~/.claude/channels/telegram/bot.pid — Telegram allows exactly one consumer per
+# token. So any OTHER Claude session that merely *loads* the plugin steals the bot from Valborg,
+# and if that session wasn't started with --channels it swallows the messages silently (they
+# arrive as notifications a non-channel CLI ignores). Enablement is therefore OFF at user scope
+# and OFF in the household repo's own .claude/settings.local.json; this bind overlays that file
+# with an enabling copy that exists only inside the container, so the ONLY way to load the plugin
+# is through this launcher. ($HOME is the real host home in here — apptainer auto-mounts it — so
+# there is no user-scope file the container has and the host doesn't.)
+if [ -n "${CS_TELEGRAM_ENABLE_SRC:-}" ] && [ -f "$CS_TELEGRAM_ENABLE_SRC" ] \
+   && [ -f "$(pwd)/.claude/settings.local.json" ]; then
+    EXTRA_BIND_APPT+=(--bind "$CS_TELEGRAM_ENABLE_SRC":/workspace/.claude/settings.local.json)
+    EXTRA_BIND_DOCK+=(-v "$CS_TELEGRAM_ENABLE_SRC":/workspace/.claude/settings.local.json)
 fi
 
 if [ "$INTERACTIVE" = false ]; then
