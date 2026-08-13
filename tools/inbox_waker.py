@@ -105,6 +105,17 @@ def main():
                     help="report what would be woken; type nothing")
     args = ap.parse_args()
 
+    # Liveness heartbeat — overwrite a tiny file every run so a monitor can tell the cron is firing
+    # even on a no-op (waker.log only gets output on an actual wake/skip/error). Never fatal.
+    try:
+        import os as _os
+        _hb = _os.path.expanduser("~/.claude/state/waker.heartbeat")
+        _os.makedirs(_os.path.dirname(_hb), exist_ok=True)
+        with open(_hb, "w") as _f:
+            _f.write(str(int(time.time())))
+    except Exception:
+        pass
+
     ws = inbox.workspace()
     msg_dir = ws / "inbox" / "messages"
     pdir = ws / "inbox" / "presence"
