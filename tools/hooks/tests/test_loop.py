@@ -17,9 +17,27 @@ sys.path.insert(0, str(HOOKS))
 import peer_turn
 
 
+def mine():
+    """Every test message in the live inbox — matched on CONTENT, not filename.
+
+    Only the seed file is named *looptest*; the replies are written by
+    send_message.py as host-to-sandbox_<timestamp>.md. A filename glob therefore
+    left them in the real inbox after every run, and undercounted them in the
+    assertion below.
+    """
+    out = []
+    for f in MSGS.glob("*.md"):
+        try:
+            if A in f.read_text(errors="replace")[:400] or B in f.read_text(errors="replace")[:400]:
+                out.append(f)
+        except Exception:
+            pass
+    return out
+
+
 def clean():
-    for f in MSGS.glob("*looptest*"):
-        f.unlink()
+    for f in mine():
+        f.unlink(missing_ok=True)
     for sid in (A, B):
         (STATE / f"inbox_seen_{sid}.json").unlink(missing_ok=True)
         (STATE / f"drain_{sid}.json").unlink(missing_ok=True)
@@ -67,12 +85,11 @@ print("drain sequence:")
 for h in hops:
     print("   ", h)
 
-sent = sorted(p.name for p in MSGS.glob("*looptest*"))
-print(f"messages on disk: {len(sent)}")
+left = mine()
+print(f"messages on disk: {len(left)}")
 stamped = []
-for p in MSGS.glob("*looptest*"):
-    t = p.read_text()
-    h = [l for l in t.splitlines() if l.lower().startswith("hop:")]
+for p in left:
+    h = [l for l in p.read_text().splitlines() if l.lower().startswith("hop:")]
     stamped.append(h[0] if h else "Hop: (none)")
 print("hop headers:", sorted(stamped))
 
