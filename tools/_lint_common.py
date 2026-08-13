@@ -64,9 +64,16 @@ def read(p: Path) -> str:
 def find_repos(workspace: Path, slug: str | None) -> list[tuple[Path, str]]:
     repos: list[tuple[Path, str]] = []
     if slug:
+        # A slug must be a single repo name, not a path. Path-like slugs
+        # (".", "..", "a/b", trailing slash) otherwise resolve to the
+        # projects/ container or its parent, which then get linted as bogus
+        # repos (missing docs/ + CLAUDE.md). Reject them up front, and keep
+        # p.name == slug as a belt-and-suspenders check.
+        if slug in {".", ".."} or "/" in slug or os.sep in slug:
+            return []
         for kind, root in [("project", workspace / "projects"), ("pipeline", workspace / "pipelines")]:
             p = root / slug
-            if p.is_dir():
+            if p.is_dir() and p.name == slug:
                 repos.append((p, kind))
         return repos
     projects = workspace / "projects"
