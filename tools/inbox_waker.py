@@ -20,6 +20,7 @@ Runs on the HOST (tmux lives there), from cron, like the Saga watchdog:
 """
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -56,6 +57,24 @@ def panes():
             line.split("\t", 1) for line in out.stdout.splitlines() if "\t" in line)
     except Exception:
         return {}
+
+
+def complain(msg, *, every=3600):
+    """Log a misconfiguration at most once per `every` seconds. Cron runs this
+    every minute, so an unthrottled complaint would bury waker.log."""
+    stamp = state_dir() / "waker_complaint.json"
+    now = int(time.time())
+    try:
+        rec = json.loads(stamp.read_text())
+    except Exception:
+        rec = {}
+    if rec.get("msg") == msg and now - rec.get("at", 0) < every:
+        return
+    print(f"inbox_waker: {msg}", file=sys.stderr)
+    try:
+        stamp.write_text(json.dumps({"msg": msg, "at": now}))
+    except Exception:
+        pass
 
 
 def wake_budget_ok(sid, *, commit=True):
@@ -106,13 +125,11 @@ def main():
     args = ap.parse_args()
 
     # Liveness heartbeat — overwrite a tiny file every run so a monitor can tell the cron is firing
-    # even on a no-op (waker.log only gets output on an actual wake/skip/error). Never fatal.
+    # even on a no-op (waker.log only gets output on an actual wake/skip/error). A fresh heartbeat
+    # proves the cron fires, NOT that wakes can happen — see the complain() call below. Never fatal.
     try:
-        import os as _os
-        _hb = _os.path.expanduser("~/.claude/state/waker.heartbeat")
-        _os.makedirs(_os.path.dirname(_hb), exist_ok=True)
-        with open(_hb, "w") as _f:
-            _f.write(str(int(time.time())))
+        _hb = state_dir() / "waker.heartbeat"
+        _hb.write_text(str(int(time.time())))
     except Exception:
         pass
 
@@ -120,6 +137,11 @@ def main():
     msg_dir = ws / "inbox" / "messages"
     pdir = ws / "inbox" / "presence"
     if not msg_dir.is_dir() or not pdir.is_dir():
+        # Resolving a workspace with no inbox/ means the waker is running but can
+        # never wake anyone. It did exactly that for a day, silently, because
+        # this returned 0 like an ordinary no-op. Say so — hourly, not 1440x/day.
+        complain(f"no inbox at {ws} — resolved the wrong workspace root; "
+                 f"RESEARCH_WORKSPACE={os.environ.get('RESEARCH_WORKSPACE') or '(unset)'}")
         return 0
     live_panes = panes()
     if not live_panes:

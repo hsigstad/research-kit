@@ -62,9 +62,15 @@ def clean():
     peer_turn.clear(SID)
 
 
-def waker():
-    p = subprocess.run([sys.executable, str(WAKER), "--dry-run"],
-                       env=env, capture_output=True, text=True)
+def waker(cron_env=False):
+    """--dry-run the waker. cron_env=True reproduces how cron actually calls it:
+    no RESEARCH_WORKSPACE, no useful cwd. Passing the variable (as every other
+    test here did) hid a day-long outage where the waker resolved $HOME/research,
+    found no inbox/, and returned 0 before looking at a single session."""
+    e = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+         "HOME": os.environ["HOME"]} if cron_env else env
+    p = subprocess.run([sys.executable, str(WAKER), "--dry-run"], cwd="/",
+                       env=e, capture_output=True, text=True)
     return p.stdout + p.stderr
 
 
@@ -86,6 +92,10 @@ else:
     put_msg(); put_presence(pane, idle_secs=600)
     out = waker()
     check("wakes an idle session with mail", "would wake WakeTest" in out, f"| {out.strip()[:60]}")
+
+    out = waker(cron_env=True)
+    check("wakes with cron's env (no RESEARCH_WORKSPACE, no cwd)",
+          "would wake WakeTest" in out, f"| {out.strip()[:60]}")
 
     put_presence(pane, idle_secs=10)
     out = waker()
