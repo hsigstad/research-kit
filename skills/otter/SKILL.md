@@ -1,7 +1,7 @@
 ---
 name: otter
 description: "Pull recent Otter.ai meeting-summary emails from Gmail, route each to the right project, and save under docs/meetings/. Use when the user runs /otter or asks to 'grab the otter notes' / 'sync otter meeting summaries' / 'update meeting notes from otter'."
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Otter Notes Sync (Otter.ai email → projects/<slug>/docs/meetings/)
