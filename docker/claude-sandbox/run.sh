@@ -203,6 +203,7 @@ if [ "$RUNTIME" = "docker" ]; then
         -v "$HOME/Dropbox":/home/henrik/Dropbox:ro \
         -v "$HOME/Dropbox/Transfer_Bocconi":/home/henrik/Dropbox/Transfer_Bocconi \
         -v "$HOME/Screenshots":/home/henrik/Screenshots:ro \
+        -v "$HOME/Downloads":/home/henrik/Downloads:ro \
         -v "$HOME/.claude":/home/henrik/.claude \
         -v "$HOME/.claude.json":/home/henrik/.claude.json \
         -v "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
@@ -269,6 +270,15 @@ if [ -e "$GMAIL_MCP_DIR" ]; then
     GMAIL_BIND=(--bind "$GMAIL_MCP_DIR":"$GMAIL_MCP_DIR")
 fi
 
+# Mirror the host's ~/Downloads into the container home (read-only). Apptainer
+# auto-mounts the host $HOME at its host path, but that differs from the image's
+# /home/henrik, so an explicit bind is needed (same reason as Screenshots).
+# Guarded by existence — no-op where the dir isn't present.
+DOWNLOADS_BIND=()
+if [ -d "$HOME/Downloads" ]; then
+    DOWNLOADS_BIND=(--bind "$HOME/Downloads":/home/henrik/Downloads:ro)
+fi
+
 exec "$RUNTIME" run \
     --bind "$(pwd)":/workspace \
     "${EXTRA_BIND_APPT[@]}" \
@@ -276,6 +286,7 @@ exec "$RUNTIME" run \
     --env "R_ENVIRON_USER=/dev/null" \
     --env "R_LIBS_USER=/tmp/r-sandbox-libs" \
     --bind "$HOME/Screenshots":/home/henrik/Screenshots:ro \
+    "${DOWNLOADS_BIND[@]}" \
     --bind "$HOME/.claude":/home/henrik/.claude \
     --bind "$HOME/.claude.json":/home/henrik/.claude.json \
     --bind "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
