@@ -150,6 +150,27 @@ if [ -n "${CS_TELEGRAM_ENABLE_SRC:-}" ] && [ -f "$CS_TELEGRAM_ENABLE_SRC" ] \
     EXTRA_BIND_DOCK+=(-v "$CS_TELEGRAM_ENABLE_SRC":/workspace/.claude/settings.local.json)
 fi
 
+# --- Shared secrets: point the resolver at ~/secrets/secrets.env --------------
+# The workspace's shared key file (<workspace-root>/.secrets/research.env) only rides along when
+# the launch dir IS the workspace root. Launch from a sibling workbench (`teach`) or from a
+# subdirectory and it is unreachable: apptainer auto-mounts only $HOME and the cwd — NOT /projects
+# — and the parent dirs it synthesises for the cwd mount are empty stubs. diarios.secrets then
+# silently finds nothing, so the keys are just absent and it debugs like an API failure.
+#
+# $RESEARCH_SECRETS is first in that resolver's candidate list, so setting it fixes every launch
+# dir at once. Guarded on existence → no-op on a machine without the secrets repo.
+# See research/rules/secrets.md.
+SECRETS_SRC="$HOME/secrets/secrets.env"
+SECRETS_APPT=()
+SECRETS_DOCK=()
+if [ -f "$SECRETS_SRC" ]; then
+    # apptainer: $HOME is auto-mounted at its host path and $HOME KEEPS that value inside the
+    # container, so the file is already reachable — only the env var is needed.
+    SECRETS_APPT=(--env "RESEARCH_SECRETS=$SECRETS_SRC")
+    # docker: nothing outside the explicit -v list exists in there, so bind the file in as well.
+    SECRETS_DOCK=(-v "$SECRETS_SRC":/home/henrik/secrets.env:ro -e RESEARCH_SECRETS=/home/henrik/secrets.env)
+fi
+
 if [ "$INTERACTIVE" = false ]; then
     CLAUDE_ARGS+=(-p "$CS_TASK")
 elif [ -n "${CS_SEED:-}" ]; then
@@ -198,6 +219,7 @@ if [ "$RUNTIME" = "docker" ]; then
     exec docker run --rm -it \
         -v "$(pwd)":/workspace \
         "${EXTRA_BIND_DOCK[@]}" \
+        "${SECRETS_DOCK[@]}" \
         -e R_ENVIRON_USER=/dev/null \
         -e R_LIBS_USER=/tmp/r-sandbox-libs \
         -v "$HOME/Dropbox":/home/henrik/Dropbox:ro \
@@ -282,6 +304,7 @@ fi
 exec "$RUNTIME" run \
     --bind "$(pwd)":/workspace \
     "${EXTRA_BIND_APPT[@]}" \
+    "${SECRETS_APPT[@]}" \
     "${GMAIL_BIND[@]}" \
     --env "R_ENVIRON_USER=/dev/null" \
     --env "R_LIBS_USER=/tmp/r-sandbox-libs" \
