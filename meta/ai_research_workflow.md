@@ -167,6 +167,20 @@ in stage 8.**
     donation-ban prompt, diff the candidate sets. Sources: Aaron Tay
     musingsaboutlibrarianship.blogspot.com (2024-12) + aarontay.substack.com;
     Katina Magazine "Power of Successive Search"; G2/Paperguide comparisons.
+  - *Elicit head-to-head, same donation-ban prompt (2026-08-28, 7-day trial):*
+    the two tools produce DIFFERENT deliverables. Undermind deep search = a
+    ranked candidate list (23 papers, match %) — recall/discovery-first, maps
+    to step-4 curation. Elicit Research agent = a written inline-cited evidence
+    brief on 6 papers (full texts read) — synthesis/answer-first, ~2 min vs
+    Undermind's ~18. Core causal overlap near-total: Peveri, Cavgias & Granella,
+    Aparicio & Avenancio-León, Hall in BOTH. Elicit surfaced 2 comparative
+    papers Undermind missed (Butcher & Milyo 2020 US; Cagé et al. 2024 France)
+    and extracted specific magnitudes; Undermind surfaced ~17 Elicit missed (all
+    the PT-language + adjacent lit). Neither found Guerra. Read: Undermind for
+    the exhaustive net + list-shaped output the skill wants; Elicit for deep
+    full-text synthesis of a focused core (Elicit's "Find papers" table mode,
+    untested, is its fairer recall analog). Confirms the reviews' "pair them"
+    verdict. Detail: electoral-justice/docs/literature/elicit_vs_undermind_2026-08-28.md.
 - **Check:** the dangerous failure mode isn't fabricated citations (easy
   to catch) — it's real papers cited for claims they don't actually make,
   or citations where the AI inverted the finding. Procedure: for every
