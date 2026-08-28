@@ -129,6 +129,23 @@ in stage 8.**
     feeding step-4 curation for from-scratch reviews, not as a skill
     replacement and not for `--update`. Seed candidate set saved to
     electoral-justice at docs/literature/undermind_candidates_2026-08-28.md.
+  - *Why it's theoretically better (and its ceiling):* the edge is the search
+    procedure, NOT the corpus — both hit the same OpenAlex/S2/Crossref-class
+    metadata + open-access PDFs. Our skill is fixed-query one-shot retrieval:
+    recall ceiling = whatever the ~10-20 generated queries happen to match, no
+    notion of "have I found everything." Undermind is iterative expand-until-
+    convergence: passes seeded by prior passes walk the citation/author graph
+    and stop only when a pass adds nothing new, with relevance scored against
+    the specific question (abstract + full text when OA) rather than keyword
+    overlap. That's what buys recall on the findable-but-hard tail, and the
+    match-% IS the curation judgment. Full-text access is only a MINOR edge:
+    it reads OA PDFs automatically (4/23 here) and paywalled ones only if you
+    upload them — same access ceiling as our skill, it just reads full text by
+    default during ranking instead of curating on title+abstract. Hard ceiling
+    it does NOT break: it walks the *indexed* graph, so an uncrawled/uncited
+    working paper (Guerra's FGV WP) stays invisible no matter how many passes.
+    Better at findable-but-hard; not better at uncrawled — where the user's own
+    field knowledge stays irreplaceable.
 - **Check:** the dangerous failure mode isn't fabricated citations (easy
   to catch) — it's real papers cited for claims they don't actually make,
   or citations where the AI inverted the finding. Procedure: for every
