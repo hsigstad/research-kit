@@ -146,6 +146,27 @@ in stage 8.**
     working paper (Guerra's FGV WP) stays invisible no matter how many passes.
     Better at findable-but-hard; not better at uncrawled — where the user's own
     field knowledge stays irreplaceable.
+  - *Competitor landscape (2026):* the only SERIOUS alternative in the same
+    "agentic deep search" category is **Elicit** — independent reviews (Aaron
+    Tay, the standard librarian voice on these tools) treat Undermind and
+    Elicit as the two advanced tools and advise PAIRING them, not choosing:
+    "Undermind finds conceptually connected papers standard search misses;
+    Elicit finds strong semantic matches." Elicit's differentiator is it
+    **indexes OA full text** and does structured extraction tables / systematic
+    reviews; Undermind's is the iterative successive-search recall described
+    above. Others are a tier down or a different job: Consensus (fast yes/no
+    evidence answers, undergraduate-friendly, weaker recall); SciSpace
+    (semantic + "Agents"); Scite (citation *contexts* — how later work
+    treated a paper); and the citation-graph MAPPERS (ResearchRabbit,
+    Connected Papers, Litmaps, Inciteful) which visualize networks rather than
+    synthesize. Reliability is a shared strength — Tay notes top-class tools
+    (Undermind/Elicit/SciSpace) almost never fabricate refs, unlike chatbots.
+    BIG caveat: every published comparison is STEM/biomedical; none evaluate
+    econ/law/poli-sci recall, so our own smoke test is more informative for our
+    use than any review. If we trial a second tool it should be Elicit, same
+    donation-ban prompt, diff the candidate sets. Sources: Aaron Tay
+    musingsaboutlibrarianship.blogspot.com (2024-12) + aarontay.substack.com;
+    Katina Magazine "Power of Successive Search"; G2/Paperguide comparisons.
 - **Check:** the dangerous failure mode isn't fabricated citations (easy
   to catch) — it's real papers cited for claims they don't actually make,
   or citations where the AI inverted the finding. Procedure: for every
