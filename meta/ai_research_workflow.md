@@ -181,6 +181,20 @@ in stage 8.**
     full-text synthesis of a focused core (Elicit's "Find papers" table mode,
     untested, is its fairer recall analog). Confirms the reviews' "pair them"
     verdict. Detail: electoral-justice/docs/literature/elicit_vs_undermind_2026-08-28.md.
+  - *Elicit "Find papers" mode, same prompt (the fairer recall analog):* curated
+    80 candidates → 12-row ranked table, ~1-2 min, richer structured columns
+    (Design/Geography/Outcomes/Priority/Relevance) than Undermind's bare match %.
+    Changes the picture: it found 6 papers Undermind's 23 MISSED, several
+    high-value causal — Balán et al. "Kin in the Game" (family-tie substitution),
+    Baltrunaite (Lithuania procurement), Cagé 2024 (France), Butcher & Milyo,
+    Stratmann. Undermind still found ~15 Elicit missed, but mostly PT-language
+    descriptive tail + 2 strong ones (Motolinia/Klašnja/Weschle APSR; Cammett/
+    Novaes/Tuñón JOP). So Elicit = higher precision + structured output; Undermind
+    = higher raw recall/wider grey-lit net. NEITHER dominates — each caught ~5-6
+    relevant papers the other didn't; BOTH missed Guerra (3rd confirmation).
+    Practical takeaway: for a real review, run BOTH and union the candidate sets.
+    If we ever wire ONE tool into `/literature`, Elicit "Find papers" is now at
+    least as strong a candidate as Undermind (its table maps to curation better).
 - **Check:** the dangerous failure mode isn't fabricated citations (easy
   to catch) — it's real papers cited for claims they don't actually make,
   or citations where the AI inverted the finding. Procedure: for every
