@@ -128,7 +128,8 @@ in stage 8.**
     literature that isn't crawled anywhere. Net: adopt as a discovery source
     feeding step-4 curation for from-scratch reviews, not as a skill
     replacement and not for `--update`. Seed candidate set saved to
-    electoral-justice at docs/literature/undermind_candidates_2026-08-28.md.
+    ficha at docs/literature/undermind_candidates_2026-08-28.md (donation-ban
+    strand belongs to ficha, not electoral-justice).
   - *Why it's theoretically better (and its ceiling):* the edge is the search
     procedure, NOT the corpus — both hit the same OpenAlex/S2/Crossref-class
     metadata + open-access PDFs. Our skill is fixed-query one-shot retrieval:
@@ -180,7 +181,7 @@ in stage 8.**
     the exhaustive net + list-shaped output the skill wants; Elicit for deep
     full-text synthesis of a focused core (Elicit's "Find papers" table mode,
     untested, is its fairer recall analog). Confirms the reviews' "pair them"
-    verdict. Detail: electoral-justice/docs/literature/elicit_vs_undermind_2026-08-28.md.
+    verdict. Detail: ficha/docs/literature/elicit_vs_undermind_2026-08-28.md.
   - *Elicit "Find papers" mode, same prompt (the fairer recall analog):* curated
     80 candidates → 12-row ranked table, ~1-2 min, richer structured columns
     (Design/Geography/Outcomes/Priority/Relevance) than Undermind's bare match %.
