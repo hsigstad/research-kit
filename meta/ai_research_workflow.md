@@ -96,6 +96,39 @@ in stage 8.**
   expand via citation graphs, write `literature.md` + bib, download PDFs.
   (See `/literature` skill.)
 - **I do:** skim the curated list, read the key papers myself.
+- **Tool to evaluate (deferred):** [Undermind](https://undermind.ai) — an
+  iterative "deep search" agent (semantic search → citation trails →
+  key-author sweep, looping until nothing new) that scores hits against a
+  precise research question. Now has an MCP connector, so `/literature`
+  could call it as an extra discovery source feeding curation, replacing
+  only the query-gen + API-search steps (keeps our `[cite:]` tokens, bib
+  bijection, PDF machinery). No upfront cost — accounts start with a small
+  free deep-search allotment; paid only for volume. Strongest in
+  natural-sciences/biomedical, so recall on our econ/law/Brazil questions
+  is the open risk. Plan: on the next from-scratch review (electoral-justice
+  or poll-sponsor-bias are good tests), run it in parallel with the normal
+  skill and diff candidate sets — adopt as a source only if it surfaces
+  relevant papers the OpenAlex/S2/Crossref pass missed.
+  - *Smoke test 2026-08-28 (free tier, query = electoral-justice corporate
+    donation ban):* process quality high — scopes with clarifying questions,
+    writes a search goal that separates causal from descriptive work, runs a
+    real semantic→citation→author multi-pass sweep. But SLOW: one deep search
+    ran 16+ min and was still finishing, confirming it's a fire-and-forget
+    batch job, not interactive — fine for a one-time review, wrong tool for
+    the incremental `--update` path. Coverage verdict (did it catch the poorly
+    indexed Guerra et al. working paper?) still pending the ranked list.
+  - *Coverage result (same run, 23 papers / 4 full texts, ~18 min):* recall
+    on published + grey PT-language literature is strong — it nailed the three
+    core causal Brazil donation-ban papers at 100% match (Peveri; Aparicio &
+    Avenancio-León; Cavgias & Granella) plus Avis & Varjão and Hall's US
+    corporate-ban paper, and pulled obscure Brazilian-journal work a keyword
+    pass returns only buried in noise. The match-% scoring IS the step-4
+    curation the skill now does by hand. BUT it did not surface Guerra et al.
+    as a visible hit (the unindexed FGV WP) — so it doesn't rescue grey
+    literature that isn't crawled anywhere. Net: adopt as a discovery source
+    feeding step-4 curation for from-scratch reviews, not as a skill
+    replacement and not for `--update`. Seed candidate set saved to
+    electoral-justice at docs/literature/undermind_candidates_2026-08-28.md.
 - **Check:** the dangerous failure mode isn't fabricated citations (easy
   to catch) — it's real papers cited for claims they don't actually make,
   or citations where the AI inverted the finding. Procedure: for every
