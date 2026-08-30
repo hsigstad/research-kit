@@ -150,25 +150,21 @@ if [ -n "${CS_TELEGRAM_ENABLE_SRC:-}" ] && [ -f "$CS_TELEGRAM_ENABLE_SRC" ] \
     EXTRA_BIND_DOCK+=(-v "$CS_TELEGRAM_ENABLE_SRC":/workspace/.claude/settings.local.json)
 fi
 
-# --- Shared secrets: point the resolver at ~/secrets/secrets.env --------------
-# The workspace's shared key file (<workspace-root>/.secrets/research.env) only rides along when
-# the launch dir IS the workspace root. Launch from a sibling workbench (`teach`) or from a
-# subdirectory and it is unreachable: apptainer auto-mounts only $HOME and the cwd — NOT /projects
-# — and the parent dirs it synthesises for the cwd mount are empty stubs. diarios.secrets then
-# silently finds nothing, so the keys are just absent and it debugs like an API failure.
-#
-# $RESEARCH_SECRETS is first in that resolver's candidate list, so setting it fixes every launch
-# dir at once. Guarded on existence → no-op on a machine without the secrets repo.
-# See research/rules/secrets.md.
-SECRETS_SRC="$HOME/secrets/secrets.env"
+# --- Shared secrets: make ~/secrets/ resolve to the same path in both runtimes ---
+# The resolver (diarios.secrets / proxy.py) checks `~/secrets/secrets.env` — Path.home()-relative,
+# so it is CWD-independent and survives launching from a sibling workbench (`teach`) or a subdir,
+# which the workspace-tree candidates do not. We just have to make `~/secrets/` reachable in each
+# runtime; no $RESEARCH_SECRETS env var is needed (the resolver still honours it as an override).
+# Guarded on existence → no-op on a machine without the secrets repo. See research/rules/secrets.md.
+SECRETS_SRC="$HOME/secrets"
 SECRETS_APPT=()
 SECRETS_DOCK=()
-if [ -f "$SECRETS_SRC" ]; then
-    # apptainer: $HOME is auto-mounted at its host path and $HOME KEEPS that value inside the
-    # container, so the file is already reachable — only the env var is needed.
-    SECRETS_APPT=(--env "RESEARCH_SECRETS=$SECRETS_SRC")
-    # docker: nothing outside the explicit -v list exists in there, so bind the file in as well.
-    SECRETS_DOCK=(-v "$SECRETS_SRC":/home/henrik/secrets.env:ro -e RESEARCH_SECRETS=/home/henrik/secrets.env)
+if [ -d "$SECRETS_SRC" ]; then
+    # apptainer: container $HOME == host $HOME (auto-mounted at its host path), so host ~/secrets/
+    # is already reachable at ~/secrets/ inside — nothing to bind.
+    SECRETS_APPT=()
+    # docker: container $HOME is /home/henrik, so bind the whole dir there (read-only) to match.
+    SECRETS_DOCK=(-v "$SECRETS_SRC":/home/henrik/secrets:ro)
 fi
 
 if [ "$INTERACTIVE" = false ]; then
