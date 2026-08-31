@@ -69,6 +69,29 @@ messages you actually consumed** — they're git-ignored plain files. Because ho
 share the same `/workspace`, a message another session wrote is already on disk for you — no
 `git pull` or re-run needed.
 
+## Delivery is not guaranteed — don't read silence as agreement
+
+`inbox_waker.py` (cron, every minute) types a sentinel prompt into an idle session's tmux pane,
+so an idle peer is normally reached within ~1-3 minutes. Two limits mean it can fail silently:
+
+- **`ACTIVE_SECS = 120`** — a session seen in the last 2 min counts as awake and is skipped, on
+  the assumption its Stop hook will drain the mail. If it was mid-turn when you wrote, add ~2 min
+  before expecting a reply. *Don't conclude the system is broken and poke it by hand at t+1min.*
+- **`STALE_SECS = 3600`** — after an hour with no heartbeat the waker gives up **permanently**.
+  A message to a session that has been idle longer than that will never be delivered on its own.
+
+Check `inbox/presence/` before sending something load-bearing: if the target's `last_seen` is
+already over an hour old, it is unreachable, and the roster injected into your prompt is a hint,
+not a guarantee anyone is listening.
+
+`inbox_reaper.py` (piggy-backs on the waker's cron entry, self-throttled hourly) retires messages
+that sat undelivered past a 7-day grace: they **move** to `inbox/dead/` (never deleted), each with
+a line in `inbox/dead/REAPED.jsonl` recording whether it was `undelivered` or merely `consumed`
+(delivered, recipient never `rm`'d it). If the sender is still in presence it gets a bounce saying
+the request was **not** done. So: **an undelivered ask eventually reports back, but slowly.** For
+anything that must happen regardless of whether a peer reads it, don't message — make it durable
+yourself (edit the file, rule, or doc directly).
+
 ## Fallback: a container without the shared inbox (`~/me`)
 
 The `~/me` container does **not** mount the shared workspace, so `send_message.py` can't write

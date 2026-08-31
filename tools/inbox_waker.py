@@ -170,6 +170,17 @@ def main():
         complain(f"no inbox at {ws} — resolved the wrong workspace root; "
                  f"RESEARCH_WORKSPACE={os.environ.get('RESEARCH_WORKSPACE') or '(unset)'}")
         return 0
+
+    # Retire messages nobody will read. Piggy-backs on this cron entry rather than
+    # taking its own — the crontab is a known-fragile surface (brain-up.sh ate the
+    # waker block once). inbox_reaper self-throttles to hourly, so calling it every
+    # minute is a stat() on a stamp file. Never let it break waking.
+    try:
+        subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "inbox_reaper.py")],
+                       capture_output=False, timeout=60)
+    except Exception as e:
+        print(f"inbox_reaper failed (waking continues): {e}", file=sys.stderr)
+
     if not live_panes:
         return 0  # no tmux here; nothing to wake
 
