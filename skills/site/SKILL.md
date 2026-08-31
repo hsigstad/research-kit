@@ -63,11 +63,14 @@ sites):
   index (`references/` → `references.html`); notebooklm is dead (droppable).
   Dataset portal reads an empty summary cache in-sandbox → needs a **data host**
   to regenerate the cache and verify dataset pages.
-- `rol` — NOT a docs site: a bespoke claim-graph knowledge base (14 typed node
-  types, strand cross-cut indexes, an interactive graph explorer + generated
-  `site-data.js`, a linear book). Needs a **new graph/claim-graph archetype**;
-  do not force it onto `minimal` (catastrophic content loss). Its deploy is
-  already on the shared `site_deploy.sh`.
+`rol` is **intentionally NOT migrated** (decision 2026-08-31, Henrik): it's not
+a docs site but a bespoke claim-graph knowledge base (14 typed node types,
+strand cross-cut indexes, an interactive graph explorer + generated
+`site-data.js`, a linear book). Its deploy is already on the shared
+`site_deploy.sh`, and a graph archetype would be single-consumer code in shared
+sitekit, so rol stays on its own `build_all.py`. Do not force it onto `minimal`
+(catastrophic content loss) and do not re-open this without a second graph
+consumer to justify the archetype.
 
 For unmigrated projects the old archetype-reference workflow is still
 authoritative: copy `build_all.py` + `templates/` from the matching
