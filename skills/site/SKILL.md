@@ -41,12 +41,22 @@ sites):
   Deploys **plaintext-public** → run a PII/sensitive compliance audit before any
   redeploy (sitekit build newly copies `build/figure` + `build/analysis` PNGs
   and stops shipping `main.pdf`).
-- `ficha` — empirical; 243 pages, flat→nested URL remap, 4 bespoke builders
-  with no stock equivalent (`copy_build_artifacts` copies PDF+PNG+tables to
-  `figure/`+`table/`, `autolink_build_artifacts`, ~300-line
-  `build_key_artifacts_page`, note asset-folder copies) + a sitekit build-order
-  gap (figures copy pre-docs; `config.hooks` run post-docs). Also: committed
-  `docs/reference/analysis-index.yaml` is stale (+10 entries on rebuild).
+- `ficha` — empirical, 476 pages (231 script pages dominate), **coauthor-facing**.
+  Needs a **TeX host**: its bespoke paper page (inline-footnote reconstruction,
+  `\newcommand` macro substitution, side-rail TOC, figure-path rewrite) has no
+  cached `build/make4ht/paper.html` in-sandbox, so it can't be diffed — don't
+  port it blind. Also renders everything FLAT at site root with a bespoke
+  autolink layer (`an_file_map`, `link_h_refs`, `autolink_build_artifacts`,
+  `rewrite_build_artifact_paths`), so flat→nested is a full link-layer
+  reimplementation (verify by new-broken⊆baseline), not a config migration.
+  4 bespoke builders to port as hooks (`copy_build_artifacts` copies
+  PDF+PNG+tables to `figure/`+`table/`, `autolink_build_artifacts`, ~300-line
+  `build_key_artifacts_page`, note asset-folder copies) — the artifact copy needs
+  a **pre-docs hook** (`copy_site_figures` is pre-docs but `config.hooks` are
+  post-docs); add `SiteConfig.pre_docs_hooks` *with* ficha as its first consumer
+  (don't land it unexercised). Verifiable-in-sandbox parts: docs, 82 analyses,
+  hypotheses, findings, subdirs, 231 script pages, 2 dataset pages, key_artifacts.
+  Fold in a check of the possibly-stale `docs/reference/analysis-index.yaml`.
 - `saude` — empirical; ~30% maps to stock (top-level docs + stock cached
   paper). LIVE bespoke subsystems needing hooks: a news timeline
   (`references/news/stories.csv` → `news.html`) and an 18-source references
