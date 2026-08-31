@@ -282,11 +282,28 @@ class SiteConfig:
     build_tables: bool = True
 
     # --- archetype-specific (theoretical) ---
-    cases_dir_rel: str = "cases"
     briefs_dir_rel: str = "briefs"
-    extra_tex_pages: list[tuple[str, str]] = field(default_factory=list)
-    # extra_tex_pages: list of (tex_filename, site_subdir) for projects with
-    # multiple LaTeX outputs (e.g. bind's holdings.tex)
+
+    # Case extractions rendered by the theoretical archetype. Each *.md under
+    # cases_extractions_rel becomes build/site/cases/<stem>.html (rendered
+    # through the standard doc pipeline), plus a grouped cases/index.html built
+    # from cases_index_template. Empty area maps → no cases section.
+    cases_extractions_rel: str = "cases/extractions"
+    cases_index_template: str = "cases.html"
+    # stem -> area_code (which doctrinal/topic area a case belongs to).
+    cases_area_map: dict[str, str] = field(default_factory=dict)
+    # area_code -> display label; iteration order controls index/nav order.
+    cases_area_labels: dict[str, str] = field(default_factory=dict)
+    # area_code -> list of (topic_label, [stems]) for the grouped index.
+    cases_topic_map: dict[str, list] = field(default_factory=dict)
+
+    # Extra standalone LaTeX pages beyond the main paper (theoretical archetype
+    # builds each via make4ht). Each entry:
+    #   (tex_filename, out_subdir, nav_active, title, subtitle)
+    # e.g. ("holdings.tex", "holdings", "holdings", "Enriched Holdings", "…").
+    # make4ht output dir is build/make4ht-<tex_stem>/. Skipped gracefully when
+    # TeX/make4ht is unavailable (page builds on a TeX host).
+    extra_tex_pages: list[tuple] = field(default_factory=list)
 
     @property
     def site_dir(self) -> Path:
