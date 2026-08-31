@@ -16,42 +16,62 @@ thin shim that hands a `SiteConfig` to `sitekit.build_site()`.
 
 **Migrated to sitekit:** `audit`, `campaign-finance`, `deterrence`,
 `electoral-justice`, `fisc`, `judgeGPT`, `poll-sponsor-bias`, `promotor`,
-`serasa`, `vague` (minimal + empirical archetypes), and `lawsuit`, `scheme`,
-`segredo` (minimal). For migrated projects, verification is content-parity
-of each rendered doc body against the pre-migration output plus intended
-convergence of the chrome onto the shared design system — NOT byte-equivalence
-(that only held for `serasa`, whose templates *were* the extraction source;
-other projects had drifted chrome the migration deliberately normalizes).
+`serasa`, `vague`, `lawsuit`, `scheme`, `segredo`, `connect` (minimal +
+empirical), and `bind` (theoretical). For migrated projects, verification is
+content-parity of each rendered doc body against the pre-migration output plus
+intended convergence of the chrome onto the shared design system — NOT
+byte-equivalence (that only held for `serasa`, whose templates *were* the
+extraction source; other projects had drifted chrome the migration deliberately
+normalizes). The standard acceptance check the recent migrations used: page-set
+diff (0 lost), body-text parity (~1.0; sub-1.0 is pure CSS-var normalization),
+and "new broken-link set ⊆ baseline broken-link set" (the migration introduces
+no broken links; pre-existing stale source refs stay pre-existing).
 
-**Not yet migrated — each needs a dedicated pass, not a batch slot:**
-- `connect` — empirical + the origin of the cite/AN/script-page machinery;
-  1 bespoke `build_pipeline_section` (pipeline.html) to port as a hook.
-- `procure` — mixed empirical + `cases` (case.html/cases_index.html) +
-  bespoke `build_validation_page`, `build_election_rd_page`,
-  `build_briefs_section`.
-- `saude` — empirical + bespoke `references`/`notebooklm`/`news` pages
-  (gated on external `build/notebooklm/` inputs); summary cache absent.
+**Not yet migrated — each is a DEDICATED effort blocked on a specific host or
+build, NOT a batch slot** (verified by attempted migrations 2026-08-31, which
+correctly refused to force a lossy/unverifiable rewrite of coauthor-facing
+sites):
+- `procure` — coauthor-facing + validation-gated; ~2,500 loc of bespoke
+  subsystems to port as hooks: a paper page with validation-ledger UI +
+  number-attribution tooltips + feedback-worker (the blocker — 850 loc of
+  bespoke UI that can't be built/verified without a **TeX host**), a dataset
+  portal (`build/summary/*.json`, different schema than the empirical archetype),
+  a 1,111-loc `build_cases.py` cases renderer, validation + election-RD pages,
+  and a chip-filtered AN index. ~40% maps to stock. Needs a **TeX-capable host**.
+  Deploys **plaintext-public** → run a PII/sensitive compliance audit before any
+  redeploy (sitekit build newly copies `build/figure` + `build/analysis` PNGs
+  and stops shipping `main.pdf`).
 - `ficha` — empirical; 243 pages, flat→nested URL remap, 4 bespoke builders
   with no stock equivalent (`copy_build_artifacts` copies PDF+PNG+tables to
   `figure/`+`table/`, `autolink_build_artifacts`, ~300-line
-  `build_key_artifacts_page`, note asset-folder copies) + a build-order gap
-  (sitekit copies figures pre-docs; `config.hooks` run post-docs).
-- `bind` — theoretical; needs the **theoretical archetype** built out first
-  (`archetypes/theoretical.py` is still a ~20-line stub).
-- `rol` — NOT a docs site: a bespoke claim-graph knowledge base (typed
-  nodes, strand indexes, interactive graph explorer + generated
-  `site-data.js`, linear book). Needs a **new graph/claim-graph archetype**;
-  do not force it onto `minimal` (catastrophic content loss).
+  `build_key_artifacts_page`, note asset-folder copies) + a sitekit build-order
+  gap (figures copy pre-docs; `config.hooks` run post-docs). Also: committed
+  `docs/reference/analysis-index.yaml` is stale (+10 entries on rebuild).
+- `saude` — empirical; ~30% maps to stock (top-level docs + stock cached
+  paper). LIVE bespoke subsystems needing hooks: a news timeline
+  (`references/news/stories.csv` → `news.html`) and an 18-source references
+  index (`references/` → `references.html`); notebooklm is dead (droppable).
+  Dataset portal reads an empty summary cache in-sandbox → needs a **data host**
+  to regenerate the cache and verify dataset pages.
+- `rol` — NOT a docs site: a bespoke claim-graph knowledge base (14 typed node
+  types, strand cross-cut indexes, an interactive graph explorer + generated
+  `site-data.js`, a linear book). Needs a **new graph/claim-graph archetype**;
+  do not force it onto `minimal` (catastrophic content loss). Its deploy is
+  already on the shared `site_deploy.sh`.
 
 For unmigrated projects the old archetype-reference workflow is still
 authoritative: copy `build_all.py` + `templates/` from the matching
 canonical reference and customize. For new projects, prefer the sitekit
 path (see "Using sitekit" below).
 
-The **empirical** archetype is real and exercised (fisc, poll-sponsor-bias);
-the AN-page / cite-ref / script-page machinery is exercised by the migrated
-projects. Still stubs: the **theoretical** archetype (`bind`) and any
-**graph** archetype (`rol`) — filled in as those projects migrate.
+The **empirical** archetype (fisc, poll-sponsor-bias, connect's docs-heavy
+variant) and the **theoretical** archetype (`bind` — cases discovery +
+per-case pages via a project `cases.html`, grouped cases index,
+`extra_tex_pages` for holdings-style companion LaTeX, plus a citations hook)
+are both real and exercised, as are the AN-page / cite-ref / anecdote /
+findings / hypotheses / script-page passes. Still a stub: any **graph**
+archetype (`rol`). sitekit also gained `SiteConfig.exclude_stems` (keep
+specific subdir notes off a PUBLIC site) during this work.
 
 ## Arguments
 
