@@ -45,13 +45,19 @@ def link_anec_refs(
 ) -> str:
     """Auto-link [anec:<slug>] tokens to their anecdote page.
 
-    Anecdote pages render at ``build/site/docs/anecdotes/<slug>.html``. ``prefix``
+    The anecdote page's location depends on how the project renders the subdir:
+    folder-mode (``anecdotes`` in ``SiteConfig.folder_mode_subdirs``, e.g.
+    promotor) puts pages at ``docs/anecdotes/<slug>.html``; a plain root
+    doc_subdir (e.g. connect, which needs ``build_doc_subdir`` for the rich
+    ``anecdote.html`` twins) puts them at ``anecdotes/<slug>.html``. ``prefix``
     is the relative path from the citing page to the site root (``"../"`` for a
-    flat ``docs/<page>.html``, ``"../../"`` for a folder-mode page one level
+    doc_subdir/top-level page, ``"../../"`` for a folder-mode page one level
     deeper), so the href resolves from any page depth.
     """
     if not ctx.anec_map:
         return html
+    base = ("docs/anecdotes"
+            if "anecdotes" in ctx.config.folder_mode_subdirs else "anecdotes")
     pattern = re.compile(
         r'(<a\b[^>]*>.*?</a>)|(\[anec:([A-Za-z0-9][A-Za-z0-9_-]*)\])',
         re.DOTALL)
@@ -63,7 +69,7 @@ def link_anec_refs(
         label = ctx.anec_map.get(slug)
         if not label or slug == current_stem:
             return token
-        return (f'<a class="anec-ref" href="{prefix}docs/anecdotes/{slug}.html">'
+        return (f'<a class="anec-ref" href="{prefix}{base}/{slug}.html">'
                 f'{_html.escape(label)}</a>')
 
     return pattern.sub(_replacer, html)

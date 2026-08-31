@@ -104,12 +104,17 @@ def load_index_cite_map(
     return out
 
 
-def link_cite_refs(html: str, ctx: BuildContext, current_stem: str = "") -> str:
+def link_cite_refs(html: str, ctx: BuildContext, current_stem: str = "",
+                   prefix: str = "../") -> str:
     """Auto-link [cite:<key>] tokens to literature page or index anchor.
 
     Two URL layouts via SiteConfig.cite_refs_mode:
-      - "connect": ../literature/<key>.html or ../literature/index.html#cite-<key>
+      - "connect": <prefix>literature/<key>.html or <prefix>literature/index.html#cite-<key>
       - "flat":    literature.html#cite-<key>  (one flat docs/literature.md)
+
+    `prefix` is the relative path from the citing page to the site root, so the
+    href resolves from any page depth (``"../"`` for a doc_subdir/top-level page,
+    ``"../../"`` for a folder-mode page one level deeper).
     """
     if not ctx.cite_map and not ctx.index_cite_map:
         return html
@@ -127,19 +132,22 @@ def link_cite_refs(html: str, ctx: BuildContext, current_stem: str = "") -> str:
                 return token
             if key in ctx.index_cite_map:
                 label = ctx.index_cite_map[key]
+                # Flat literature renders to docs/literature.html; resolve it via
+                # the page's site-root prefix so cite tokens work from any depth
+                # (top-level docs, root subdirs, folder-mode pages).
                 return (f'<a class="cite-ref" '
-                        f'href="literature.html#cite-{key}">'
+                        f'href="{prefix}docs/literature.html#cite-{key}">'
                         f'{_html.escape(label)}</a>')
             return token
         # connect mode
         if key in ctx.cite_map and key != current_stem:
             label = ctx.cite_map[key]
-            return (f'<a class="cite-ref" href="../literature/{key}.html">'
+            return (f'<a class="cite-ref" href="{prefix}literature/{key}.html">'
                     f'{_html.escape(label)}</a>')
         if key in ctx.index_cite_map and current_stem != "index":
             label = ctx.index_cite_map[key]
             return (f'<a class="cite-ref" '
-                    f'href="../literature/index.html#cite-{key}">'
+                    f'href="{prefix}literature/index.html#cite-{key}">'
                     f'{_html.escape(label)}</a>')
         return token
 

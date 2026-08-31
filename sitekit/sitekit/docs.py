@@ -76,7 +76,7 @@ def _render_content(
     if cfg.enable_hyp_refs:
         content_html = link_h_refs(content_html, ctx, current_stem, prefix=prefix)
     if cfg.enable_cite_refs:
-        content_html = link_cite_refs(content_html, ctx, current_stem)
+        content_html = link_cite_refs(content_html, ctx, current_stem, prefix=prefix)
     if cfg.enable_anec_refs:
         content_html = link_anec_refs(content_html, ctx, current_stem, prefix=prefix)
     if cfg.enable_script_pages:
