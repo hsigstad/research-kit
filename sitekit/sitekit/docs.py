@@ -166,7 +166,7 @@ def _discover_folder_mode_entries(ctx: BuildContext) -> list[tuple[str, str, str
         if not folder.is_dir():
             continue
         for md in sorted(folder.glob("*.md")):
-            if md.stem == "index":
+            if md.stem == "index" or md.stem in cfg.exclude_stems:
                 continue
             title = md.stem
             for line in md.read_text(encoding="utf-8").splitlines():
@@ -218,6 +218,8 @@ def build_doc_subdir(ctx: BuildContext, subdir: str) -> list[dict]:
     rich_template_name = "anecdote.html" if subdir == "anecdotes" else "doc.html"
     for html_path in sorted(src_dir.glob("*.html")):
         stem = html_path.stem
+        if stem in cfg.exclude_stems:
+            continue
         html_stems.add(stem)
         title = _fragment_title(html_path)
         try:
@@ -234,7 +236,7 @@ def build_doc_subdir(ctx: BuildContext, subdir: str) -> list[dict]:
 
     for md_path in sorted(src_dir.glob("*.md")):
         stem = md_path.stem
-        if stem in html_stems:
+        if stem in html_stems or stem in cfg.exclude_stems:
             continue
 
         meta_override = cfg.subdir_doc_meta.get(stem)

@@ -115,6 +115,8 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
             continue
         entries: list[tuple[str, str]] = []
         for md_path in sorted(sub_path.glob("*.md")):
+            if md_path.stem in cfg.exclude_stems:
+                continue
             meta_override = cfg.subdir_doc_meta.get(md_path.stem)
             if meta_override is not None:
                 title = meta_override[0]

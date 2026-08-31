@@ -105,6 +105,13 @@ class SiteConfig:
     # converging to the design-system var(--…) palette.
     nav_css_override: str | None = None
 
+    # Stems (filename without extension) to exclude from doc-subdir publishing
+    # and folder-mode auto-discovery. Use to keep specific internal notes off a
+    # PUBLIC site (e.g. an architecture map, or a note that cites an unpublished
+    # sibling project) while leaving the file in the repo. Applied in
+    # build_doc_subdir and _discover_folder_mode_entries.
+    exclude_stems: set[str] = field(default_factory=set)
+
     # Auto-discover .md files under docs/<subdir>/ for each folder_mode_subdirs
     # entry and append them to the registry at build time with category
     # f"{Subdir.capitalize()} (folder mode)". index.md is skipped because it's
