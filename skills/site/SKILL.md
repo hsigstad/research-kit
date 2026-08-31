@@ -14,23 +14,44 @@ The rendering machinery lives in the **`sitekit`** package under
 `research-kit/sitekit/`. Each project's `source/site/build_all.py` is a
 thin shim that hands a `SiteConfig` to `sitekit.build_site()`.
 
-**Migrated to sitekit (verified byte-equivalent diff against pre-migration
-output):** `serasa`.
+**Migrated to sitekit:** `audit`, `campaign-finance`, `deterrence`,
+`electoral-justice`, `fisc`, `judgeGPT`, `poll-sponsor-bias`, `promotor`,
+`serasa`, `vague` (minimal + empirical archetypes), and `lawsuit`, `scheme`,
+`segredo` (minimal). For migrated projects, verification is content-parity
+of each rendered doc body against the pre-migration output plus intended
+convergence of the chrome onto the shared design system — NOT byte-equivalence
+(that only held for `serasa`, whose templates *were* the extraction source;
+other projects had drifted chrome the migration deliberately normalizes).
 
-**Not yet migrated** (still uses the fork-and-customize pattern described
-below): `connect`, `fisc`, `bind`, `deterrence`, `electoral-justice`,
-`procure`, `saude`, `scheme`, `lawsuit`, `poll-sponsor-bias`.
+**Not yet migrated — each needs a dedicated pass, not a batch slot:**
+- `connect` — empirical + the origin of the cite/AN/script-page machinery;
+  1 bespoke `build_pipeline_section` (pipeline.html) to port as a hook.
+- `procure` — mixed empirical + `cases` (case.html/cases_index.html) +
+  bespoke `build_validation_page`, `build_election_rd_page`,
+  `build_briefs_section`.
+- `saude` — empirical + bespoke `references`/`notebooklm`/`news` pages
+  (gated on external `build/notebooklm/` inputs); summary cache absent.
+- `ficha` — empirical; 243 pages, flat→nested URL remap, 4 bespoke builders
+  with no stock equivalent (`copy_build_artifacts` copies PDF+PNG+tables to
+  `figure/`+`table/`, `autolink_build_artifacts`, ~300-line
+  `build_key_artifacts_page`, note asset-folder copies) + a build-order gap
+  (sitekit copies figures pre-docs; `config.hooks` run post-docs).
+- `bind` — theoretical; needs the **theoretical archetype** built out first
+  (`archetypes/theoretical.py` is still a ~20-line stub).
+- `rol` — NOT a docs site: a bespoke claim-graph knowledge base (typed
+  nodes, strand indexes, interactive graph explorer + generated
+  `site-data.js`, linear book). Needs a **new graph/claim-graph archetype**;
+  do not force it onto `minimal` (catastrophic content loss).
 
 For unmigrated projects the old archetype-reference workflow is still
 authoritative: copy `build_all.py` + `templates/` from the matching
 canonical reference and customize. For new projects, prefer the sitekit
 path (see "Using sitekit" below).
 
-The package bundles the AN-page machinery, cite-ref machinery, and
-script-page machinery from `connect`, but those code paths haven't been
-exercised by a real project's build yet — they will be when `connect` or
-`fisc` migrates. The empirical and theoretical archetype modules are
-currently stubs and will be filled in as part of those migrations.
+The **empirical** archetype is real and exercised (fisc, poll-sponsor-bias);
+the AN-page / cite-ref / script-page machinery is exercised by the migrated
+projects. Still stubs: the **theoretical** archetype (`bind`) and any
+**graph** archetype (`rol`) — filled in as those projects migrate.
 
 ## Arguments
 
