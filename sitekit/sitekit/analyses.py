@@ -248,7 +248,7 @@ def build_analyses_index(
         by_type.setdefault(e.get("type", "causal"), []).append(e)
 
     h_tags = sorted({t for e in entries for t in e.get("tags", [])
-                     if t.startswith("H:")})
+                     if str(t).startswith("H:")})
     clusters = [c for c in cluster_tags
                 if any(c in e.get("tags", []) for e in entries)]
 
@@ -276,7 +276,7 @@ def build_analyses_index(
             continue
         body: list[str] = []
         for e in group:
-            tags = e.get("tags", [])
+            tags = [str(x) for x in e.get("tags", [])]
             data = " ".join(dict.fromkeys([t] + [x.lower() for x in tags]))
             conf = e.get("confidence", "pending")
             href = Path(e["file"]).stem + ".html"

@@ -226,6 +226,12 @@ class SiteConfig:
     # BuildContext and may return a value the index layer can use (or None).
     hooks: list[Hook] = field(default_factory=list)
 
+    # Called after figure-copy but BEFORE docs render. For projects that must
+    # stage extra build artifacts / note-asset folders on disk before their
+    # content-postprocessors autolink to them (ficha's copy_build_artifacts).
+    # Each receives the BuildContext; return value unused. Default empty.
+    pre_docs_hooks: list[Hook] = field(default_factory=list)
+
     # --- output ---
     site_dir_rel: str = "build/site"
 

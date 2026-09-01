@@ -40,6 +40,14 @@ def build_site(config: SiteConfig) -> int:
             note += f" (+ {derived} PNGs derived from PDFs via pdftoppm)"
         print(note + "\n")
 
+    # Pre-docs hooks run after figure-copy but BEFORE docs render, so a project
+    # that copies extra build artifacts / note assets can have them on disk
+    # before its content-postprocessors autolink to them (ficha). Default empty.
+    if config.pre_docs_hooks:
+        print("Running pre-docs hooks...")
+        for hook in config.pre_docs_hooks:
+            hook(ctx)
+
     print("Building documentation pages...")
     docs_info = build_docs_section(ctx)
 
