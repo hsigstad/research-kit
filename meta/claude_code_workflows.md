@@ -140,6 +140,15 @@ appear as slash commands.
 frontmatter (`name`, `description`, `user_invocable: true`) followed by the
 prompt instructions. Then type `/myskill` in Claude Code.
 
+**Link it everywhere it's needed.** A skill exists only for sessions that can
+see its directory, and different sessions read different ones: `~/.claude/skills`
+(host sessions, absolute links), `<workspace>/.claude/skills` (sandboxed
+sessions — these must be *relative*, since absolute paths escape the jail), and
+any second brain with its own root, like `work/.claude/skills`. Link into one
+and the skill is silently missing from the others. `research-kit/tools/skill_links.py`
+checks coverage across all three (and runs nightly); `.skill-links-ignore` in a
+link dir marks skills a location omits on purpose.
+
 ---
 
 ## 3. MCP Integrations (External Tool Access)

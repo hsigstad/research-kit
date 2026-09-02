@@ -181,7 +181,8 @@ def main() -> int:
 
     lines.append(f"## skill_links: {len(issues)} issue(s)")
     for issue in issues[:MAX_PER_SECTION]:
-        lines.append(f"- {issue}")
+        lines.append(f"- [{issue.get('kind', '?')}] {issue.get('where', '?')}"
+                     f" — {issue.get('detail', '')}")
     if len(issues) > MAX_PER_SECTION:
         lines.append(f"- ... and {len(issues) - MAX_PER_SECTION} more")
     if sl_fail:

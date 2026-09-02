@@ -15,11 +15,24 @@ Catches drift introduced by adding/renaming a skill mode without
 updating the skills that reference it (e.g. /next mentioning
 /findings --update before /findings has a --update mode).
 
+Also checks **link coverage**: a skill only exists for a session that
+can see it, and each kind of session reads a different directory of
+symlinks (see `_LINK_LOCATIONS`). A skill added to research-kit but
+linked into only one of them is invisible to everyone else — that
+drift is silent, since the skill itself is perfectly well-formed.
+
+Coverage compares *names and link targets only*, never `exists()`:
+Saga's links point through bind-mounts that exist only inside her
+jail, so they dangle host-side by design. To omit a skill from one
+location on purpose, list it in `<location>/.skill-links-ignore`
+(one name per line, `#` comments).
+
 Read-only. Run after editing any skill, or as a research-kit-wide
 nightly sanity check.
 
 Usage:
   python3 research-kit/tools/skill_links.py [--root PATH] [--detail] [--json]
+                                            [--link-dir PATH ...] [--no-coverage]
 
 Exits 0 on clean, 1 if any broken references found (suitable for CI).
 """
@@ -63,6 +76,117 @@ _RK_PATH = re.compile(
 _NON_SKILL_TOKENS = {
     "claim", "next-log",  # decorative slash-text examples
 }
+
+
+# ─── link coverage ──────────────────────────────────────────────────────────
+
+# Where skills have to be linked to be reachable, and by whom. Each is
+# (label, path-relative-to-what, description). Missing directories are
+# skipped silently — the laptop has no `work/`, and a fresh clone has no
+# user-level dir.
+#
+#   user       ~/.claude/skills            host sessions; absolute links
+#   workspace  <root>/.claude/skills       sandboxed sessions jailed to the
+#                                          workspace; relative links, since
+#                                          absolute ones escape the jail
+#   saga       <root>/../work/.claude/skills
+#                                          the work brain, jailed to `work/`;
+#                                          relative links through bind-mounts
+#                                          that only exist inside her jail
+def _link_locations(root: Path, extra: list[Path]) -> list[tuple[str, Path]]:
+    candidates = [
+        ("user", Path.home() / ".claude" / "skills"),
+        ("workspace", root / ".claude" / "skills"),
+        ("saga", root.parent / "work" / ".claude" / "skills"),
+    ]
+    candidates += [(str(p), p) for p in extra]
+    return [(label, p) for label, p in candidates if p.is_dir()]
+
+
+def _ignored_names(loc: Path) -> set[str]:
+    """Names a location deliberately omits — the skill sets are curated,
+    so a prune must not read as drift."""
+    f = loc / ".skill-links-ignore"
+    if not f.is_file():
+        return set()
+    names = set()
+    for line in f.read_text(errors="replace").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            names.add(line)
+    return names
+
+
+# A link target naming a research-kit skill, however it is spelled:
+# absolute (~/.claude/skills) or relative with any number of ../ hops.
+_LINK_TARGET = re.compile(r"research-kit/skills/([A-Za-z0-9_.-]+)/?$")
+
+
+def _serves_root(entries: dict[str, Path | None], root: Path) -> bool:
+    """Does this location link into *this* workspace?
+
+    Only absolute targets can say: `~/.claude/skills` may point at a
+    different checkout entirely, and judging it against this root would
+    report every one of its links as stale. Relative targets are taken
+    on trust — Saga's resolve through bind-mounts that don't exist
+    host-side, so following them here would prove nothing.
+    """
+    roots = set()
+    for target in entries.values():
+        if target is None or not target.is_absolute():
+            continue
+        s = str(target)
+        i = s.find("/research-kit/skills/")
+        if i > 0:
+            roots.add(s[:i])
+    return not roots or str(root) in roots
+
+
+def check_coverage(root: Path, skills: dict[str, Skill],
+                   extra: list[Path]) -> list[Issue]:
+    """Every research-kit skill should be linked into every location.
+
+    Deliberately target-text-based: `exists()` is meaningless for Saga's
+    links, which resolve only inside her jail.
+    """
+    issues: list[Issue] = []
+    for label, loc in _link_locations(root, extra):
+        entries = {p.name: (p.readlink() if p.is_symlink() else None)
+                   for p in loc.iterdir() if not p.name.startswith(".")}
+        if not _serves_root(entries, root):
+            continue
+        ignored = _ignored_names(loc)
+        where = f"{label}:{_display_path(loc)}"
+
+        for name in sorted(set(skills) - set(entries) - ignored):
+            issues.append(Issue(
+                "missing_link",
+                where,
+                f"/{name} not linked — invisible to {label} sessions",
+            ))
+
+        # A link left behind by a renamed or deleted skill. Only judge
+        # entries that *name* a research-kit skill; teach skills and
+        # one-offs like /referee live elsewhere and are none of our business.
+        for name, target in sorted(entries.items()):
+            if target is None:
+                continue
+            m = _LINK_TARGET.search(str(target))
+            if m and m.group(1) not in skills:
+                issues.append(Issue(
+                    "stale_link",
+                    where,
+                    f"{name} → {target} — no such skill in research-kit/skills/",
+                ))
+    return issues
+
+
+def _display_path(p: Path) -> str:
+    """Shorten a location for reporting: ~ for home, else as given."""
+    try:
+        return "~/" + str(p.relative_to(Path.home()))
+    except ValueError:
+        return str(p)
 
 
 # ─── core ───────────────────────────────────────────────────────────────────
@@ -234,9 +358,11 @@ def check_skill(skill: Skill, known_skills: dict[str, Skill],
 
 
 def format_report(issues: list[Issue], skills: dict[str, Skill],
-                  detail: bool) -> str:
+                  detail: bool, locations: list[str] | None = None) -> str:
     lines: list[str] = []
     lines.append(f"Skill cross-ref check — {len(skills)} skills audited")
+    if locations:
+        lines.append(f"Link coverage — {', '.join(locations)}")
     lines.append("─" * 60)
     if not issues:
         lines.append("✓ all references resolve")
@@ -251,6 +377,8 @@ def format_report(issues: list[Issue], skills: dict[str, Skill],
             "missing_skill": "broken /skill references",
             "missing_flag": "broken --flag references (flag not documented in target skill)",
             "missing_file": "broken research-kit/ file references",
+            "missing_link": "skills not linked into a session's skill dir",
+            "stale_link": "links to skills that no longer exist",
         }.get(kind, kind)
         lines.append(f"\n✗ {len(group):3d}  {label}")
         if detail:
@@ -288,6 +416,12 @@ def main() -> int:
                     help="list every issue, not just the first 5 per kind")
     ap.add_argument("--json", action="store_true",
                     help="emit JSON instead of a human report")
+    ap.add_argument("--link-dir", type=Path, action="append", default=[],
+                    metavar="PATH",
+                    help="extra skill-link directory to check for coverage "
+                         "(repeatable); the standard three are automatic")
+    ap.add_argument("--no-coverage", action="store_true",
+                    help="skip the link-coverage check (cross-refs only)")
     args = ap.parse_args()
 
     # Resolve research-kit root
@@ -323,11 +457,17 @@ def main() -> int:
     issues: list[Issue] = []
     for skill in skills.values():
         issues.extend(check_skill(skill, skills, root))
+    if not args.no_coverage:
+        issues.extend(check_coverage(root, skills, args.link_dir))
 
+    locations = ([] if args.no_coverage
+                 else [f"{label} ({_display_path(p)})"
+                       for label, p in _link_locations(root, args.link_dir)])
     if args.json:
         print(report_to_json(issues))
     else:
-        print(format_report(issues, skills, detail=args.detail))
+        print(format_report(issues, skills, detail=args.detail,
+                            locations=locations))
     return 0 if not issues else 1
 
 
