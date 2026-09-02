@@ -444,6 +444,39 @@ problem into a transparency exercise.
 
 ---
 
+## Significance is not the win condition (the informative-null rule)
+
+AI acceleration doesn't just enable p-hacking — it *automates the
+significance-hunting default*. A session told "find the effect" will
+happily run the garden of forking paths until something clears p<0.05,
+and then report that as success. The correction is a rule of thumb,
+borrowed from Stevenson and Fischman (2026, *Humans in the Loop*, JEL):
+
+- **Pursuit gate.** Before pursuing an analysis, ask whether a *null*
+  would be as informative — and as publishable — as a hit: will the
+  confidence interval be tight enough to rule out the effect sizes we'd
+  actually care about, *whichever way it lands*? If yes, the design is
+  worth running regardless of outcome. If only a significant result
+  would be interesting and power is thin, that is a significance-bias
+  trap: the "hit" is a winner's-curse artifact and the "null" tells you
+  nothing. Either power it up or deprioritize it. (This is the CI-width
+  reframe of the usual first-stage-F / minimum-detectable-effect check:
+  judge the interval, not the instrument.)
+
+- **Interpretation corollary.** Statistical significance is not the
+  success condition of a run — an informative CI is. A tight null is a
+  *finding*, not a failure. A significant estimate from an underpowered
+  design is *suspect* (the lower the power, the worse significance bias
+  gets), not a discovery. Never iterate specifications toward
+  significance.
+
+Caveats: this is a rule of thumb, not a hard gate. Genuinely
+exploratory first passes are fine to run underpowered *as long as they
+are labelled exploratory and not written up as findings*. And it fires
+on estimation runs, not descriptive/measurement cuts.
+
+---
+
 ## Review fatigue
 
 The biggest practical failure mode: rubber-stamping AI output because

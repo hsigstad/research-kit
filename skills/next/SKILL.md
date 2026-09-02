@@ -124,6 +124,21 @@ Ranking criteria, in order:
 5. Picks up a high-value lead from a prior `/next` iteration
    (the `## Leads from …` blocks in `todo.md`).
 
+**Pursuit gate (estimation candidates).** Before ranking an estimation
+candidate highly, ask whether a *null* would be as informative as a
+significant result: will the CI be tight enough to rule out the effect
+sizes we'd care about *whichever way it lands*? If yes, it's worth
+running regardless of outcome. If only a significant result would be
+interesting and power is thin, that's a significance-bias trap — the
+"hit" would be a winner's-curse artifact and the "null" uninformative;
+flag it (`Risk: underpowered — only a "hit" would be interesting`) and
+either propose powering it up or deprioritize it. Do not rank a
+candidate highly *because* it is likely to return significance. This
+does not apply to descriptive/measurement cuts, and a genuinely
+exploratory candidate can still be proposed if labelled `(exploratory)`.
+See `research-kit/meta/ai_research_workflow.md`, "Significance is not the
+win condition."
+
 Candidate format example (new analysis):
 
 ```
@@ -325,6 +340,12 @@ Report a short summary to the researcher:
 - Headline number(s) with SE/CI if applicable.
 - Whether it confirms, refutes, or qualifies the prior expectation.
 - Any surprise worth flagging.
+- **Read the CI, not the p-value.** Significance is not the success
+  condition of the run. A *tight* null (CI that rules out effects we'd
+  care about) is a positive result — say so, don't treat it as a
+  failure. A *significant* estimate from a thin-power design is suspect
+  (winner's curse), not a discovery — flag it rather than headlining it.
+  Never re-run specs in search of significance.
 
 **Stop and let the researcher confirm before doc propagation.** Doc
 edits are harder to reverse than re-running a script.
@@ -469,7 +490,7 @@ docs. Only update those the run actually affects.
 | Descriptive table or figure | `reference/stylized-facts.md` + relevant `briefs/*.md` |
 | Identification-design run (D-series) | `methods.md` + the affected `outline*.md` |
 | Institutional/legal finding | (sometimes) `literature.md` |
-| Null result on a candidate hypothesis | propose a `decisions.md` entry if it demotes the hypothesis from the paper |
+| Null result on a candidate hypothesis | first judge whether the null is *informative* (CI rules out effects we'd care about) or merely *underpowered* (wide CI). An informative null is a finding — record it via `/findings --extend` and note it in the hypothesis status block. Only propose a `decisions.md` demotion when the design was well-powered; an underpowered null demotes nothing on its own (flag it as "needs more power" instead) |
 | Re-run with new data/parser | walk every cited number; run `/findings --refresh` to flag drift in `findings.md` and `stylized-facts.md` |
 
 For each secondary doc, invoke the appropriate mode of its skill — never
