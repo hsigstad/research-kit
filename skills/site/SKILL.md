@@ -263,12 +263,26 @@ Gotchas, learned building `govspend` (canonical empirical **pipeline**):
 - **Big / heterogeneous data (pipeline-scale):** fisc's `compute.py` does a single
   `read_parquet` — fine for projects, not for a pipeline with 500M-row
   partitioned dirs or JSONL raw. `govspend`'s `compute.py` is the reference for:
-  exact `row_count` from Parquet **footer metadata** (no data read) + per-column
-  stats over the first N parts only (record a `stats_scope` note); a JSONL reader;
-  and **CPF masking** (`[CPF]` for CPF-shaped values + a `mask_columns` list for
-  person-name columns) — do this even on a gated site. Firm CNPJs/names stay
-  visible; individual CPFs never surface. Note CEIS/CNEP-style **public naming
-  registries** are the exception — leave party names visible, mask only CPFs.
+  exact `row_count` from Parquet **footer metadata** (no data read) + a
+  **stratified** sample of parts spread across the partition list (NOT the first N
+  — a `{uf}-{year}` layout sampled first-N yields an all-Amazonas histogram);
+  **skip 0-row parts** (BigQuery exports leave padding files that zero out stats);
+  a JSONL reader; and **CPF masking** (`[CPF]` for CPF-shaped values + a
+  `mask_columns` list for person-name columns) — do this even on a gated site.
+  Firm CNPJs/names stay visible; individual CPFs never surface. Note CEIS/CNEP-style
+  **public naming registries** are the exception — leave party names visible, mask
+  only CPFs. Record a `stats_scope` note (which/how many parts scanned).
+- **Full-text corpora (gazettes, court text, etc.) OOM a naive read.** A `text`
+  column of multi-KB documents times the scanned rows is gigabytes — a whole-part
+  `read_parquet` gets the process **silently OOM-killed** (looks like an empty exit
+  when piped through `grep`; symptom: only the first 1–2 caches written, no error).
+  `diario-municipal`'s `compute.py` is the reference: read a **row-bounded first
+  batch** via `pq.ParquetFile(f).iter_batches(batch_size=…)` (a ~20k-row budget
+  spread across the stratified scan parts) instead of loading whole parts, and
+  **truncate sample-row cells** (~240 chars) so a dataset page doesn't embed
+  megabytes of raw act text. When a build "completes" with a near-empty cache and
+  no error, suspect OOM on a `text` column — run the build in the foreground
+  (unpiped) to see the real output.
 - **Raw vs clean pages:** show a raw table page only where the clean layer drops
   fields the raw carries (or the raw has no clean equivalent); otherwise the clean
   table is the faithful view. Channels whose raw is ZIP/nested dumps (not cleanly
@@ -279,6 +293,20 @@ Gotchas, learned building `govspend` (canonical empirical **pipeline**):
   the content. A stray aggregate `build/figure/*.png` still gets copied into
   `build/site/figures/` (unencrypted on a gated site) — confirm it carries no PII
   or drop it.
+- **Coverage checkerboard (high-value landing hero).** Both `govspend` and
+  `diario-municipal` ship a `source/summary/coverage.py` (writes a committed
+  `coverage.json`: a UF × data-type × **year** cube) + `source/figure/
+  coverage_matrix.py` (small-multiples — each cell a mini year-histogram on a
+  fixed shared x-axis, bar height ∝ √count normalized within column, tri-state
+  green/amber/blank color), embedded on the index via an `<img>` the copied
+  `index.html` template references. Copy both. Compute the cube cheaply/exactly:
+  UF and year from `{uf}-{year}` partition **filenames** + footers where possible,
+  else read just the uf + year/date columns; derive UF from `ibge7` (first two
+  digits = IBGE state code) when there's no uf column. Pick the amber="partial"
+  semantics per pipeline: govspend uses it for platform-limited/incomplete columns
+  (BLL, aditivos), diario for recall-limited **derived extractions** vs complete
+  **corpus text**. Name capability columns honestly ("Bids · incl. losers", not
+  "full rolls") and verify surprising ones against the data before shipping.
 
 #### Using the legacy fork-and-customize pattern (for archetype-rich projects until they migrate)
 
@@ -557,6 +585,12 @@ The self-contained `build.sh` wires three functions into a `deploy` mode:
 cd $PROJECT_ROOT && bash build.sh deploy
 ```
 Requirements: `npx` (for staticrypt) and git push access to the project repo.
+`site_deploy.sh` clones/pushes gh-pages over **SSH** (`git@github.com:…`)
+regardless of the repo's `origin` URL, so the deploy works even when `origin` is
+HTTPS. But **committing the source** to an HTTPS-origin repo fails here (no
+credential helper: `could not read Username for 'https://github.com'`) — push via
+token instead: `git push "https://x-access-token:${GH_TOKEN}@github.com/<owner>/<repo>.git" HEAD:main`
+(leaves `origin` untouched). SSH-origin repos push normally.
 
 **The site password.** Each project gets its own, stored in a gitignored
 `.site-password` at the project root (also read from `$STATICRYPT_PASSWORD`).
