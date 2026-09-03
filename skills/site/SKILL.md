@@ -103,9 +103,30 @@ specific subdir notes off a PUBLIC site) during this work.
 ### 1. Locate project
 
 Find workspace root by searching upward for `CLAUDE.md` next to `projects/` and `pipelines/`.
-Resolve the project: `$ROOT/projects/{slug}/`.
+Resolve the target: `$ROOT/projects/{slug}/` **or `$ROOT/pipelines/{slug}/`** — a slug can
+name either. If `/site foo` is given, check both trees; pipelines are as valid a target as
+projects.
 
-Read the project's `CLAUDE.md` to get the project title and short description.
+Read the target's `CLAUDE.md` to get the title and short description.
+
+**Pipeline repos differ from project repos** in three ways — mind them throughout:
+
+1. **Deploy plumbing.** Pipeline `build.sh` sources the shared
+   `research-kit/tools/site_deploy.sh` (providing `sk_encrypt_site` /
+   `sk_deploy_site`) and sets `SITE_TITLE` + a `SITE_GATED` toggle, rather than
+   inlining the staticrypt/rsync logic. Public data-reconstruction pipelines set
+   `SITE_GATED=0` (plaintext, e.g. `lovhistorie`); pipelines documenting access
+   to sensitive/geoblocked raw data set `SITE_GATED=1` (default — gated, e.g.
+   `govspend`). Model a new pipeline `build.sh` on `pipelines/lovhistorie/build.sh`
+   (public) or `pipelines/govspend/build.sh` (gated), NOT on `serasa/build.sh`.
+2. **`source/` may not be a package.** Pipelines often run scrape/clean scripts
+   directly, so `source/__init__.py` can be absent; `python3 -m source.site.build_all`
+   needs it. Create empty `source/__init__.py` and `source/site/__init__.py` if missing.
+3. **Usual archetype is `minimal` (docs-only) or `empirical` (data portal)** — a
+   pipeline rarely has a `paper/`, so set `paper_title=""` and a
+   `paper_placeholder_msg` that says "this is a pipeline". `lovhistorie` is the
+   canonical minimal pipeline; `govspend` the canonical empirical pipeline (source
+   cards over raw + clean tables — see "Empirical data portal for a pipeline" below).
 
 ### 2. Check if site already exists
 
@@ -213,6 +234,51 @@ above the index's standard doc-group grid.
 On `educloud` the system venv is read-only, so the `sys.path` shim in
 `build_all.py` replaces `pip install -e`. On a writable env you can
 substitute `pip install -e ../../research-kit/sitekit` and drop the shim.
+
+#### Empirical data portal (`archetype="empirical"`) — extra wiring
+
+The data portal (source-card landing grid → per-source pages → per-table pages
+with columns / example rows / histograms) needs more than the `site.py` shim.
+Gotchas, learned building `govspend` (canonical empirical **pipeline**):
+
+- **sitekit does NOT bundle `dataset.html`, `source.html`, or `index.html`.** The
+  empirical archetype raises `TemplateNotFoundError: dataset.html` unless the
+  project supplies them under `source/site/templates/`. Copy all three from
+  `projects/fisc/source/site/templates/` (the canonical empirical set), then edit
+  only `index.html`'s `<title>` and `summary-box` for the new project. The
+  bundled `index.html` has NO `<!-- INJECT_SOURCE_CARDS -->` marker, so **without
+  a copied `index.html` the landing page silently omits the source cards** even
+  though the source/dataset pages build fine — always verify the index actually
+  links `sources/*.html` after building.
+- **Two-stage build.** `source/summary/{config,compute,build_all}.py` computes a
+  per-dataset JSON cache (`source/summary/cache/*.json`, committed to git so the
+  site rebuilds without raw data); the site reads that cache. `build.sh` needs a
+  `summary` mode (`python3 -m source.summary.build_all [--force|--only <id>]`)
+  separate from `site`. Model `config.py`/`compute.py` on
+  `projects/fisc/source/summary/`.
+- **`config.py` contract:** `SOURCES` (list of `SourceConfig(id, name,
+  description, categories)`) + `DATASETS` (list of `DatasetConfig`, each with a
+  `category` in exactly one source's `categories`) + a `CACHE_DIR`. Source group
+  pages only build if **every** source has non-empty `categories`.
+- **Big / heterogeneous data (pipeline-scale):** fisc's `compute.py` does a single
+  `read_parquet` — fine for projects, not for a pipeline with 500M-row
+  partitioned dirs or JSONL raw. `govspend`'s `compute.py` is the reference for:
+  exact `row_count` from Parquet **footer metadata** (no data read) + per-column
+  stats over the first N parts only (record a `stats_scope` note); a JSONL reader;
+  and **CPF masking** (`[CPF]` for CPF-shaped values + a `mask_columns` list for
+  person-name columns) — do this even on a gated site. Firm CNPJs/names stay
+  visible; individual CPFs never surface. Note CEIS/CNEP-style **public naming
+  registries** are the exception — leave party names visible, mask only CPFs.
+- **Raw vs clean pages:** show a raw table page only where the clean layer drops
+  fields the raw carries (or the raw has no clean equivalent); otherwise the clean
+  table is the faithful view. Channels whose raw is ZIP/nested dumps (not cleanly
+  tabular) are represented by their clean tables with a feeder note in
+  `source_notes`.
+- **Turn off `build_descriptives` / `build_tables`** in `SiteConfig` for a
+  pipeline with no paper-style `build/figure` + `build/table`; the data portal is
+  the content. A stray aggregate `build/figure/*.png` still gets copied into
+  `build/site/figures/` (unencrypted on a gated site) — confirm it carries no PII
+  or drop it.
 
 #### Using the legacy fork-and-customize pattern (for archetype-rich projects until they migrate)
 
@@ -454,11 +520,20 @@ research content isn't readable by anyone who stumbles on the URL. There is no
 separate plaintext push or `~/hsigstad.github.io/{slug}/` personal-website
 step — that legacy approach is retired.
 
-The reference implementation is **`/home/henrik/research/projects/serasa/build.sh`**.
-Port it (adjusting `PROJECT_TITLE` and the paper/talk `.tex` names) to any
-project that doesn't have it yet — including projects still on the old
-plaintext `gh-pages` push or the legacy `~/hsigstad.github.io/{slug}/` rsync.
-`build.sh` wires three functions into a `deploy` mode:
+The reference implementation is **`/home/henrik/research/projects/serasa/build.sh`**
+(self-contained, project style). Port it (adjusting `PROJECT_TITLE` and the
+paper/talk `.tex` names) to any project that doesn't have it yet — including
+projects still on the old plaintext `gh-pages` push or the legacy
+`~/hsigstad.github.io/{slug}/` rsync.
+
+**Pipeline repos take the shared-helper route instead** (see step 1): their
+`build.sh` sources `research-kit/tools/site_deploy.sh` and calls its
+`sk_encrypt_site` / `sk_deploy_site` — no inlined staticrypt/rsync. Set
+`SITE_GATED=0` for a public pipeline (`pipelines/lovhistorie/build.sh`) or leave
+it gated (default 1) for a sensitive one (`pipelines/govspend/build.sh`). Same
+gh-pages / repo-name-URL / password-gate outcome as below.
+
+The self-contained `build.sh` wires three functions into a `deploy` mode:
 
 - **`build_site`** — make4ht for paper/talk, then `python3 -m source.site.build_all` → `build/site/` (plaintext).
 - **`encrypt_site`** — staticrypt over `build/site/` → `build/site-encrypted/`:
