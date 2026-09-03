@@ -239,6 +239,7 @@ def check_ai_tell(filepath: str, lines: list[tuple[int, str, str]]) -> list[Viol
         r"\bin today'?s world\b",
         r"\bit is important to note that\b",
         r"\bit'?s worth mentioning that\b",
+        r"\bsweep(?:s|ing|t)?\b",  # "sweeping p in {...}" -> "for p in {...}" (Henrik, 2026-09-03)
     ]
     # "comprehensive", "robust", and "leverage" only when used as filler
     # (not in technical contexts like "robust standard errors" or
