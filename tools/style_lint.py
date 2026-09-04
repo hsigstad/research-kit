@@ -1062,31 +1062,59 @@ def check_workflow_jargon(filepath: str, lines: list[tuple[int, str, str]]) -> l
 
 def check_coding_vocab(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
     """§4: data-engineering vocabulary in published prose."""
+    # (pattern, suggestion, severity). "warning" blocks edits via the convention
+    # gate hook; "info" only surfaces in reports / style-check. Broad patterns
+    # (bare "cell"/"grid") are info to avoid mass-blocking edits on the existing
+    # corpus while still flagging them for pre-submission cleanup.
     PATTERNS = [
-        (r"\bwithin-cell\b", "name the comparison directly (e.g., \"within race × week\")"),
-        (r"\bcell-level\b", "name the level of observation"),
-        (r"\bsame cell\b", "name the cell explicitly (\"same race-week\")"),
-        (r"\bpanel grid\b", "describe the panel layout in words"),
+        (r"\bwithin-cell\b", "name the comparison directly (e.g., \"within race × week\")", "warning"),
+        (r"\bcell-level\b", "name the level of observation", "warning"),
+        (r"\bper-cell\b", "\"per-group\", or name the level of observation", "info"),
+        (r"\bsame cell\b", "name the cell explicitly (\"same race-week\")", "warning"),
+        (r"(?<![-\w])cells?\b(?!ular|\sphone)", "name the group or level of observation (\"one row per occupation\")", "info"),
+        (r"\bpanel grid\b", "describe the panel layout in words", "warning"),
+        (r"\bgrid\b(?!\s+search)", "name the layout or axes; don't call it a grid", "info"),
+        (r"\bols-identified\b", "say what identifies the estimate, not \"OLS-identified\"", "info"),
         (r"\bgrain\b(?! of (?:salt|truth|sand|rice|sugar|wheat))",
-         "name the level of observation (\"one row per …\")"),
-        (r"\bbucket(?:s|ed|ing)?\b", "name the group or bin"),
-        (r"\b(?:left|inner|outer|cross)\s+join\b", "\"link\" or \"merge\""),
-        (r"\bjoin key\b", "\"matching variable\""),
-        (r"\bassemble layer\b", "describe what the layer does"),
-        (r"\bintermediate layer\b", "describe what the layer does"),
+         "name the level of observation (\"one row per …\")", "warning"),
+        (r"\bbucket(?:s|ed|ing)?\b", "name the group or bin", "warning"),
+        (r"\b(?:left|inner|outer|cross)\s+join\b", "\"link\" or \"merge\"", "warning"),
+        (r"\bjoin key\b", "\"matching variable\"", "warning"),
+        (r"\bassemble layer\b", "describe what the layer does", "warning"),
+        (r"\bintermediate layer\b", "describe what the layer does", "warning"),
     ]
     violations = []
     for lineno, _raw, prose in lines:
         lower = prose.lower()
-        for pat, fix in PATTERNS:
+        for pat, fix, sev in PATTERNS:
             for m in re.finditer(pat, lower):
                 violations.append(Violation(
                     file=filepath, line=lineno, rule="coding-vocab",
-                    severity="warning",
+                    severity=sev,
                     message=f"Pipeline vocabulary in prose: \"{m.group()}\"",
                     suggestion=fix + " (§4)",
                     context=prose.strip()[:120],
                 ))
+    return violations
+
+
+def check_latex_paragraph(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    r"""LaTeX \paragraph{Title.}/\subparagraph{} inline-title macro reads as
+    AI-generated (coauthor rule). Use \noindent\textbf{Title.} or fold the title
+    into the prose. Operates on raw lines since \paragraph is stripped from prose."""
+    if not filepath.endswith(".tex"):
+        return []
+    pat = re.compile(r"\\(?:sub)?paragraph\s*\{")
+    violations = []
+    for lineno, raw, _prose in lines:
+        if pat.search(raw):
+            violations.append(Violation(
+                file=filepath, line=lineno, rule="latex-paragraph",
+                severity="info",
+                message="\\paragraph{...} inline-title macro reads as AI-generated",
+                suggestion="Use \\noindent\\textbf{Title.} or fold the title into the prose",
+                context=raw.strip()[:120],
+            ))
     return violations
 
 
@@ -1220,6 +1248,7 @@ ALL_CHECKS = [
     check_math_in_prose,
     check_pseudocode_inline,
     check_coding_vocab,
+    check_latex_paragraph,
     check_workflow_jargon,
 ]
 
