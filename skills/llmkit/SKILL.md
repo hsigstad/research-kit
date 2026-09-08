@@ -72,6 +72,34 @@ result.usage        # dict — token counts
 
 Stratified sampling for human review. See `llmkit/audit.py`.
 
+### `build_report(cache, *, prices=None)` / `render_markdown(report)`
+
+Rolls a cache directory up into the reporting items a journal data editor
+needs for a paper using LLM-generated variables, per the checklist in
+Coqueret, Llull, Oswald, Pérignon, Scheuch & Vilhuber (2026), *Randomness in
+large language models*. Groups entries by (model, schema, prompt_hash,
+source_commit) and emits, per configuration: a model card (name, served
+version, dates queried), the **verbatim system prompt + one example user
+message**, the generation parameters actually used, and a **cost statement**
+(total input/output tokens, estimated USD, elapsed wall-clock). The rendered
+Markdown is framed around the two reproducibility checks (their §5.2):
+free/exact *reproduction from deposited outputs* vs. paid *regeneration from
+the model* (a fresh draw, not a byte copy).
+
+```bash
+python -m llmkit.report <cache_dir> -o REPLICATION_LLM.md
+llmkit-report <cache_dir> --price gpt-4o-mini=0.15/0.60   # override $/1M in/out
+```
+
+Token counts always come from the cache's per-call `usage`; the USD estimate
+uses a small built-in OpenAI price table (`DEFAULT_PRICES`, clearly caveated —
+verify before quoting) or `--price` overrides. Models with no price show `n/a`
+and are excluded from the USD total but still contribute token counts. The
+cache holds **one draw per unique input**, so the totals describe a
+single-draw regeneration. Where `temperature == 0`, the report adds the
+paper's caveat that this is *not* deterministic. Legacy entries (no
+`_cache_meta`) are counted but carry no tokens. See `llmkit/report.py`.
+
 ## Cache design
 
 ### Cache key = `hash(doc_id, text_hash, model[, schema_name])`
