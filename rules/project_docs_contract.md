@@ -617,6 +617,18 @@ Contains, for each hypothesis:
 
 This file is not a paper draft. It is a machine-readable reference document.
 
+**One hypothesis, one project.** A hypothesis slug lives in exactly one
+project's `docs/hypotheses/` — never duplicated across projects. When a data
+primitive (e.g. aditivo, no-bid, donor-firm) legitimately feeds hypotheses in
+more than one project, those stay as **distinct, correctly-owned hypotheses — do
+not merge them** (merging breaks project/paper boundaries). Instead register the
+primitive in `research/meta/data_linkages.md` ("Shared data primitives →
+hypotheses"), the cross-project routing table. **Before proposing a new analysis
+on a shared primitive, consult that map and read the linked hypotheses'
+`evidence` sections** — the sibling-project hypothesis is where the already-run
+(often null/underpowered) analyses live, and skipping this is how sessions
+re-propose done work. Enforced by the `/next` skill.
+
 Cross-references `theory.md` for theoretical frameworks, `literature.md` for
 sources, and `data.md` for data availability.
 

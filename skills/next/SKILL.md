@@ -86,6 +86,17 @@ Always read 1–3. Read 4+ only in propose mode.
 8. `ls source/{table,figure}/` and `ls build/{table,figure}/` — don't
    re-derive what already exists; if it exists, the candidate is a *follow-
    up* not a *new* analysis.
+9. **Cross-project prior-art check (REQUIRED before proposing).** If the
+   candidate touches a **data primitive** (aditivo, no-bid/dispensa,
+   donor-firm, edital, …), open `research/meta/data_linkages.md` §"Shared data
+   primitives → hypotheses" and check whether a **sibling project** already
+   tests it under a different hypothesis. If so, read that hypothesis's
+   `evidence` section (and its canonical index doc, if listed) **before**
+   proposing — the already-run, often null/underpowered analyses live there,
+   not in this project's ledger. This is the guard against re-proposing done
+   work across projects (per `project_docs_contract.md` "one hypothesis, one
+   project"). If the primitive spans projects but is not yet in the map, add
+   the row.
 
 ## Step 1 — Propose (propose mode only)
 
