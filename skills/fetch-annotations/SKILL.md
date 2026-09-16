@@ -57,6 +57,19 @@ exported (get one at https://hypothes.is/account/developer). If the call
 fails with 401, prompt the user to set it. The user may keep the token in
 `~/.bashrc` for future invocations.
 
+**Known bug — `--url-prefix` returns zero rows.** The hypothes.is `uri` search
+parameter matches **exactly**, not as a prefix (`wildcard_uri` is the prefix
+form), so the tool can report no annotations while the group holds plenty. If
+the count looks wrong, query the API directly and filter client-side:
+
+```bash
+curl -s -H "Authorization: Bearer $HYPOTHESIS_API_TOKEN" \
+     "https://api.hypothes.is/api/search?group=<GROUP>&limit=100"
+```
+
+Then keep rows whose `uri` contains the project slug. Annotations with a
+`references` field are replies, not top-level items.
+
 ### 4. Map each annotation to a source file
 
 Each annotation has:
@@ -231,6 +244,42 @@ Workflow:
    mapping-file path. Do not attempt to "resolve" or close annotations
    via the API — that's the coauthor's call.
 
+### 9. Close out handled annotations (Henrik's own)
+
+Annotations authored by **Henrik** (`acct:hsigstad@hypothes.is`) are working
+notes to us, not a conversation to preserve — once an item is applied, the
+annotation is noise on the next fetch and gets re-proposed. Delete them as part
+of the same pass, without being asked.
+
+Do **not** delete:
+
+- annotations by any **other** user — those are theirs to close;
+- items you did **not** apply (skipped, deferred, or still running) — they are
+  the only record that the item is open;
+- anything you have not **verified** landed in the source. Deletion is
+  irreversible; a fix reported but not applied would be lost silently.
+
+Verify before deleting. Re-read the source and confirm each edit is present —
+grep for the new wording, and for the old wording being gone. Only then delete:
+
+```bash
+curl -s -X DELETE -H "Authorization: Bearer $HYPOTHESIS_API_TOKEN" \
+     "https://api.hypothes.is/api/annotations/<id>"     # 200 = deleted
+```
+
+Re-query the group afterwards and report the count. The search index lags a
+few seconds, so a just-deleted annotation can still appear in an immediate
+re-query — wait and re-check rather than reporting a phantom survivor.
+
+Scope the delete list to the current project (filter `uri` on the project's
+site prefix) so a shared hypothes.is group's other projects are untouched.
+
+**Ownership in a multi-session workspace.** Where several sessions each own a
+section, only delete annotations on *your* section. Map each annotation's quote
+to the file it lives in first; an annotation on a peer's section is theirs to
+handle even though the author is Henrik.
+
+
 ## Notes and gotchas
 
 - **Orphaned annotations:** if the site has been rebuilt and the quoted text
@@ -241,8 +290,9 @@ Workflow:
   text, then find the corresponding markdown in the source.
 - **Paper annotations** map to `paper/paper.tex` but the quote is HTML text
   from make4ht output — expect LaTeX macros in the source around the match.
-- **Never delete the coauthor's annotations** via the API. You can only
-  delete your own replies (Step 8), and only with the user's go-ahead.
+- **Delete Henrik's own handled annotations; never delete anyone else's.**
+  See Step 9. Annotations by *other* coauthors are theirs to close — you may
+  only delete your own replies (Step 8), and only with the user's go-ahead.
 - **Don't batch applies.** Walk the user through one at a time; a wrong
   auto-apply on a paragraph is painful to undo.
 - **Token names vary.** Two conventions exist in this workspace:
