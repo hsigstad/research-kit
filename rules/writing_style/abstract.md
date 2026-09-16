@@ -82,7 +82,9 @@ rules apply.
   one-third"); just say "almost one-third".
 - **Length: ~150 words is the default target.** Major economics
   journal caps for context — AER, QJE, ReStud: 150; Econometrica:
-  250; AEJ, JPE: 100. 150 fits everywhere except JPE and AEJ. By
+  250; AEJ, JPE: 100; PNAS: 250 (plus a separate ~120-word significance
+  statement); Science: 125, structured. 150 fits everywhere except JPE,
+  AEJ, and Science. By
   general §1's deletion principle ("if a paragraph reads fine when
   you delete a sentence, delete it"), an abstract running to 300+
   words is almost always two or three content blocks too long. The

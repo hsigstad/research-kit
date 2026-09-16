@@ -59,6 +59,11 @@ dropped without losing meaning, drop it.
   - Editorializing: "The temporal evidence is starkest."
   - Direct: "We find evidence consistent with corruption migrating across
     margins as oversight tightened."
+- **Don't address or stage-manage the reader.** Cut "A reader may worry
+  that…", "One might think…", "Note that the reader…", "As the reader
+  will see…". Put the concern in the paper's own impersonal voice and
+  answer it ("One concern with this design is X. We address it by Y."),
+  or just make the point directly.
 
 ## 3. Sentences
 
@@ -220,7 +225,12 @@ identifiers (`AN-098`), code names, temporary variables, debugging
 notes, build-system stage names (`assemble layer`, `intermediate
 layer`), and TODO references belong in scripts and project docs, not
 in the paper. Replace with research-language descriptions of the
-operation, the variable, or the design choice.
+operation, the variable, or the design choice. This includes **internal
+repository paths** (`pipelines/politica/source/llm/`,
+`source/clean/parse.py`): never cite a repo path in the paper, in the
+replication-materials prose, or in any doc a coauthor reads — name the
+artifact by what it is ("the prompts and schema are in the replication
+materials"), not by where it sits in our tree.
 
 ## 5. Paragraph structure
 
@@ -326,6 +336,14 @@ operation, the variable, or the design choice.
   effect for X" drops out and the reader loses the inferential
   basis, scope, or data limit, the qualifier is doing work — keep
   it.
+- **Don't editorialize method virtue.** Don't label your own procedure
+  "without cherry-picking", "non-cherry-picked", "fully reproducible",
+  "reproducibly", "principled", or "carefully". Describe what you did
+  and let the description carry the credibility — "we rank cases by a
+  hash of the case number and keep the lowest 200", not "we select the
+  sample reproducibly and without cherry-picking". Same instinct as
+  banning "frozen taxonomy": don't relabel a method with a virtue
+  adjective, state the method.
 
 ## 8. Signposting
 
@@ -366,6 +384,13 @@ typical reader genuinely can skip: long lists of references, side
 algebra, technical caveats some readers will want attached to the
 current point. The same applies to parentheses — lots of parentheses are
 just as bad as lots of footnotes.
+
+Sampling and reproducibility mechanics are footnote material: hash-based
+ordering, random seeds, and the exact post-attrition N belong in a
+footnote hung on a plain main-text sentence. Main text: "we draw 200
+random cases." Footnote: the hash rule, the seed, and the net count
+after dropping incomplete records. Don't lead the main text with an
+arbitrary-looking net N (e.g. 193) or the hashing details.
 
 ### Tables and figures
 

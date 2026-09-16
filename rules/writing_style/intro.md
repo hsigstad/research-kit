@@ -138,7 +138,11 @@ or expand by section. The order matters more than the exact count.
   statement. The single exception is the roadmap paragraph at the end
   ("Section~2 describes…"), where the references are the purpose of
   the paragraph. Same rule applies to forward `Appendix~\ref{...}`
-  pointers — those belong in the body, not the intro.
+  pointers — those belong in the body, not the intro. It also covers
+  forward references to figures or tables ("(Fig. 1)", "see Table 2")
+  and to constructs the paper only defines later ("conditions
+  (i)–(iii)", "the wedge defined below") — none belong in the intro
+  body.
 - **Submission discipline: contractual, not aspirational.** Shapiro's
   step 1 (aspirational intro — write the intro for the paper you wish
   you had) is a thinking tool for early-stage project formulation. By

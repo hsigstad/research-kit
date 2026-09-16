@@ -9,6 +9,12 @@ have additional content rules.
 - **Same standards as the main text.** An appendix that is sloppy
   signals that the main text might be too. Captions self-contained,
   numbers discussed, robust to skim-reading.
+- **Robustness and SI checks are short and dry.** State what you did and
+  the result in one paragraph — often one or two sentences. Don't build a
+  robustness check up over several paragraphs, and don't add a results
+  table when a single sentence carrying the numbers suffices. The main
+  text already earned the reader's attention; an appendix check just
+  closes the loop.
 - **What belongs here.** Robustness checks not central to the main
   argument; alternative specifications; technical proofs; data
   appendices that catalog rather than analyze; extended descriptive
