@@ -12,6 +12,15 @@ baseline) and [`body.md`](body.md) (body baseline).
   goes without text discussion (Cochrane). "Row 1 of Table 3 shows a
   u-shaped pattern" is fine; "Table 5 shows summary statistics" alone
   is not. See general §10.
+- **Name the exhibit a result comes from.** The converse of the rule
+  above: when you state a number in prose, cite where the reader can
+  see it — "the model agrees with the sitting judge on 69% (Table S1)".
+  Every stated result points to its table or figure.
+- **Define the outcome before you report it; walk panels in order.**
+  State what the metric is ("agreement is balanced accuracy") before the
+  first result that uses it, and introduce a multi-panel exhibit in
+  sequence — "In Panel A we show …; in Panel B …" — rather than dropping
+  numbers the reader cannot yet interpret.
 - **Always state economic significance, not just statistical
   significance.** Express effect sizes in concrete terms (percent,
   dollars, standard deviations, days) alongside the *t*-stat or

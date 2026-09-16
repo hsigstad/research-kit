@@ -350,7 +350,16 @@ materials"), not by where it sits in our tree.
 - "In Section 2, we develop..." — fine and useful at the end of an intro.
 - "In this paper, I show..." — fine to anchor the reader early.
 - Don't pad with "in this section, we will discuss" when the section heading
-  already says it.
+  already says it. But a **substantive purpose-opener is welcome**: "In this
+  section we estimate the rate at which two random judges agree" previews the
+  estimand and orients the reader — it adds what the heading doesn't. The line
+  is content vs padding: state what the section establishes (fine); don't just
+  restate the heading ("In this section we present our results" — cut).
+  Especially useful in technical / SI sections.
+- **A preview must match what follows.** If a sentence says "what remains is to
+  show X and Y", the next sections must be X then Y, in that order. Make the
+  structure match the preview, or cut the preview — don't promise an order the
+  paper doesn't keep.
 
 ## 9. Connectives
 
@@ -392,6 +401,12 @@ random cases." Footnote: the hash rule, the seed, and the net count
 after dropping incomplete records. Don't lead the main text with an
 arbitrary-looking net N (e.g. 193) or the hashing details.
 
+Formal definitions belong in a footnote too, with an informal gloss carrying
+the idea in the body: say what a quantity means in words in the text, and hang
+the formula and its boundary conditions (e.g. "balanced accuracy has a 50%
+floor") on a footnote. The reader gets the idea inline and the precision on
+demand.
+
 ### Tables and figures
 
 - **Self-contained captions.** A skimming reader should understand the
@@ -417,6 +432,12 @@ arbitrary-looking net N (e.g. 193) or the hashing details.
 - **Sensible units.** "2.3 percent" is more readable than "0.0000023";
   use percentages, levels in millions, etc., where they make the number
   human-scaled.
+- **Spell out column headers; report rates as decimals.** Write "Balanced
+  accuracy", not "Bal. acc."; define "N". Report rates, probabilities, and
+  accuracies in decimal form (0.71) — always the `0.xx` form, not "71%" — and
+  drop a redundant "(%)" when the column already carries the unit. (Treatment
+  effects and differences stated in percentage points are a separate case; this
+  is about reported rates and accuracies.)
 
 ## 11. Typography
 
