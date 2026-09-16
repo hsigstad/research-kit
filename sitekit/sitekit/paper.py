@@ -155,6 +155,38 @@ def _extract_body(raw_html: str) -> str:
     return raw_html[body_start:body_end].strip()
 
 
+def _fix_title_spacing(content: str, raw_html: str) -> str:
+    """Repair spaces make4ht drops in the title heading.
+
+    tex4ht renders a source newline inside ``\\title{...}`` as nothing in the
+    ``titleHead`` element (e.g. ``deterrence by\\nignoring`` -> ``byignoring``),
+    while the ``<title>`` metadata keeps every space. Re-space the first
+    heading from ``<title>`` — but only when the heading is plain text that
+    already matches the title modulo whitespace, so headings carrying real
+    markup (footnote marks, math) are left untouched.
+    """
+    import html as _html
+
+    m = re.search(r"<title>(.*?)</title>", raw_html, flags=re.DOTALL)
+    if not m:
+        return content
+    correct = re.sub(r"\s+", " ", _html.unescape(m.group(1))).strip()
+    if not correct:
+        return content
+    squashed = re.sub(r"\s+", "", correct)
+
+    def _repl(hm: re.Match) -> str:
+        inner = hm.group(2)
+        if "<" in inner:  # heading has nested markup — leave it alone
+            return hm.group(0)
+        if re.sub(r"\s+", "", _html.unescape(inner)) != squashed:
+            return hm.group(0)
+        return f"{hm.group(1)}{correct}{hm.group(3)}"
+
+    return re.sub(r"(<h[12][^>]*>)(.*?)(</h[12]>)", _repl, content,
+                  count=1, flags=re.DOTALL)
+
+
 def _render_paper_html(
     ctx: BuildContext,
     tex_filename: str,
@@ -179,6 +211,7 @@ def _render_paper_html(
 
     raw_html = html_path.read_text(encoding="utf-8")
     content = _extract_body(raw_html)
+    content = _fix_title_spacing(content, raw_html)
 
     if cfg.paper_strip_author:
         # Strip author names and affiliation footnotes — historically a
