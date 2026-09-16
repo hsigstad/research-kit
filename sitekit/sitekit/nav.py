@@ -12,6 +12,7 @@ from pathlib import Path
 from .config import SiteConfig
 from .context import BuildContext
 from .paths import output_path
+from .toc import TOC_BLOCK
 
 
 NAV_CSS = """\
@@ -241,7 +242,8 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
 {extras_block}{before_block}
   {docs_dropdown}{after_block}
 </nav>
-{NAV_JS}"""
+{NAV_JS}
+{TOC_BLOCK}"""
     return nav_html
 
 
