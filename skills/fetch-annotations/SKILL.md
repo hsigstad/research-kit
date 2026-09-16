@@ -133,7 +133,14 @@ If multiple annotations are addressed by a single edit (e.g. "#10 + #27
 both ask for X"), give them one combined entry under the lowest number,
 and reference it from the higher number (e.g. "#27 — handled under #10").
 
-### 7. Harvest style-flavored feedback to the workspace log (optional)
+### 7. Harvest style-flavored feedback to the workspace log (required)
+
+This step is **not optional** and is **not complete until you have written to
+the feedback log** — either real entries or the no-feedback marker below. The
+nightly sweep (`research-kit/tools/check_feedback_harvest.py`) flags any
+response log with no matching `(date, project)` block in the feedback log, so a
+skipped harvest surfaces the next morning. Do it before you consider the pass
+done.
 
 After the response log is complete, classify each annotation by *kind*:
 
@@ -153,6 +160,18 @@ For each `style` and `mixed` entry, append one record to
 `<!-- /fetch-annotations appends below this line -->` marker, in the format
 documented at the top of that file. Use exactly one tag from the fixed
 vocab listed there. Mark `Status: raw`.
+
+If the pass finds **no** `style`/`mixed` annotations (all content/typo/meta),
+still close the loop so the harvest-gap check stays quiet — append a one-line
+marker block instead:
+
+```
+## YYYY-MM-DD · {project} · {author}
+- **Status:** none — no style/mixed feedback in this pass
+```
+
+Use the same date and author as the response log's filename, so the
+`(date, project)` key matches.
 
 Do NOT edit `research/rules/writing_style.md` or the research-kit baseline
 here. The log is harvest; distillation is a separate, manual

@@ -90,6 +90,20 @@ def skill_link_issues(ws: Path):
         return [], str(e)
 
 
+def harvest_gap_issues(ws: Path):
+    """/fetch-annotations response logs never style-harvested into the log."""
+    tools = ws / "research-kit" / "tools"
+    try:
+        out = subprocess.run(
+            ["python3", str(tools / "check_feedback_harvest.py"),
+             "--json", "--root", str(ws)],
+            capture_output=True, text=True, timeout=120,
+        )
+        return json.loads(out.stdout).get("gaps", []), None
+    except Exception as e:  # noqa: BLE001
+        return [], str(e)
+
+
 def update_baseline(ws: Path) -> int:
     _, warnings, failures = collect(ws)
     if failures:
@@ -131,6 +145,7 @@ def main() -> int:
 
     errors, warnings, failures = collect(ws)
     issues, sl_fail = skill_link_issues(ws)
+    gaps, hv_fail = harvest_gap_issues(ws)
     baseline = load_baseline(ws)
 
     # New warnings = those whose fingerprint is not in the committed baseline.
@@ -189,7 +204,17 @@ def main() -> int:
         lines.append(f"- sweep failed ({sl_fail})")
     lines.append("")
 
-    total = len(errors) + len(new_warnings) + len(issues) + len(failures) + (1 if sl_fail else 0)
+    lines.append(f"## fetch-annotations harvest gaps: {len(gaps)}")
+    for g in gaps[:MAX_PER_SECTION]:
+        lines.append(f"- {g.get('path', '?')} — {g.get('detail', '')}")
+    if len(gaps) > MAX_PER_SECTION:
+        lines.append(f"- ... and {len(gaps) - MAX_PER_SECTION} more")
+    if hv_fail:
+        lines.append(f"- sweep failed ({hv_fail})")
+    lines.append("")
+
+    total = (len(errors) + len(new_warnings) + len(issues) + len(failures)
+             + len(gaps) + (1 if sl_fail else 0) + (1 if hv_fail else 0))
     if total > 0:
         report.write_text("\n".join(lines))
     elif report.exists():
