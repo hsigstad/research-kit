@@ -1087,6 +1087,11 @@ def check_coding_vocab(filepath: str, lines: list[tuple[int, str, str]]) -> list
     for lineno, _raw, prose in lines:
         lower = prose.lower()
         for pat, fix, sev in PATTERNS:
+            # SEVERITY IS DELIBERATELY 'info' -- do not promote to 'warning'.
+            # The convention-gate hook blocks edits on warning-or-higher, and the
+            # corpus carries ~370 \paragraph and ~80 bare cell/grid uses across
+            # bind, fisc, procure and the archived deterrence paper. Promoting
+            # these would freeze editing workspace-wide until those are cleaned.
             for m in re.finditer(pat, lower):
                 violations.append(Violation(
                     file=filepath, line=lineno, rule="coding-vocab",
