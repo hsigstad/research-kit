@@ -1139,6 +1139,22 @@ def _find_overlay(start: Path) -> Optional[Path]:
     return None
 
 
+def _find_project_overlay(start: Path) -> Optional[Path]:
+    """Walk up to the project/pipeline root (dir containing .git) and return its
+    `.style-lint.md`, if present. Lets a single project ban a term that stays
+    legitimate workspace-wide -- e.g. judgeGPT bans `stratum` while `strata`
+    remains fine for stratified-randomization projects. Its "## Banned phrases"
+    table stacks on top of the workspace overlay."""
+    cur = start.resolve()
+    cur = cur.parent if cur.is_file() else cur
+    while cur != cur.parent:
+        if (cur / ".git").exists():
+            candidate = cur / ".style-lint.md"
+            return candidate if candidate.is_file() else None
+        cur = cur.parent
+    return None
+
+
 _PAREN_RE = re.compile(r"\(([^)]*)\)")
 
 
@@ -1361,6 +1377,10 @@ def main():
             overlay_path = _find_overlay(files[0])
         if overlay_path:
             overlay_phrases = _parse_banned_phrases(overlay_path)
+        # Project-local overlay stacks on top of the workspace one.
+        proj_overlay = _find_project_overlay(files[0])
+        if proj_overlay:
+            overlay_phrases = overlay_phrases + _parse_banned_phrases(proj_overlay)
 
     all_violations: list[Violation] = []
     for f in files:
