@@ -1,10 +1,11 @@
-"""In-page table of contents — ships on every sitekit page.
+"""In-page table of contents — ships on the paper page only.
 
-A single self-contained block (CSS + JS) appended to the nav injection, so it
-reaches both the paper page and every doc page without template or per-project
-config changes. The JS builds the TOC client-side from the headings inside
-``<main>`` (assigning slug ids where missing), so it needs nothing from the
-LaTeX/make4ht or markdown pipelines.
+A single self-contained block (CSS + JS) appended to the nav injection when
+``inject_nav(..., include_toc=True)``. Only the paper content page opts in
+(see ``paper._render_paper_html``); doc pages and other pages leave it off.
+The JS builds the TOC client-side from the headings inside ``<main>``
+(assigning slug ids where missing), so it needs nothing from the LaTeX/make4ht
+or markdown pipelines.
 
 Layout follows the spec:
 - **Wide screens (>=1200px):** a fixed sidebar living in the empty left margin

@@ -88,8 +88,15 @@ def _brief_title(md_path: Path) -> str:
     return md_path.stem.replace("-", " ").replace("_", " ").title()
 
 
-def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str:
-    """Generate the site-wide navigation bar HTML."""
+def build_nav_html(
+    ctx: BuildContext, prefix: str = "", active: str = "", include_toc: bool = False
+) -> str:
+    """Generate the site-wide navigation bar HTML.
+
+    The in-page table of contents (TOC_BLOCK) is only appended when
+    ``include_toc`` is True — currently just the paper page. Doc pages and
+    other pages (e.g. govspend/sources/harmonized.html) leave it off.
+    """
     cfg = ctx.config
 
     def _cls(section: str) -> str:
@@ -235,6 +242,7 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
     else:
         nav_css = base_css
 
+    toc_block = f"\n{TOC_BLOCK}" if include_toc else ""
     nav_html = f"""{nav_css}
 <nav class="site-nav">
   <a href="{prefix}index.html" class="nav-brand">{cfg.project_title}</a>
@@ -242,13 +250,16 @@ def build_nav_html(ctx: BuildContext, prefix: str = "", active: str = "") -> str
 {extras_block}{before_block}
   {docs_dropdown}{after_block}
 </nav>
-{NAV_JS}
-{TOC_BLOCK}"""
+{NAV_JS}{toc_block}"""
     return nav_html
 
 
 def inject_nav(
-    html: str, ctx: BuildContext, prefix: str = "", active: str = ""
+    html: str,
+    ctx: BuildContext,
+    prefix: str = "",
+    active: str = "",
+    include_toc: bool = False,
 ) -> str:
     """Replace <!-- INJECT_NAV --> with the generated nav and add noindex.
 
@@ -256,7 +267,9 @@ def inject_nav(
     templates that aren't project-locked) and defaults INJECT_BODY_CLASS
     to empty so the placeholder doesn't leak.
     """
-    html = html.replace("<!-- INJECT_NAV -->", build_nav_html(ctx, prefix, active))
+    html = html.replace(
+        "<!-- INJECT_NAV -->", build_nav_html(ctx, prefix, active, include_toc)
+    )
     html = html.replace("<!-- INJECT_PROJECT_TITLE -->", ctx.config.project_title)
     html = html.replace("<!-- INJECT_BODY_CLASS -->", "")
     html = html.replace("<head>", f"<head>\n{NOINDEX}", 1)

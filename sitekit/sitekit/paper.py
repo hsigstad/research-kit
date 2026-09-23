@@ -234,7 +234,7 @@ def _render_paper_html(
     if cfg.paper_extra_substitutions is not None:
         for placeholder, value in cfg.paper_extra_substitutions(ctx).items():
             html = html.replace(placeholder, value)
-    html = inject_nav(html, ctx, prefix=prefix, active="paper")
+    html = inject_nav(html, ctx, prefix=prefix, active="paper", include_toc=True)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     for img in list(make4ht_dir.glob("*.png")) + list(make4ht_dir.glob("*.svg")):
