@@ -102,23 +102,36 @@ sk_deploy_site() {
     echo ""
     echo "=== Deploying $([[ "$gated" == "1" ]] && echo encrypted || echo PLAINTEXT) site to GitHub Pages ($repo gh-pages) ==="
     local tmp; tmp=$(mktemp -d)
-    if git ls-remote --exit-code --heads "git@github.com:$repo.git" gh-pages >/dev/null 2>&1; then
-        git clone --quiet --single-branch -b gh-pages "git@github.com:$repo.git" "$tmp"
-    else
-        echo "  gh-pages branch missing on origin; initialising as orphan."
-        git clone --quiet "git@github.com:$repo.git" "$tmp"
-        ( cd "$tmp" && git checkout --orphan gh-pages && { git rm -rf --quiet . 2>/dev/null || true; } )
-    fi
-    rsync -a --delete --exclude='.git' "$src/" "$tmp/"
-    printf 'User-agent: *\nDisallow: /\n' > "$tmp/robots.txt"
-    ( cd "$tmp"
-      git add -A
-      if git diff --cached --quiet; then
-          echo "  No changes to deploy."
-      else
-          git commit -m "Deploy site" --quiet
-          git push --quiet -u origin gh-pages
-          echo "  Deployed -> $url"
-      fi )
-    rm -rf "$tmp"
+    # Everything below runs in a subshell holding its own EXIT trap, so the
+    # scratch clone is removed on EVERY exit path -- not just the happy one.
+    # Callers run under `set -e`, so a failed clone/commit/push used to abort
+    # before the old trailing `rm -rf` and strand a multi-GB clone in /tmp
+    # (observed 2026-09-22: a failed deterrence push leaked 2.5G). The trap is
+    # subshell-local on purpose: a global EXIT trap would clobber the caller's
+    # (projects/scheme/build.sh sets one).
+    (
+        trap 'rm -rf "$tmp"' EXIT
+        # --depth 1: gh-pages carries generated site output and accumulates a
+        # new commit of it per deploy, so its history is large and worthless
+        # here. We only ever add a commit on top of the tip; the remote already
+        # has the ancestors, so a shallow push fast-forwards fine.
+        if git ls-remote --exit-code --heads "git@github.com:$repo.git" gh-pages >/dev/null 2>&1; then
+            git clone --quiet --single-branch --depth 1 -b gh-pages "git@github.com:$repo.git" "$tmp"
+        else
+            echo "  gh-pages branch missing on origin; initialising as orphan."
+            git clone --quiet --depth 1 "git@github.com:$repo.git" "$tmp"
+            ( cd "$tmp" && git checkout --orphan gh-pages && { git rm -rf --quiet . 2>/dev/null || true; } )
+        fi
+        rsync -a --delete --exclude='.git' "$src/" "$tmp/"
+        printf 'User-agent: *\nDisallow: /\n' > "$tmp/robots.txt"
+        cd "$tmp"
+        git add -A
+        if git diff --cached --quiet; then
+            echo "  No changes to deploy."
+        else
+            git commit -m "Deploy site" --quiet
+            git push --quiet -u origin gh-pages
+            echo "  Deployed -> $url"
+        fi
+    )
 }
