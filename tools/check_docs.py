@@ -48,6 +48,10 @@ OPTIONAL_PROJECT_DOCS = {
     # fallback paper/validation.yaml), plus its narrative companion
     # docs/validation.md declared by the /validate-section skill.
     "validation.yaml", "validation.md",
+    # Coauthor-facing how-to for leaving inline feedback on the rendered
+    # paper page via the Hypothes.is annotation layer (paired with the
+    # /fetch-annotations skill). Reusable across sites (fisc, connect, …).
+    "annotating.md",
 }
 
 ALLOWED_PROJECT_DOCS = REQUIRED_PROJECT_DOCS | OPTIONAL_PROJECT_DOCS
