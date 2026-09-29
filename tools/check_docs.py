@@ -106,6 +106,12 @@ CANONICAL_SOURCE_DIRS = {
     "figure", "table", "paper",
 }
 
+# Shared library/helper layers: modules imported across layers (registries,
+# estimators, formatters), NOT run — they produce no build/ artifact, so they are
+# exempt from the source->build producer bijection by role (see rules/build_layers.md).
+# The sanctioned, non-underscore home for cross-layer helpers.
+LIBRARY_SOURCE_DIRS = {"lib"}
+
 DATA_OUTPUT_EXTS = (".parquet", ".csv", ".csv.gz", ".json", ".rds", ".dta", ".xlsx", ".feather")
 PAPER_FIGURE_EXTS = (".pdf", ".png", ".svg", ".jpg")
 PAPER_TABLE_EXTS  = (".tex", ".md")
@@ -260,7 +266,7 @@ def lint_source_build(repo: Path, f: Findings):
         if layer_name.startswith(".") or layer_name == "__pycache__":
             continue
 
-        if layer_name not in CANONICAL_SOURCE_DIRS:
+        if layer_name not in CANONICAL_SOURCE_DIRS | LIBRARY_SOURCE_DIRS:
             f.note("source.layer.noncanonical",
                    f"source/{layer_name}/ is project-specific (canonical layers: {', '.join(sorted(CANONICAL_SOURCE_DIRS))})",
                    path=f"source/{layer_name}")

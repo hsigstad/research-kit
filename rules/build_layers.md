@@ -27,6 +27,15 @@ canonical directories below keep their role when present.
 | `source/figure/`       | `build/figure/*.{pdf,png}`    | Figure-generating scripts                                           | If the paper has figures |
 | `source/table/`        | `build/table/*.tex`           | Table-generating scripts                                            | If the paper has computed tables |
 | `source/paper/`        | `paper/numbers.{tex,json}`    | Paper numeric macros (see `rules/paper_macros.md`)                  | If the paper cites structural numbers |
+| `source/lib/`          | *(none — imported, not run)*  | Shared library modules imported across layers (registries, estimators, formatters, label maps) | When helpers are shared by more than one layer |
+
+**`source/lib/` — shared helpers.** The sanctioned home for cross-layer helper
+code: modules that are *imported, not run*, and produce no `build/` artifact.
+Because it has no output, it is exempt from the source→build bijection **by role**
+— use it instead of an underscore prefix (`source/_x.py`) for shared helpers.
+(Clean-layer parsers still live in `source/clean/parse.py`; `source/lib/` is for
+helpers shared across `table/`, `figure/`, `paper/`, etc.) `check_docs.py`
+recognizes it and does not flag it.
 
 Claude may freely add any other subfolder the project needs
 (illustrative examples in the wild: `source/scrape/`, `source/llm/`,
