@@ -159,10 +159,14 @@ def build_index(
 
     doc_html: list[str] = []
     for cat, docs in groups.items():
-        links = "".join(
-            f'<li><a href="docs/{d["stem"]}.html">{d["title"]}</a></li>'
-            for d in docs
-        )
+        # Entries default to docs/<stem>.html; an explicit "href" lets a hook
+        # contribute a link into a category group that lives outside docs/
+        # (e.g. reference/<x>.html, pipeline/<x>.html).
+        link_items: list[str] = []
+        for d in docs:
+            href = d.get("href") or f'docs/{d["stem"]}.html'
+            link_items.append(f'<li><a href="{href}">{d["title"]}</a></li>')
+        links = "".join(link_items)
         doc_html.append(
             f'<div class="doc-group"><h3>{cat}</h3>'
             f'<ul class="link-list">{links}</ul></div>'

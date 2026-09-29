@@ -93,6 +93,11 @@ def build_site(config: SiteConfig) -> int:
         result = hook(ctx)
         if isinstance(result, dict) and result.get("extra_cards"):
             extra_cards.append(result["extra_cards"])
+        # Hooks may also contribute links into named category groups (each entry
+        # a docs_info-shaped dict, optionally with an explicit "href"). Merges
+        # into the matching "All Documentation" group instead of a separate card.
+        if isinstance(result, dict) and result.get("extra_docs_info"):
+            docs_info.extend(result["extra_docs_info"])
 
     print("\nBuilding index page...")
     build_index(
