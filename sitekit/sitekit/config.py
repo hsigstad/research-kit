@@ -118,6 +118,15 @@ class SiteConfig:
     # typically already in the registry.
     folder_mode_auto_discover: bool = True
 
+    # When False, folder-mode pages are still built but are NOT added to the
+    # landing-page "All Documentation" index (docs_info). Use when a folder-mode
+    # subdir has its own index hub page (e.g. docs/hypotheses/index.html) that is
+    # the intended entry point, so the landing page links the hub instead of
+    # enumerating every child. Default True preserves the enumerate-everything
+    # behavior. Independent of folder_mode_auto_discover (which controls whether
+    # the child pages build at all).
+    index_list_folder_mode: bool = True
+
     # Extra href prefixes to strip in rewrite_md_links beyond the defaults
     # ("docs/", "../docs/"). For projects whose registry includes paths in
     # sibling subdirs (briefs/, notes/) that render flat into docs/.

@@ -184,13 +184,19 @@ def build_docs_section(ctx: BuildContext) -> list[dict]:
     cfg = ctx.config
     (ctx.site_dir / "docs").mkdir(parents=True, exist_ok=True)
     docs_info: list[dict] = []
-    all_entries = list(cfg.doc_registry) + _discover_folder_mode_entries(ctx)
-    for rel_path, title, description, category in all_entries:
+    # Folder-mode entries are tagged so they can be built-but-not-indexed when
+    # index_list_folder_mode is False (their hub index page carries them instead).
+    registry_entries = [(e, False) for e in cfg.doc_registry]
+    folder_entries = [(e, True) for e in _discover_folder_mode_entries(ctx)]
+    for (rel_path, title, description, category), is_folder in (
+            registry_entries + folder_entries):
         md_path = ctx.project_root / rel_path
         if not md_path.exists():
             print(f"  {rel_path} (skipped — file not found)")
             continue
         build_doc_page(ctx, rel_path, title)
+        if is_folder and not cfg.index_list_folder_mode:
+            continue  # built, but kept off the landing-page index
         _, display, _ = output_path(ctx, rel_path)
         stem_for_index = display.removeprefix("docs/").removesuffix(".html")
         docs_info.append({
