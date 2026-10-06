@@ -226,7 +226,7 @@ if [ "$RUNTIME" = "docker" ]; then
         -v "$HOME/.claude.json":/home/henrik/.claude.json \
         -v "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
         -v "$HOME/.ssh":/home/henrik/.ssh:ro \
-        -v "$HOME/.config/rclone-sandbox/rclone.conf":/home/henrik/.config/rclone/rclone.conf:ro \
+        -v "$HOME/.config/rclone-sandbox/rclone.conf":/home/henrik/.config/rclone/rclone.conf \
         "${WHATSAPP_MOUNT[@]}" \
         "${GMAIL_MOUNT[@]}" \
         -e TERM=xterm-256color \
@@ -310,7 +310,7 @@ exec "$RUNTIME" run \
     --bind "$HOME/.claude.json":/home/henrik/.claude.json \
     --bind "$HOME/.gitconfig":/home/henrik/.gitconfig:ro \
     --bind "$HOME/.ssh":/home/henrik/.ssh:ro \
-    --bind /projects/ec113/henrik/.config/rclone-sandbox/rclone.conf:/rclone.conf:ro \
+    --bind /projects/ec113/henrik/.config/rclone-sandbox/rclone.conf:/rclone.conf \
     --env "RCLONE_CONFIG=/rclone.conf" \
     --env "TERM=xterm-256color" \
     --env "COLORTERM=truecolor" \
