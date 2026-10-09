@@ -12,7 +12,23 @@
 #   SITE_REMEMBER_DAYS staticrypt --remember duration (default 365)
 #   SITE_INSTRUCTIONS  login-prompt text (has a default)
 #
-# Provides: sk_encrypt_site, sk_deploy_site
+# Provides: sk_encrypt_site, sk_deploy_site, sk_dispatch, sk_site_usage
+#
+# sk_dispatch centralises the standard site-publish ladder so every project
+# exposes the SAME targets with the SAME meaning (no per-build.sh drift). A
+# project build.sh defines a `build_site` function, handles any bespoke targets
+# (paper, data, all, ...) in its own case, and sends the rest to sk_dispatch:
+#
+#     build_site() { ...project-specific build... }
+#     case "$MODE" in
+#         paper) build_paper ;;                      # bespoke targets first
+#         all)   FORCE_PAPER_REBUILD=1 build_site; sk_encrypt_site; sk_deploy_site ;;
+#         *)     sk_dispatch "$MODE" ;;              # build|encrypt|deploy|push|help
+#     esac
+#
+# The ladder is build -> encrypt -> deploy, each target running the prior
+# stages; `deploy` does NOT force a paper rebuild (docs-only deploys need no
+# TeX toolchain). `push` re-pushes an existing encrypted build.
 #
 # Both the autofill guard and the per-project remember-key namespacing live here
 # ONCE, so every workspace site gets them identically (no per-build.sh drift).
@@ -21,6 +37,38 @@
 # them together. Without these fixes the browser autofills one site's saved
 # password onto every other, and logging into one site evicts another's
 # remembered login.
+
+sk_site_usage() {
+    # Standard site targets. Projects may document additional bespoke targets
+    # (paper, data, all, ...) in their own build.sh header.
+    cat <<'USAGE'
+Standard site targets (build -> encrypt -> deploy; each runs the prior stages):
+  build     build the static site                 -> build/site/
+  encrypt   build, then staticrypt-encrypt         -> build/site-encrypted/
+  deploy    build + encrypt + push to gh-pages     (the one-stop publish)
+  push      re-push an already-encrypted build/site-encrypted/ (no rebuild)
+  help      print this list
+`site` is a deprecated alias for `build`. `deploy` does not force a paper
+rebuild; use the project's `all` target for that.
+USAGE
+}
+
+sk_dispatch() {
+    # Run a standard site target against the project's build_site() hook.
+    # Returns 1 on an unknown target so the caller can fall through if desired.
+    if ! declare -F build_site >/dev/null; then
+        echo "ERROR: build.sh must define a build_site() function before sk_dispatch." >&2
+        return 2
+    fi
+    case "${1:-}" in
+        build|site) build_site ;;
+        encrypt)    build_site; sk_encrypt_site ;;
+        deploy)     build_site; sk_encrypt_site; sk_deploy_site ;;
+        push)       sk_deploy_site ;;
+        help|-h|--help|"") sk_site_usage ;;
+        *) echo "Unknown target: $1"; echo; sk_site_usage; return 1 ;;
+    esac
+}
 
 sk__repo() {
     # Derive "<owner>/<repo>" from the origin remote (ssh or https form).
