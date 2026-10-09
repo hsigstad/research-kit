@@ -547,6 +547,67 @@ def lint_analyses(repo: Path, f: Findings, workspace: Path):
 
 
 # ---------------------------------------------------------------------------
+# Decision-brief frontmatter (docs/briefs/)
+# ---------------------------------------------------------------------------
+
+BRIEF_REQUIRED = ["id", "type", "title", "status", "question",
+                  "deciders", "created", "updated"]
+BRIEF_STATUS = {"open", "decided", "superseded"}
+
+
+def lint_briefs(repo: Path, f: Findings, workspace: Path):
+    """Validate docs/briefs/ decision-brief frontmatter against
+    docs/reference/brief-schema.yaml.
+
+    Opt-in: runs only when that schema file exists in the repo, so projects
+    that have not adopted the convention (and the workspace-level
+    research/project_briefs/, a different genre) are unaffected.
+
+    - A brief with no frontmatter → warning (nudge to add the header).
+    - `type: decision` → every BRIEF_REQUIRED field must be present and
+      non-empty (error).
+    - `status` must be one of open|decided|superseded (warning).
+    - `id` should match the filename stem (warning).
+    Non-decision briefs (type: reference|proposal) are checked only for a
+    valid status.
+    """
+    bdir = repo / "docs" / "briefs"
+    schema = repo / "docs" / "reference" / "brief-schema.yaml"
+    if not bdir.is_dir() or not schema.is_file():
+        return
+    for md in sorted(bdir.glob("*.md")):
+        if md.name == "index.md":
+            continue
+        rel = str(md.relative_to(workspace))
+        text = read(md)
+        meta = parse_frontmatter(text)
+        if meta is None:
+            f.warn("brief.no-frontmatter",
+                   "decision-brief frontmatter missing "
+                   "(see docs/reference/brief-schema.yaml)",
+                   path=rel)
+            continue
+        unq = lambda v: (v or "").strip().strip('"').strip("'")
+        btype = unq(meta.get("type"))
+        status = unq(meta.get("status"))
+        if btype == "decision":
+            missing = [k for k in BRIEF_REQUIRED if not unq(meta.get(k))]
+            if missing:
+                f.err("brief.frontmatter.missing-fields",
+                      f"type: decision but missing required fields: {missing}",
+                      path=rel)
+        if status and status not in BRIEF_STATUS:
+            f.warn("brief.bad-status",
+                   f"status: {status} not in {sorted(BRIEF_STATUS)}",
+                   path=rel)
+        bid = unq(meta.get("id"))
+        if bid and bid != md.stem:
+            f.warn("brief.id-mismatch",
+                   f"id: {bid} does not match filename stem '{md.stem}'",
+                   path=rel)
+
+
+# ---------------------------------------------------------------------------
 # CLAUDE.md presence
 # ---------------------------------------------------------------------------
 
@@ -916,6 +977,7 @@ def lint_repo(repo: Path, kind: str, workspace: Path) -> Findings:
     lint_todo_done(repo, f)
     lint_thinking(repo, f)
     lint_analyses(repo, f, workspace)
+    lint_briefs(repo, f, workspace)
     lint_findings(repo, f)
     lint_variables(repo, f, workspace)
     lint_decisions(repo, f)
