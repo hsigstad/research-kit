@@ -53,17 +53,28 @@ rebuild; use the project's `all` target for that.
 USAGE
 }
 
+sk__maybe_encrypt() {
+    # Gated sites (SITE_GATED=1, default) staticrypt-encrypt; plaintext sites
+    # (SITE_GATED=0) skip it — sk_deploy_site then ships build/site directly.
+    if [[ "${SITE_GATED:-1}" == "0" ]]; then
+        echo "  SITE_GATED=0 — plaintext site, skipping encryption."
+    else
+        sk_encrypt_site
+    fi
+}
+
 sk_dispatch() {
     # Run a standard site target against the project's build_site() hook.
-    # Returns 1 on an unknown target so the caller can fall through if desired.
+    # Honours SITE_GATED (gated vs plaintext). Returns 1 on an unknown target
+    # so the caller can fall through if desired.
     if ! declare -F build_site >/dev/null; then
         echo "ERROR: build.sh must define a build_site() function before sk_dispatch." >&2
         return 2
     fi
     case "${1:-}" in
         build|site) build_site ;;
-        encrypt)    build_site; sk_encrypt_site ;;
-        deploy)     build_site; sk_encrypt_site; sk_deploy_site ;;
+        encrypt)    build_site; sk__maybe_encrypt ;;
+        deploy)     build_site; sk__maybe_encrypt; sk_deploy_site ;;
         push)       sk_deploy_site ;;
         help|-h|--help|"") sk_site_usage ;;
         *) echo "Unknown target: $1"; echo; sk_site_usage; return 1 ;;
