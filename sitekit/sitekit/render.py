@@ -130,6 +130,13 @@ def rewrite_md_links(
             # above) plus the doc_subdir routing (handled above) apply; do not
             # strip the leading `../`.
             return f'href="{new}"'
+        if in_subdir and new.startswith("../docs/"):
+            # A flattened doc-subdir page (build/site/<subdir>/) that links a
+            # top-level doc with the docs/ prefix spelled out — `../docs/x.md`
+            # — is ALREADY output-correct (../docs/ reaches the docs/ tree from
+            # build/site/<subdir>/). Keep it verbatim; stripping `../docs/`
+            # below would wrongly collapse it to a same-dir `x.html` → 404.
+            return f'href="{new}"'
         for sp in strip_prefixes:
             if new.startswith(sp):
                 new = new[len(sp):]
