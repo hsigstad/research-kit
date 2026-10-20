@@ -1183,7 +1183,13 @@ def _parse_banned_phrases(overlay_path: Path) -> list[tuple[re.Pattern, str, str
     Entries that are too context-dependent for mechanical matching
     (e.g. the bare word `file`) are skipped entirely.
     """
-    SKIP = {"file"}
+    # `matched` is correct terminology in any genuine matching design
+    # (matched pairs, matched samples, matched on covariates); the rule
+    # only targets its misuse for a non-matched comparison group, which
+    # the linter cannot tell apart from the legitimate use. Keep it as
+    # human/LLM guidance in the table but do not flag it mechanically,
+    # the same treatment as the bare word `file`.
+    SKIP = {"file", "matched"}
     text = overlay_path.read_text(errors="replace")
     m = re.search(r"##\s+Banned phrases\b(.*?)(?=\n##\s|\Z)", text, re.DOTALL)
     if not m:
