@@ -382,6 +382,18 @@ Each entry must include:
 - reason
 - alternatives considered (if applicable)
 
+Required entry format (labeled so the fields are machine-checkable — a
+non-decision cannot be filled in without leaving a field empty):
+
+    ## YYYY-MM-DD — <short title>        ← the date is WHEN the decision was made
+    **Decision:** <the choice made, stated declaratively — what was chosen>
+    **Reason:** <why; the rationale not recoverable from code or results>
+    **Alternatives:** <options considered and rejected>   (if applicable)
+
+An entry missing the dated header, a `**Decision:**`, or a `**Reason:**` is not
+a valid decision and will be flagged. If you cannot state a crisp Decision and
+Reason, it is not a decision yet — route it (below) instead.
+
 **A `decisions.md` entry records a *choice and its rationale* — nothing else.**
 If an entry has no `reason`, it is not a decision; route it. Common misuse to
 avoid (route instead):
