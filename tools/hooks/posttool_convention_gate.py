@@ -71,6 +71,27 @@ def check_docs_md(path: Path):
         )
 
 
+def check_decisions(path: Path):
+    # projects/<slug>/docs/decisions.md -> run check_docs for that slug, keep
+    # only the decisions.* findings on this file (labeled-field + bad-header).
+    rel = path.relative_to(WORKSPACE)
+    slug = rel.parts[1]
+    data = run_json(["python3", str(TOOLS / "check_docs.py"), slug, "--json"])
+    hits = []
+    for repo in data.get("repos", []):
+        for finding in repo.get("errors", []) + repo.get("warnings", []):
+            if (finding.get("path", "").split(":")[0] == "docs/decisions.md"
+                    and finding.get("code", "").startswith("decisions.")):
+                hits.append(f"- {finding['path']}: {finding['msg']}")
+    if hits:
+        report(
+            "decisions.md convention (docs contract: each entry needs "
+            "**Decision:** + **Reason:**; non-decisions route to "
+            "todo.md/done.md/reference/findings). Fix now:",
+            hits,
+        )
+
+
 def check_source_py(path: Path):
     text = path.read_text(errors="replace")
     lines = text.splitlines()
@@ -135,6 +156,8 @@ def main():
     if len(rel.parts) < 3 or rel.parts[0] not in ("projects", "pipelines"):
         fail_open()
     if rel.parts[2] == "docs" and path.suffix == ".md":
+        if path.name == "decisions.md":
+            check_decisions(path)
         check_docs_md(path)
     elif rel.parts[2] == "source" and path.suffix == ".py":
         check_source_py(path)

@@ -735,6 +735,12 @@ def lint_gitignore_build(repo: Path, f: Findings):
 
 DECISIONS_HEADER_RE = re.compile(r"^##\s+(\d{4}-\d{2}-\d{2})\s+[—\-]\s+\S", re.MULTILINE)
 DECISIONS_ANY_H2_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
+# Entries dated >= this cutoff must carry the labeled fields (older ones are
+# grandfathered). A real decision states a choice and a reason; a note that
+# can't fill both is not a decision (route it — see project_docs_contract.md).
+DECISIONS_LABELED_CUTOFF = "2026-10-20"
+DECISION_FIELD_RE = re.compile(r"^\s*\*\*Decision:\*\*\s*\S", re.MULTILINE)
+REASON_FIELD_RE = re.compile(r"^\s*\*\*Reason:\*\*\s*\S", re.MULTILINE)
 
 def lint_decisions(repo: Path, f: Findings):
     decisions = repo / "docs" / "decisions.md"
@@ -752,6 +758,27 @@ def lint_decisions(repo: Path, f: Findings):
             line_no = text[:m.start()].count("\n") + 1
             f.warn("decisions.bad-header",
                    f"decisions.md entry header doesn't match `## YYYY-MM-DD — <title>`: '## {title}'",
+                   path=f"docs/decisions.md:{line_no}")
+
+    # Labeled-field requirement: each entry dated >= the cutoff must state a
+    # **Decision:** (the choice) and a **Reason:** (why). Entries before the
+    # cutoff are grandfathered. Catches status/task/log dumps and not-yet-made
+    # decisions — they cannot fill both fields.
+    headers = [(mm.start(), mm.group(1)) for mm in DECISIONS_HEADER_RE.finditer(text)]
+    for i, (start, date) in enumerate(headers):
+        if date < DECISIONS_LABELED_CUTOFF:  # ISO dates compare lexically
+            continue
+        end = headers[i + 1][0] if i + 1 < len(headers) else len(text)
+        body = text[start:end]
+        missing = [lbl for lbl, rx in (("**Decision:**", DECISION_FIELD_RE),
+                                        ("**Reason:**", REASON_FIELD_RE))
+                   if not rx.search(body)]
+        if missing:
+            line_no = text[:start].count("\n") + 1
+            f.warn("decisions.missing-fields",
+                   f"decisions.md entry (dated {date}) is missing {' and '.join(missing)} — "
+                   "a decision must state the choice and the reason; if you can't, it is not "
+                   "a decision (route to todo.md/done.md/reference/findings per the docs contract).",
                    path=f"docs/decisions.md:{line_no}")
 
 
