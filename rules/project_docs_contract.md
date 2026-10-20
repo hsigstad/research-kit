@@ -382,6 +382,23 @@ Each entry must include:
 - reason
 - alternatives considered (if applicable)
 
+**A `decisions.md` entry records a *choice and its rationale* — nothing else.**
+If an entry has no `reason`, it is not a decision; route it. Common misuse to
+avoid (route instead):
+
+| If the note answers… | it is… | route to |
+|---|---|---|
+| "what did we choose, and why" | a decision | **decisions.md** (keep) |
+| "what is the current state" (e.g. "X is frozen", "v1 until rerun") | status | derive from git / a status note — not here |
+| "what should we do" (incl. conditional "on re-run, fix X") | a task | **todo.md** |
+| "what did we do" (ran N polls, committed abc123) | a log | **done.md** / handoff / git |
+| "how does X work" (field defs, data layout) | reference | **reference/** / **data.md** |
+| "what did we find" (an estimate/result) | a finding | **findings.md** |
+
+Recommended: begin each project's `docs/decisions.md` with a one-line guard
+comment stating the above, so a session editing the file sees the rule at the
+point of use, not only in this contract.
+
 ---
 
 ### thinking.md
