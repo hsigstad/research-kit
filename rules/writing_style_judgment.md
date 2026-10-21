@@ -28,7 +28,16 @@ what it can't see. `[ws]` = workspace-specific.)
   reduce, increase, affect* claim causality. For OLS/descriptive:
   *associate, predict, accompany, are linked to*.
 - **Don't hedge in the main sentence.** Caveat goes in a footnote or
-  follow-up.
+  follow-up. (This governs *findings* — what you measured. It does **not**
+  license asserting inferences; see the next rule.)
+- **No claim the design can't back.** State findings plainly, but never
+  assert an unobserved *mechanism* (where/how an effect is produced) or a
+  *policy's efficacy* as fact — those are inferences beyond the data. Mark
+  them as inference (*these results suggest*, *consistent with*, *point to*)
+  or frame as a proposal (*one response is to…*). An observational design
+  cannot state where a bias enters or that a remedy works. Banned: *the bias
+  enters later*, *two remedies can*. The linter's `unbackable-claim` check
+  catches the lexical cases; this rule covers the rest.
 - **`[ws]` Literature paragraph ties to OUR contribution** — not a
   roll-call. Tie each named tradition back to the contribution in
   the same sentence.

@@ -1248,8 +1248,91 @@ def check_banned_phrases(filepath: str, lines: list[tuple[int, str, str]],
 # Runner
 # ---------------------------------------------------------------------------
 
+# Hedges that mark a statement as an inference rather than a bald assertion.
+# A mechanism/efficacy claim is fine once it is hedged or conditionalized.
+_UNBACKABLE_HEDGE_RE = re.compile(
+    r"\b(suggests?|suggesting|consistent with|points? to|pointing to|"
+    r"indicat\w+|appears?|seems?|likely|plausibl\w+|may|might|could|would|"
+    r"we (?:infer|read|interpret|cannot say|do not know)|implies|if)\b",
+    re.IGNORECASE,
+)
+# A negation/limitation cue just before the claim makes it humble, not bald:
+# "it cannot show where the bias was made", "the bias does not enter here".
+_UNBACKABLE_NEG_RE = re.compile(
+    r"\b(cannot|can't|could not|does not|do not|did not|not|never|without|"
+    r"unable|neither|nor|no)\b",
+    re.IGNORECASE,
+)
+# (a) Bald mechanism-location claims: an observational design cannot state
+#     *where/how* the effect is produced as fact.
+_UNBACKABLE_MECH_RE = re.compile(
+    r"\b(?:the\s+)?(?:bias|slant|gap|tilt|favor|effect|overstatement)\s+"
+    r"(?:enters|is\s+(?:introduced|produced|made|created|generated|inserted)|"
+    r"arises|was\s+made)\b",
+    re.IGNORECASE,
+)
+# (b) Policy-efficacy claims: asserting a remedy works (or cannot work).
+_UNBACKABLE_EFFICACY_RE = re.compile(
+    r"\b(?:remed\w+|disclosure|regulations?|a\s+rule|rules|reforms?|polic\w+|"
+    r"sanctions?|the\s+law|courts?)\b[^.]{0,40}?\b"
+    r"(?:can|could|would|will|cannot|can't|could\s+not)\b[^.]{0,25}?\b"
+    r"(?:reach|fix|solv\w+|prevent\w*|eliminat\w+|stop|address\w*|deter\w*|"
+    r"disciplin\w+|curb|remove|catch|detect|close)\b",
+    re.IGNORECASE,
+)
+# "Two remedies can.", "the remedy would" — elliptical efficacy modal.
+_UNBACKABLE_REMEDY_RE = re.compile(
+    r"\b(?:remed(?:y|ies)|solutions?)\s+(?:can|could|would|will)\b",
+    re.IGNORECASE,
+)
+
+
+def check_unbackable_claims(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """Flag claims an (observational) design cannot back as fact.
+
+    Two failure modes Claude keeps introducing: (a) bald mechanism-location
+    claims -- "the bias enters later", "the slant is produced during fielding";
+    (b) policy-efficacy claims -- "two remedies can", "disclosure can reach it".
+    State findings plainly, but mark any inference beyond the design as an
+    inference ("these results suggest", "consistent with", "point to") or frame
+    it as a proposal ("one response is to..."). A claim preceded by a hedge or
+    an "if" on the same line is exempt. Warning severity: a conscious keep/fix,
+    not a hard error.
+    """
+    violations = []
+    for lineno, _raw, prose in lines:
+        for rule_kind, rx in (
+            ("mechanism", _UNBACKABLE_MECH_RE),
+            ("policy-efficacy", _UNBACKABLE_EFFICACY_RE),
+            ("policy-efficacy", _UNBACKABLE_REMEDY_RE),
+        ):
+            for m in rx.finditer(prose):
+                # Exempt if the clause is already hedged/conditionalized,
+                # or negated/limited just before the claim (a humble statement).
+                if _UNBACKABLE_HEDGE_RE.search(prose[:m.start()]):
+                    continue
+                if _UNBACKABLE_NEG_RE.search(prose[max(0, m.start() - 30):m.start()]):
+                    continue
+                if rule_kind == "mechanism":
+                    msg = f"Bald mechanism claim: \"{m.group().strip()}\""
+                    fix = ("Observational design can't state where/how the effect "
+                           "is produced as fact; hedge it (\"these results suggest…\", "
+                           "\"consistent with…\") or frame as inference.")
+                else:
+                    msg = f"Unbacked policy-efficacy claim: \"{m.group().strip()}\""
+                    fix = ("Don't assert a remedy works (or can't); propose it "
+                           "(\"one response is to…\") or hedge.")
+                violations.append(Violation(
+                    file=filepath, line=lineno, rule="unbackable-claim",
+                    severity="warning", message=msg, suggestion=fix,
+                    context=prose.strip()[:120],
+                ))
+    return violations
+
+
 ALL_CHECKS = [
     check_ai_tell,
+    check_unbackable_claims,
     check_filler_phrases,
     check_throat_clearing,
     check_editorializing,
