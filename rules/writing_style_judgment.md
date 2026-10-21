@@ -16,7 +16,12 @@ what it can't see. `[ws]` = workspace-specific.)
 - **Editing a coauthor's draft: minimal intervention.** Change a word
   when wrong; restructure a sentence when broken; leave the paragraph
   alone when it works. Don't replace phrasing because "I would have
-  written it this way" — voice is load-bearing.
+  written it this way" — voice is load-bearing. **`[ws]` Editing
+  Henrik's own paper prose: load
+  `research/rules/writing_style/henrik_voice.md` first.** It carries the
+  mode rule (edit size scales down as a passage accumulates his review —
+  fresh prose is fine on AI-seeded early drafts, minimal word-level edits
+  on text he has reviewed) and a few-shot of his real annotations.
 - **Topic sentence first; headings name the specific subject.**
   "The phenomenon" → "Sponsorship bias in registered polls".
 - **Vary sentence length within paragraphs.** Three 18–24-word
