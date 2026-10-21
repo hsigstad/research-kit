@@ -107,6 +107,14 @@ technical flourishes leave the contribution clearer.
   identifiers (`AN-098`), code names, temporary variables, build-stage
   names (`assemble layer`, `intermediate layer`), TODO references —
   all belong in scripts and project docs, not the paper.
+- **Prefer the specific verb; don't use *carry* as a generic *have /
+  contain / include*.** "The poll *carries* the signature of a
+  statistician" or "the estimate *carries* a positive sign" read
+  naturally, but don't let *carry* stand in for *has / includes / names
+  / shows* across many sentences (polls carrying sponsors, rows carrying
+  margins, shares carrying decimals) — the repetition reads as a tic.
+  Name the specific relation. Soft rule, not linted: legitimate uses
+  would false-positive, so flag by judgment.
 
 ## Paragraph structure
 
