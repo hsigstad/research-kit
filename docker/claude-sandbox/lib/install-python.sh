@@ -34,6 +34,7 @@ python3 -m venv "$VENV_DIR"
     pypdf pdfplumber PyMuPDF \
     pdf2image pytesseract \
     linearmodels pydantic pyreadr \
+    geopandas shapely pyogrio \
     html2text \
     fastmcp google-api-python-client google-auth google-auth-oauthlib \
     requests-cache tenacity \
