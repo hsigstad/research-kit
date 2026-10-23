@@ -69,8 +69,10 @@ ALLOWED_PIPELINE_DOCS = REQUIRED_PIPELINE_DOCS | OPTIONAL_PIPELINE_DOCS
 
 # Repos exempt from the docs contract, as "<kind>s/<slug>". marcella is
 # RA-owned (Marcella's own working repo — notebooks and scripts at the
-# root); we don't impose the contract structure on it.
-EXEMPT_REPOS = {"pipelines/marcella"}
+# root); we don't impose the contract structure on it. monopanel is the
+# (inactive) code repo for an already-published monotonicity project — no
+# live doc-contract work, so we don't impose the structure (Henrik 2026-10-23).
+EXEMPT_REPOS = {"pipelines/marcella", "projects/monopanel"}
 
 ALLOWED_DOC_SUBFOLDERS = {
     "briefs", "reference", "notes", "literature", "anecdotes",
