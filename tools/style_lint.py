@@ -911,10 +911,13 @@ def check_foreign_language(filepath: str, lines: list[tuple[int, str, str]]) -> 
 
 def check_participle_tail(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
     """§4: present-participle tail clauses (AI-cadence)."""
+    # "demonstrating" dropped from the list: "X, demonstrating that Y" is a
+    # legitimate results-implication connector in academic prose (e.g. an abstract
+    # drawing a policy implication), not the AI-cadence filler the other verbs flag.
     pattern = re.compile(
         r",\s+(providing|ensuring|reflecting|emphasizing|highlighting|"
         r"showcasing|fostering|underscoring|contributing to|reinforcing|"
-        r"signaling|demonstrating|illustrating)\b[^.!?]{0,120}[.!?]",
+        r"signaling|illustrating)\b[^.!?]{0,120}[.!?]",
         re.IGNORECASE,
     )
     violations = []
