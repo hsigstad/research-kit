@@ -352,12 +352,13 @@ materials"), not by where it sits in our tree.
 
 - "In Section 2, we develop..." — fine and useful at the end of an intro.
 - "In this paper, I show..." — fine to anchor the reader early.
-- Don't pad with "in this section, we will discuss" when the section heading
-  already says it. But a **substantive purpose-opener is welcome**: "In this
-  section we estimate the rate at which two random judges agree" previews the
-  estimand and orients the reader — it adds what the heading doesn't. The line
-  is content vs padding: state what the section establishes (fine); don't just
-  restate the heading ("In this section we present our results" — cut).
+- **Open a section/subsection with a substantive purpose sentence** — this
+  is the preferred default, not merely tolerated: "In this section we
+  estimate the rate at which two random judges agree" previews the estimand
+  and orients the reader. The one thing to avoid is heading-restatement
+  padding: "In this section we present our results" adds nothing over a
+  "Results" heading and is cut. The line is content vs padding — name the
+  question or estimand the section settles (fine); don't echo the title.
   Especially useful in technical / SI sections.
 - **A preview must match what follows.** If a sentence says "what remains is to
   show X and Y", the next sections must be X then Y, in that order. Make the

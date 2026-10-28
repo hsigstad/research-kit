@@ -301,6 +301,25 @@ For each `(target, check_kind)` pair:
      conclusion sections only) — does the conclusion restate all
      findings (bad) or give a short takeaway (good)? Flag "future
      research" agendas.
+  9. **Section opener names the scope** (`writing_style.md` §8;
+     [`writing_style/results.md`](../../../rules/writing_style/results.md);
+     body/technical sections) — does the section/subsection's first
+     paragraph open with a sentence naming the question or task it
+     settles ("In this section, we test whether…", "We first
+     compare…")? Flag if it dives into a number, a result, or a
+     table/figure reference with no scope framing — OR if the opener is
+     bare heading-restatement padding ("In this section we present our
+     results"). The wanted form states what the section *does*; it is
+     not the heading echoed back.
+  10. **Results paragraph names the exhibit first**
+     ([`writing_style/results.md`](../../../rules/writing_style/results.md);
+     results/data/appendix) — does a paragraph that reports a result
+     from a table or figure follow motivate → method → **exhibit
+     pointer** → interpret, naming the exhibit ("The results are shown
+     in Table~X", "Table~X reports…", "Figure~X shows that…") *before*
+     the numbers and interpretation? Flag paragraphs that state the
+     numbers or the takeaway first and cite the exhibit only in a
+     trailing clause — the pointer should lead, not trail.
 
   **Type-driven scoping.** Apply only the sub-checks relevant to the
   resolved section type:
@@ -309,14 +328,14 @@ For each `(target, check_kind)` pair:
   |-----------------|----------------------------------------------------|
   | `intro`         | 1, 2, 7                                            |
   | `abstract`      | use [`abstract.md`](../../../rules/writing_style/abstract.md) rules directly; sub-checks 1–8 mostly don't apply |
-  | `results`       | 2, 3, 4, 5, 6, 7                                   |
-  | `methods`       | 2, 3, 4, 7                                          |
-  | `data`          | 2, 3, 5, 6, 7                                       |
-  | `theory`        | 2, 7 (skip 3/4 — formal+informal pairing applies, not triangular structure) |
-  | `institutions`  | 2, 3, 7                                             |
-  | `discussion`    | 2, 3, 4, 7                                          |
+  | `results`       | 2, 3, 4, 5, 6, 7, 9, 10                           |
+  | `methods`       | 2, 3, 4, 7, 9                                       |
+  | `data`          | 2, 3, 5, 6, 7, 9, 10                               |
+  | `theory`        | 2, 7, 9 (skip 3/4 — formal+informal pairing applies, not triangular structure) |
+  | `institutions`  | 2, 3, 7, 9                                          |
+  | `discussion`    | 2, 3, 4, 7, 9                                       |
   | `conclusion`    | 2, 8                                                 |
-  | `appendix`      | 2, 5, 6, 7                                          |
+  | `appendix`      | 2, 5, 6, 7, 9, 10                                  |
   | (unknown type)  | 2, 7 (general defaults only)                        |
 
   Plus any additional checks from the per-type file beyond what the

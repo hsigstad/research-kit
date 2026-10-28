@@ -16,6 +16,16 @@ baseline) and [`body.md`](body.md) (body baseline).
   above: when you state a number in prose, cite where the reader can
   see it — "the model agrees with the sitting judge on 69% (Table S1)".
   Every stated result points to its table or figure.
+- **Results-paragraph shape: motivate → method → exhibit → interpret.**
+  Pose the question, say how you address it ("To test this, we…"), **name
+  the exhibit before the numbers** ("The results are shown in Table~X" /
+  "Table~X reports…" / "Figure~X shows that…"), then interpret — marking
+  the conclusion as inference ("suggests"). Never interpret a number
+  before pointing to where it lives; the exhibit reference leads.
+- **Open a results section/subsection with a scope sentence.** First
+  sentence names the question or task the section settles ("In this
+  section, we test whether…") — not a restatement of the heading (that
+  padding is still cut; baseline §8).
 - **Define the outcome before you report it; walk panels in order.**
   State what the metric is ("agreement is balanced accuracy") before the
   first result that uses it, and introduce a multi-panel exhibit in
