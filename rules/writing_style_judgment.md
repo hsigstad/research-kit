@@ -49,6 +49,12 @@ what it can't see. `[ws]` = workspace-specific.)
   cannot state where a bias enters or that a remedy works. Banned: *the bias
   enters later*, *two remedies can*. The linter's `unbackable-claim` check
   catches the lexical cases; this rule covers the rest.
+    - Don't assert a claim you'd then concede is unsupported
+      (*widely understood to exert substantial influence* → drop or cite).
+    - Don't attribute a close match to one cause when the comparison differs
+      on many dimensions.
+    - Calibrate normative endorsement down (*legitimate* → *might be
+      justified*).
 - **`[ws]` Literature paragraph ties to OUR contribution** — not a
   roll-call. Tie each named tradition back to the contribution in
   the same sentence.

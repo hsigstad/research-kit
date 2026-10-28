@@ -15,6 +15,10 @@ have additional content rules.
   table when a single sentence carrying the numbers suffices. The main
   text already earned the reader's attention; an appendix check just
   closes the loop.
+- **Give each appendix block a `\paragraph` heading.** In a long
+  appendix section, each distinct block gets a `\paragraph` heading
+  announcing what it tests. Untitled run-on blocks bury the structure
+  and make the section hard to skim.
 - **What belongs here.** Robustness checks not central to the main
   argument; alternative specifications; technical proofs; data
   appendices that catalog rather than analyze; extended descriptive

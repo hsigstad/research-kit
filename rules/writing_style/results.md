@@ -35,6 +35,12 @@ baseline) and [`body.md`](body.md) (body baseline).
   "Table~X reports…" / "Figure~X shows that…"), then interpret — marking
   the conclusion as inference ("suggests"). Never interpret a number
   before pointing to where it lives; the exhibit reference leads.
+- **Lead the mechanism with the concrete exhibit; name the formal
+  object after.** Open on the figure or worked example and walk the
+  reader through it, *then* name the formal object or write the
+  equation — not the reverse. Don't open with an abstract hypothetical
+  or reduce a rich object to "N clean inputs". Keep a simplified
+  formula in the body and defer the general one to the appendix.
 - **Open a results section/subsection with a scope sentence.** First
   sentence names the question or task the section settles ("In this
   section, we test whether…") — not a restatement of the heading (that
@@ -53,8 +59,15 @@ baseline) and [`body.md`](body.md) (body baseline).
   the table or figure from the caption alone. Define every symbol;
   spell out variable names; state what each column shows. See general
   §10.
+- **Order exhibit rows and panels to match the prose.** Lay out
+  panels, rows, and series in the order the body discusses them. If the
+  text takes panel B before panel A, switch the panels so the reader
+  meets them in reading order.
 - **Robustness and heterogeneity belong in subsections, not as preamble.**
-  Lead with the main result; put alternatives after.
+  Lead with the main result; put alternatives after. A robustness check
+  in the main text gets no separate paragraph or header — one sentence
+  naming the checks briefly, plus a pointer to the appendix, not a
+  build-up.
 - **Appendix-pointer sentences lead with the claim, not the
   enumeration.** A sentence whose shape is "Robustness checks —
   dropping the largest sponsor, tightening name matching, party-by-
@@ -64,7 +77,10 @@ baseline) and [`body.md`](body.md) (body baseline).
   result survives [the load-bearing variations, named briefly]."
   Same for diagnostic paragraphs whose payload is "we ran X and
   found no anomaly": one sentence in the body, the detail in the
-  appendix.
+  appendix. A secondary analysis that has its own appendix opens the
+  body paragraph with the pointer ("In Appendix~J, we ask whether…"),
+  then carries only the finding and the suggested conclusion — it does
+  not restate the method.
 - **Reference figures and tables linearly.** Don't preview ("As we will
   see in Table 6") or recall ("Recall from Table 2"). If you find
   yourself doing this, the linear sequence is wrong.
@@ -80,6 +96,16 @@ baseline) and [`body.md`](body.md) (body baseline).
   magnitude *moves* across cuts (e.g., +8 pp in sparse-coverage
   races vs. +3 pp in dense-coverage races) belong in the
   heterogeneity subsection or the table, not in narrative summary.
+- **Report levels in the running text; let the table carry the
+  contrast.** Give the two group means in prose ("41.5% vs. 41.6%",
+  "28.4% vs. 28.0%"); the difference, standard error, and *p*-value
+  belong in the table. Putting the test statistic in the sentence
+  duplicates the exhibit and reads thinner than the levels themselves.
+- **State a signed comparison as a level, not "X less than Y".**
+  "9 pp less bias" invites the reader to misread 9 pp as a level; state
+  the level itself (the gap is −0.3 pp) or name the comparison group
+  explicitly. One clean number, not two cuts conflated into a
+  difference.
 - **Don't editorialize the data.** "The temporal evidence is starkest"
   → flag and rewrite. State the finding and the number; let the reader
   judge strength. See general §2.

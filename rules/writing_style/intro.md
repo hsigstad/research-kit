@@ -97,6 +97,19 @@ or expand by section. The order matters more than the exact count.
 - **The hook must be concrete.** A reader who has never seen this paper
   should know in the first 30 seconds what it is about. Generic abstract
   framing fails this test.
+- **Establish the object before the specific instance or test.** Name
+  the general phenomenon, or define the object, before the specific fact
+  or test that turns on it: what an income quota is before testing
+  whether it is manipulated; that automated sanctioning is plausibly
+  near before naming the drafting system; the general class of decision
+  before the specialized binary. Supply the context a general-interest
+  reader needs to follow the instance. (Distinct from the body-section
+  rule against writing a general model and then specializing — that
+  governs the theory model, this governs the intro's framing.)
+- **Don't front-load generalizability.** Introduce the specific setting
+  on its own terms first. Make the "this generalizes to…" case later, in
+  its own place — not in the opening motivation, where it competes with
+  the concrete hook.
 - **Place the literature-contributions paragraph near the end, not at
   the start.** The intro is read top-to-bottom; readers care about your
   question and findings before they care which threads you contribute
@@ -110,6 +123,10 @@ or expand by section. The order matters more than the exact count.
   — not a JEL-style review of the whole literature (Cochrane). If you
   find yourself stretching for a second or third contribution, the
   intro is telling you the paper has one.
+- **Don't close the intro on "Our contribution is…".** End the intro on
+  the findings and why they matter. Related papers go in the literature
+  paragraph; method papers are cited in the body where the method is
+  used — not as the intro's parting note.
 - **Every outcome studied must be motivated before it appears as a
   result.** If the paper analyses vote share, the intro must motivate
   why vote share matters before the result paragraph that reports the

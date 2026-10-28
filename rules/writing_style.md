@@ -45,6 +45,11 @@ dropped without losing meaning, drop it.
   author; "the estimator is defined as..."), or when the object is the
   natural topic of the paragraph. When you write a passive, ask whether
   the actor is genuinely irrelevant or you've dropped them by habit.
+- **State methods actively; don't give the estimator agency.** Write "we
+  compare treated and control municipalities" / "we cluster standard
+  errors by municipality", not "the fixed effect compares…" or a bare
+  "standard errors cluster by municipality". The researcher performs the
+  method; the estimator is not an actor.
 - Direct claims, not aspirations. "We show that X" — not "this paper aims to
   show", "this study seeks to investigate", "we attempt to estimate".
 - No throat-clearing meta-talk. Don't write "the contribution of this paper
@@ -87,6 +92,17 @@ paragraph. When a coauthor flags a sentence as too long or too
 complicated, the right move is usually to delete a clause or the whole
 sentence, not to rewrite it. Ask first: "does the paragraph still work
 if I cut this?" — and if yes, cut.
+
+**Unpack dense sentences.** Break a chain of appositives into separate
+sentences — split, don't reword. Lift a dense embedded list out into its
+own framed sentence. Recast one long qualified clause as two short
+parallel sentences: "When the goal is prediction… But when the goal is
+deterrence…".
+
+**Don't repeat a distinctive key verb in adjacent sentences.** Vary a
+weight-bearing content verb — *drives*, *produces* — across adjacent
+sentences; reusing it reads as a tic. Ordinary verbs (*is*, *show*,
+*find*) are exempt.
 
 - At most two subordinate clauses. Three-clause stacks get split.
 - Em-dashes are fine — used as parenthetical inserts, to introduce examples,
@@ -149,6 +165,32 @@ reader: they have to decode the term before they can read on. Compare:
   large-scale dataset of procurement-corruption cases classified by
   mechanism."
 
+**One term (and one symbol) per concept.** Pick one word for a construct
+and use it throughout: *imprisonment* (not alternating with
+*incarceration*); *reversal* (not also *crossing* and
+*monotonicity-violation*); *case* (not also *vignette*). The same for
+notation — don't reuse one symbol for two quantities: if `w` denotes
+weights, write `n_{ij}` for the count, not `w` again.
+
+**Reserve a word with precise technical meaning for that meaning.** If a
+word names a specific metric or estimand, don't spend it loosely.
+"accurate" is the literal accuracy metric — say "as good as a judge"
+when you mean valid-enough, not "accurate". Keep "gap" for the estimand
+and "bias" for the phenomenon; don't let them drift into each other.
+
+**Name the standard a relative or evaluative word is measured against.**
+A comparative needs its baseline stated. "optimal" → say what it
+maximizes; "more-favorable / less-favorable states" → "states more
+favorable to the worker's claim". Leaving the standard implicit makes
+the reader guess the yardstick.
+
+**Gloss specialized field terms on first use.** Domain vocabulary opaque
+to a general reader gets a plain gloss the first time: *custody* →
+"custody (unsuspended plus suspended prison)"; *clawback* → "a pay
+clawback". Conversely, drop a specialist method-label where the plain
+term carries the meaning: "95% Wilson confidence intervals" → "95%
+confidence intervals", unless the Wilson construction is load-bearing.
+
 **Avoid (AI-tell vocabulary):** delve into, leverage, navigate (as buzzword),
 underscore, robust (as filler), comprehensive, multifaceted, paradigm,
 seamless, pivotal, intricate, holistic, dynamic landscape, in today's
@@ -180,11 +222,30 @@ one. "A flexible design" or "a well-identified design".
 **No tri-colon lists everywhere.** Three-item lists are fine when there are
 exactly three things. Don't manufacture them for cadence.
 
+**No figurative or idiomatic phrasing.** State it literally. "makes the
+case" → say what the exhibit shows; "fan out" → "vary across about 40
+percentage points"; "within its reach" → the plain relation; "reach the
+bias" / "check the bias" → "punish the bias". Figurative verbs and idioms
+force the reader to translate; the literal statement is shorter and exact.
+
+**Describe the behavior, not the plot geometry.** Say what the pattern
+means, not what the line looks like. "the line is flat" → "the models
+essentially do not respond to occupation"; "grant rates fan out" →
+"grant rates vary across about 40 percentage points". The reader cares
+about the behavior the figure encodes, not its shape.
+
 **Clothe the naked "this".** Bare "This shows…" / "This implies…" leaves
 the antecedent ambiguous, especially when the prior sentence has multiple
 candidate referents. Always say "This *regression* shows…" / "This *rule*
 implies…" / "This *finding* suggests…" — name what *this* refers to. The
 fix is one extra word and removes a recurring source of reader confusion.
+
+**Don't open a sentence with a bare "This" or an escalation connector.**
+Beyond clothing the antecedent: don't *open* a sentence with a
+content-free "This inverts…" / "This helps:…" — lead with the subject or
+mechanism ("Because we never observe true conduct, …"). And don't open
+with escalation adverbs — "Worse,", "Crucially,", "Strikingly," — which
+editorialize before the content arrives.
 
 **Translate code language into prose.** The data-engineering vocabulary
 we use in scripts and design docs — `cell`, `within-cell`, `grain`,
@@ -233,7 +294,13 @@ repository paths** (`pipelines/politica/source/llm/`,
 `source/clean/parse.py`): never cite a repo path in the paper, in the
 replication-materials prose, or in any doc a coauthor reads — name the
 artifact by what it is ("the prompts and schema are in the replication
-materials"), not by where it sits in our tree.
+materials"), not by where it sits in our tree. The same applies to
+**in-house shorthand and cross-paper dependencies**: don't compress a
+quantity into private shorthand ("the quota share above five SM" → "the
+share of respondents earning over five minimum wages"), and don't lean on
+a companion or earlier paper's vocabulary, section labels, or table
+numbers ("Own- and Cross-Weights (Q3)", "Table D.9"). The prose must be
+self-contained.
 
 ## 5. Paragraph structure
 
@@ -245,7 +312,11 @@ materials"), not by where it sits in our tree.
   registered polls"*, *"Brazilian electoral-poll regulation"*,
   *"Policy options to reduce poll bias"*. The cost is two more words;
   the gain is a skimmable structure where each heading earns its place
-  in the table of contents.
+  in the table of contents. Prefer the action or question form —
+  *"Testing for income-quota manipulation"*, *"Assessing the incentive
+  properties"* — over a bare topic noun (*"Own- and Cross-Weights"*) or
+  the method (*"Subsampling"*); name what the reader will learn, and if
+  the title and the body disagree, fix one.
 - **Don't lead an opener with the conclusion.** Paragraph and
   subsection openers should name the question or the object under
   discussion, not announce the answer the section is about to derive.
@@ -267,12 +338,21 @@ materials"), not by where it sits in our tree.
   the limitation and what cannot be ruled out, not with a rhetorical
   "natural worry".
 - One idea per paragraph.
+- **A separate topic gets its own heading; size a section to its
+  weight.** When a buried paragraph turns to a genuinely separate topic,
+  give it its own heading ("Beyond labor courts"). And the section
+  carrying the key contribution should be long enough, and titled
+  clearly enough, to signal that it is the center of the paper.
 - **State institutional details, sample definitions, and data-construction
   facts once.** Cross-reference rather than re-explain. If the reader
   already learned in §3 that the sample is mayoral 1st-round candidates,
   do not restate the filter in §5 when discussing a robustness check —
   point at §3. The most common offender is the institutional setup
   paragraph that gets paraphrased every time it touches a new analysis.
+- **Point to a given appendix section once.** Don't scatter repeated
+  pointers to the same supplementary section across a short span.
+  Consolidate them into one reference, placed at the end of the
+  paragraph.
 - Question-then-answer is a recurring pattern: pose the question explicitly,
   then answer.
 - Formal + informal pairing for technical content: state the formal version,
@@ -290,6 +370,11 @@ materials"), not by where it sits in our tree.
 - Cite numbers from the data, not vague qualifiers. "65 percent less likely"
   beats "substantially less likely".
 - Name the example. "São Paulo Appeal Court", not "a state appellate court".
+- **Genericize domain nouns in the general framing; keep the specific as
+  the running example.** In the general claim, write "courts" or
+  "decision-makers' rulings"; then introduce the labor court as the
+  concrete example. This is the complement of "Name the example" — the
+  general statement stays general, the illustration stays specific.
 - **Foreign-language terms — introduce once, prefer English thereafter.**
   Gloss the term in parentheses on first use: `câmara` (courtroom),
   `comarca` (judicial district), `lista de antiguidade` (seniority list).
@@ -347,6 +432,23 @@ materials"), not by where it sits in our tree.
   sample reproducibly and without cherry-picking". Same instinct as
   banning "frozen taxonomy": don't relabel a method with a virtue
   adjective, state the method.
+- **Don't claim a guarantee the method can't give.** Verbs that assert
+  certainty or perfect fidelity — *certify, prove, guarantee, ensure,
+  reproduce* — usually overstate what a method delivers. An audit
+  *tests* a property, it does not *certify* it; a model *reaches the
+  judge's conclusion on 73% of cases*, it does not *reproduce the
+  reasoning*; a model *could learn* a bias, it does not *inherit* or
+  *absorb* it. This is the fidelity analogue of the causal-verb rule
+  (§4).
+- **State a tendency as a tendency, not an absolute.** "conditioning on
+  type drives deterrence to zero" → "conditioning on type tends to
+  weaken deterrence"; leave the limiting case to the following
+  sentences. And don't assert "the" effect when several exist — write
+  "typically" or "usually" and push the alternative to a footnote.
+- **Don't overclaim data coverage.** "we observe everything the judge
+  saw" → "the key documents the decision rests on". Don't claim
+  "everything", and don't enumerate what is missing in the same breath —
+  state what you do observe.
 
 ## 8. Signposting
 
@@ -442,6 +544,22 @@ demand.
   drop a redundant "(%)" when the column already carries the unit. (Treatment
   effects and differences stated in percentage points are a separate case; this
   is about reported rates and accuracies.)
+- **Don't restate what the exhibit already shows.** Prose and caption
+  should not duplicate the content of the table or figure — point to it
+  and say what to take from it, don't transcribe its numbers back into
+  words.
+- **Choose a readable sign convention and direction label for a derived
+  measure.** When a measure's sign is a modeling choice, orient it so
+  the reader reads it naturally, and name its direction ("pro-poor
+  skew") rather than leaving a bare signed number to be decoded.
+- **Give a number-column group a spanning header.** Add a spanning
+  `\cmidrule` column-group header that names what the number columns
+  measure, so the reader sees what the block of figures is before
+  reading any single column.
+- **Captions describe; they do not interpret.** A caption states the
+  sample, coding, units, and what a blank cell means — then stops. Keep
+  interpretation ("the confidence intervals are wide", "underpowered",
+  "rules out X") in the body, not the caption.
 
 ## 11. Typography
 
@@ -455,6 +573,11 @@ and parentheses across a paragraph — as a tell. The rule is per-paragraph:
 at most one em-dash per paragraph; reserve it for the genuinely
 parenthetical case where the comma or paren would lose structure. Where
 a comma works, use a comma; where a colon works, use a colon.
+
+**Use an em-dash, not a spaced en-dash.** For a parenthetical dash write
+LaTeX's `---` — an em-dash with no surrounding spaces — not a spaced
+en-dash ("Reports – a pollster…"). The spaced en-dash is a
+word-processor substitution; the em-dash is the correct glyph.
 
 **Avoid math symbols in prose.** Spell out the relationship: *district
 × filing-year stratum* → *district-by-filing-year stratum* or *strata
@@ -576,6 +699,11 @@ your first draft.
   rewrite as a positive claim.
 - Paragraphs of evenly long sentences — break one in half so the
   rhythm varies.
+- Empty **"directly"** — "We test this directly" → "We test this".
+- Filler **"also"** linking two independent findings — drop it; let the
+  two findings stand.
+- **Redundant apposition restating a quantifier** — "at least X%, a lower
+  bound" → "at least X%" ("at least" already says lower bound).
 - **Don't abbreviate author names.** "FF show that size matters" — spell
   out "Fama and French". (Cochrane)
 - **"Illustrative test" / "illustrative empirical work" — strike.** Do

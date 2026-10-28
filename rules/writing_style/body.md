@@ -54,6 +54,12 @@ This applies at every level:
   permits it. Opening each unit with its takeaway and back-filling the
   evidence is the conclusion-first failure — the most common way this
   rule gets misapplied — not triangular style.
+- **Put each point where it does its work.** A general
+  characterization belongs with the main estimates it describes;
+  supporting material goes in the section that uses it; motivation goes
+  up front, and the results section stays terse about it. A point
+  placed where it pays off reads once and well; the same point
+  scattered across sections reads as repetition.
 
 The intuition: readers are busy and impatient. No one reads the whole
 paper from start to finish. Make it easy to skim. Most readers want to
