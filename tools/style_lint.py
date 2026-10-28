@@ -1355,7 +1355,10 @@ ALL_CHECKS = [
     check_cute_quotation,
     check_greek_in_prose,
     check_foreign_language,
-    check_participle_tail,
+    # check_participle_tail,  # retired 2026-10-28 (Henrik): too many false
+    #   positives on benign summary tails ("…, reinforcing X") vs. true dangling
+    #   participles; he's fine with the formulation. Kept as a soft note in
+    #   writing_style.md, not linted. Re-enable by uncommenting.
     check_illustrative,
     check_em_dash_density,
     check_math_in_prose,

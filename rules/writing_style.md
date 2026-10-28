@@ -159,12 +159,15 @@ X in the world, a testament to, "the takeaway:" (as paragraph opener).
 These are the 2026-vintage promotional words that read as AI-drafted
 scene-setting.
 
-**No present-participle tail clauses.** Sentences ending in `…, providing
-/ ensuring / reflecting / emphasizing / highlighting / showcasing /
-fostering / underscoring / contributing to / reinforcing X` are a
-recurring AI cadence. Replace with a period and a separate sentence
-that says what the tail was trying to say, or just cut the tail. The
-substance usually survives the deletion.
+**Watch present-participle tail clauses (soft; not linted).** Sentences
+ending in `…, providing / ensuring / reflecting / emphasizing /
+highlighting / showcasing / fostering / underscoring / contributing to /
+reinforcing X` can read as an AI cadence, and a true *dangling* participle
+(where the tail's implied subject isn't the sentence's subject) is worth
+fixing — recast as purpose (`to highlight…`) or a separate sentence. But a
+clean summary tail (`…, reinforcing the conclusion that…`) is fine. This is
+a judgment call, not an enforced rule (the `participle-tail` linter check
+was retired 2026-10-28); don't flag these mechanically.
 
 **No negative parallelism.** `It is not X, it is Y` and `Not just X but
 Y` are now widely recognised as ChatGPT's signature rhetorical move.
@@ -566,8 +569,8 @@ your first draft.
 - "We leave X for future research" — strike entirely; readers care about
   what's in the paper, not your follow-up agenda.
 - Present-participle tail clauses ("…, providing X", "…, reflecting X",
-  "…, reinforcing X") — strip on a final pass; the substance usually
-  survives.
+  "…, reinforcing X") — fix only a true *dangling* participle; benign
+  summary tails are fine (soft, not linted — see §4).
 - Negative parallelism ("not X, but Y" / "it is not X, it is Y") —
   rewrite as a positive claim.
 - Paragraphs of evenly long sentences — break one in half so the
