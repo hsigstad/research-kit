@@ -44,6 +44,16 @@ This applies at every level:
   find yourself previewing or recalling, the linear sequence is wrong;
   reorder so each section reads forward without referencing things not
   yet discussed.
+- **Triangular is macro ordering, not paragraph inversion.** "Start with
+  the main result" means the *section* leads with its headline and
+  carries no warm-up — it does **not** mean every analysis subsection or
+  paragraph opens with its own conclusion. Within one analysis unit the
+  order is question → method → exhibit → results → suggested conclusion
+  (see [`results.md`](results.md)). A one-sentence scope opener ("In this
+  section we ask whether…") is a pointer, not warm-up, and triangular
+  permits it. Opening each unit with its takeaway and back-filling the
+  evidence is the conclusion-first failure — the most common way this
+  rule gets misapplied — not triangular style.
 
 The intuition: readers are busy and impatient. No one reads the whole
 paper from start to finish. Make it easy to skim. Most readers want to

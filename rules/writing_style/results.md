@@ -5,9 +5,22 @@ baseline) and [`body.md`](body.md) (body baseline).
 
 ---
 
-- **Lead with the headline.** First paragraph states the main result.
-  No warm-up exercises, no exhaustive descriptive statistics before the
-  main estimates.
+- **Lead with the headline — at the section scale.** The results
+  section's *first* paragraph states the main result; order subsections
+  so the big finding comes first; no warm-up exercises or exhaustive
+  descriptive statistics before the main estimates. This is macro
+  ordering (which result leads). It is **not** a license to open every
+  analysis subsection or paragraph with its conclusion — within a single
+  analysis unit the order is question → method → exhibit → results →
+  suggested conclusion (see the next rule). Leading each paragraph with
+  its takeaway is the most common conclusion-first failure.
+- **Analysis-unit order: question first, conclusion last.** A subsection
+  or single result paragraph runs: (1) name the question ("In this
+  section we ask whether…"); (2) method, one sentence ("To test this,
+  we…"); (3) name the exhibit *before* the numbers ("The results are
+  shown in Table~X" / "Figure~X shows…"); (4) state the results; (5) the
+  suggested conclusion, marked as inference ("these results suggest…").
+  Do not open the unit with the finding and back-fill the evidence.
 - **Every number is discussed.** No number in a cited table or figure
   goes without text discussion (Cochrane). "Row 1 of Table 3 shows a
   u-shaped pattern" is fine; "Table 5 shows summary statistics" alone

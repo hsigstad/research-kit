@@ -12,7 +12,13 @@ what it can't see. `[ws]` = workspace-specific.)
   `Appendix~D` mid-sentence in the lede. Pointers to later *sections*
   are fine in footnotes and the "organized as follows" para.
 - **Don't lead an opener with the conclusion.** Paragraph and
-  subsection openers name the question, not the answer.
+  subsection openers name the question, not the answer. An analysis unit
+  runs: question ("In this section we ask whether…") → method ("to test
+  this, we…") → exhibit ("results in Table X") → results → suggested
+  conclusion ("these results suggest…"). "Lead with the result" is
+  *macro* ordering (which result the whole *section* leads with), not a
+  license to front-load each paragraph's takeaway and back-fill the
+  evidence — that inversion is the most common failure of this voice.
 - **Editing a coauthor's draft: minimal intervention.** Change a word
   when wrong; restructure a sentence when broken; leave the paragraph
   alone when it works. Don't replace phrasing because "I would have
