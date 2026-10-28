@@ -107,7 +107,11 @@ sentences; reusing it reads as a tic. Ordinary verbs (*is*, *show*,
 - At most two subordinate clauses. Three-clause stacks get split.
 - Em-dashes are fine — used as parenthetical inserts, to introduce examples,
   or to gloss a term.
-- Semicolons are fine; use them when a comma would lose the structure.
+- Semicolons: use sparingly. The clear case for one is separating list
+  items that themselves contain commas, where comma-only punctuation would
+  be ambiguous; many authors avoid the clause-join entirely, and a project
+  overlay may restrict semicolons further (the workspace overlay near-bans
+  them).
 - Don't bury the verb. Subject and main verb stay close.
 - **"Where" vs "in which".** "Where" refers to a place; "in which" to a
   model or framework. Write *models in which consumers have uninsured
