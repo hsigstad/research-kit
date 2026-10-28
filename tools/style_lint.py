@@ -933,6 +933,32 @@ def check_participle_tail(filepath: str, lines: list[tuple[int, str, str]]) -> l
     return violations
 
 
+def check_semicolons(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
+    """`[ws]` Near-ban on semicolons in paper prose (Henrik, 2026-10-28). The
+    semicolon join reads better as two sentences or a recast. Scoped to .tex
+    (a paper-prose rule, not for markdown docs). The one legitimate use — a list
+    whose items themselves contain commas — can't be detected by regex, so
+    dismiss those by eye."""
+    if not str(filepath).endswith(".tex"):
+        return []
+    violations = []
+    for lineno, _raw, prose in lines:
+        idx = prose.find(";")
+        if idx == -1:
+            continue
+        ctx = prose[max(0, idx - 30):idx + 20].strip()
+        violations.append(Violation(
+            file=filepath, line=lineno, rule="semicolon",
+            severity="warning",
+            message=f"Semicolon in prose: \"…{ctx}…\"",
+            suggestion="Near-banned (workspace overlay): recast as two sentences "
+                       "(second often 'But') or one clause. Only carve-out: list "
+                       "items that themselves contain commas.",
+            context=prose.strip()[:120],
+        ))
+    return violations
+
+
 def check_illustrative(filepath: str, lines: list[tuple[int, str, str]]) -> list[Violation]:
     """Quick-ref: \"illustrative test/work\" — do real empirical work or none."""
     pattern = re.compile(
@@ -1355,6 +1381,7 @@ ALL_CHECKS = [
     check_cute_quotation,
     check_greek_in_prose,
     check_foreign_language,
+    check_semicolons,
     # check_participle_tail,  # retired 2026-10-28 (Henrik): too many false
     #   positives on benign summary tails ("…, reinforcing X") vs. true dangling
     #   participles; he's fine with the formulation. Kept as a soft note in
