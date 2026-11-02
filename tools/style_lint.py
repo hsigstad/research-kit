@@ -288,7 +288,6 @@ def check_filler_phrases(filepath: str, lines: list[tuple[int, str, str]]) -> li
         (r"\bdue to the fact that\b", "\"because\""),
         (r"\ba wide variety of\b", "\"many\", or name them"),
         (r"\ba vast array of\b", "\"many\", or name them"),
-        (r"\barguably\b", "Usually cuttable"),
         (r"\bit could be argued\b", "Cut — either argue it or don't"),
         (r"\bwe leave .{0,60}for future research\b", "Strike entirely"),
     ]

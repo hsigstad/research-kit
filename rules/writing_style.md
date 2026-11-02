@@ -421,8 +421,8 @@ self-contained.
   tampering *would not be detected*" ⇒ "*cannot be ruled out*",
   because the design has no purchase on it.
 - **Operational test for any softener.** Ask: *does removing it
-  change what the reader knows?* If "perhaps" / "to some extent" /
-  "arguably" drops out and the meaning is unchanged, it is a
+  change what the reader knows?* If "perhaps" / "to some extent"
+  drops out and the meaning is unchanged, it is a
   defensive hedge — delete it. If "the analyses suggest", "within
   candidate and within race-week", or "we do not detect a larger
   effect for X" drops out and the reader loses the inferential
