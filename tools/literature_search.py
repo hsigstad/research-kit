@@ -14,8 +14,10 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import time
+import unicodedata
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -506,6 +508,209 @@ def cmd_crossref_verify(args):
 
 
 # ---------------------------------------------------------------------------
+# Bibliography audit (verify EXISTING .bib entries against Crossref)
+#
+# The discovery pipeline's hallucination guard is preventive ("never add a
+# paper not returned by an API"). This is the complementary *detective* check:
+# given a .bib that has accreted entries from many sources (coauthors, hand
+# edits, Claude drafting the paper), flag entries whose metadata does not match
+# the authoritative record. It REPORTS ONLY and never rewrites the bib — and
+# every verdict comes from a live Crossref lookup, never from model memory
+# (the whole point is to catch fabrications, not launder them).
+# ---------------------------------------------------------------------------
+
+_BIB_SHOULD_HAVE_DOI = {"article", "inproceedings", "incollection", "conference"}
+
+
+def _bib_balanced(s, start):
+    """s[start] must be '{'; return (inner_text, index_after_matching_'}')."""
+    depth = 0
+    for i in range(start, len(s)):
+        if s[i] == "{":
+            depth += 1
+        elif s[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return s[start + 1:i], i + 1
+    return s[start + 1:], len(s)
+
+
+def _bib_field(body, name):
+    """Extract one bib field, honoring brace nesting and quoted values."""
+    m = re.search(r"\b" + name + r"\s*=\s*", body, re.I)
+    if not m:
+        return ""
+    j = m.end()
+    if j < len(body) and body[j] == "{":
+        val, _ = _bib_balanced(body, j)
+    elif j < len(body) and body[j] == '"':
+        k = body.find('"', j + 1)
+        val = body[j + 1:k] if k != -1 else body[j + 1:]
+    else:
+        mm = re.match(r"([^,\n}]+)", body[j:])
+        val = mm.group(1) if mm else ""
+    return re.sub(r"\s+", " ", val).strip()
+
+
+def parse_bib(path):
+    """Parse a .bib into [{key,type,title,author,year,doi,url,venue}]."""
+    raw = Path(path).read_text(encoding="utf-8", errors="replace")
+    out = []
+    for m in re.finditer(r"@(\w+)\s*\{\s*([^,\s]+)\s*,", raw):
+        etype, key = m.group(1).lower(), m.group(2).strip()
+        if etype in ("comment", "string", "preamble"):
+            continue
+        nxt = raw.find("\n@", m.end())
+        body = raw[m.end(): nxt if nxt != -1 else len(raw)]
+        out.append({
+            "key": key, "type": etype,
+            "title": _bib_field(body, "title"),
+            "author": _bib_field(body, "author"),
+            "year": _bib_field(body, "year"),
+            "doi": _bib_field(body, "doi").replace("https://doi.org/", ""),
+            "url": _bib_field(body, "url"),
+            "venue": (_bib_field(body, "journal") or _bib_field(body, "booktitle")
+                      or _bib_field(body, "publisher")),
+        })
+    return out
+
+
+def extract_cited_keys(tex_paths):
+    """Collect all \\cite{...} keys from the given .tex files."""
+    keys = set()
+    pat = re.compile(r"\\[a-zA-Z]*cite[a-zA-Z]*\s*(?:\[[^\]]*\]\s*)*\{([^}]*)\}")
+    for p in tex_paths:
+        try:
+            txt = Path(p).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        for m in pat.finditer(txt):
+            for k in m.group(1).split(","):
+                if k.strip():
+                    keys.add(k.strip())
+    return keys
+
+
+def _norm_title(t):
+    """Fold a title to a comparable ascii form. Handles LaTeX accent macros
+    (\\c{c}, \\~a, \\'e, ...) and real Unicode diacritics so a bib entry with
+    LaTeX accents matches Crossref's Unicode without false 'mismatch' flags."""
+    t = t or ""
+    t = re.sub(r"\\[a-zA-Z]\{([a-zA-Z])\}", r"\1", t)        # \c{c}, \u{g}, \v{s}
+    t = re.sub(r"\\[`'^\"~=.]\{?([a-zA-Z])\}?", r"\1", t)    # \'e \~a \"o \^o \`a
+    t = t.replace("{", "").replace("}", "").replace("\\", "")
+    t = "".join(c for c in unicodedata.normalize("NFKD", t) if not unicodedata.combining(c))
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", t.lower())).strip()
+
+
+def _first_author_family(author):
+    if not author:
+        return ""
+    first = author.split(" and ")[0].strip().strip("{}")
+    fam = first.split(",")[0] if "," in first else (first.split()[-1] if first.split() else first)
+    return re.sub(r"[{}\\]", "", fam).strip().lower()
+
+
+def _crossref_years(msg):
+    years = set()
+    for k in ("published-print", "published-online", "issued", "published"):
+        dp = msg.get(k, {}).get("date-parts", [[None]])
+        if dp and dp[0] and dp[0][0]:
+            years.add(int(dp[0][0]))
+    return years
+
+
+def crossref_search_title(title, author=""):
+    """Best-match Crossref search for a title (+ optional first author)."""
+    q = urllib.parse.quote((title + " " + author).strip())
+    return _api_get(f"https://api.crossref.org/works?query.bibliographic={q}&rows=3")
+
+
+def _titles_match(a, b):
+    na, nb = _norm_title(a), _norm_title(b)
+    return bool(na) and bool(nb) and (na == nb or na[:40] in nb or nb[:40] in na)
+
+
+def cmd_audit_bib(args):
+    entries = parse_bib(args.bib)
+    by_key = {e["key"]: e for e in entries}
+
+    if args.cited_from:
+        cited = extract_cited_keys(args.cited_from)
+        targets = [by_key[k] for k in sorted(cited) if k in by_key]
+        missing = sorted(cited - set(by_key))
+        scope = f"{len(targets)} cited entries (of {len(entries)} in bib)"
+    else:
+        targets, missing = entries, []
+        scope = f"all {len(entries)} entries"
+
+    findings = []  # (severity, verdict, key, detail)
+    for k in missing:
+        findings.append(("HIGH", "MISSING-ENTRY", k, "cited in tex but absent from the bib"))
+
+    for e in targets:
+        key, title, year = e["key"], e["title"], e["year"]
+        fam = _first_author_family(e["author"])
+        if e["doi"]:
+            meta = get_crossref_metadata(e["doi"])
+            if not meta or "message" not in meta:
+                findings.append(("HIGH", "DOI-UNRESOLVED", key,
+                                 f"doi {e['doi']} did not resolve at Crossref"))
+                continue
+            msg = meta["message"]
+            cr_title = (msg.get("title") or [""])[0]
+            cr_fam = (msg.get("author") or [{}])[0].get("family", "").lower()
+            if not _titles_match(title, cr_title):
+                findings.append(("HIGH", "TITLE-MISMATCH", key,
+                                 f"bib='{title[:55]}' | crossref='{cr_title[:55]}'"))
+            elif cr_fam and fam and fam not in cr_fam and cr_fam not in fam:
+                findings.append(("MED", "AUTHOR-MISMATCH", key,
+                                 f"bib first author '{fam}' | crossref '{cr_fam}'"))
+            else:
+                yrs = _crossref_years(msg)
+                ynum = int(re.sub(r"[^0-9]", "", year) or 0)
+                if ynum and yrs and ynum not in yrs:
+                    findings.append(("LOW", "YEAR-OFF", key,
+                                     f"bib {year} | crossref {sorted(yrs)}"))
+        else:
+            hit = crossref_search_title(title, fam)
+            items = ((hit or {}).get("message", {}) or {}).get("items", [])
+            found = None
+            if items and _titles_match(title, (items[0].get("title") or [""])[0]):
+                found = items[0].get("DOI")
+            if found:
+                findings.append(("INFO", "DOI-FOUND", key,
+                                 f"Crossref match has DOI {found} (verify, consider adding)"))
+            elif e["type"] in _BIB_SHOULD_HAVE_DOI:
+                findings.append(("HIGH", "SUSPECT", key,
+                                 f"@{e['type']} with no DOI and no Crossref title match "
+                                 "-- possible hallucination; verify by hand"))
+            else:
+                findings.append(("INFO", "NO-DOI-MANUAL", key,
+                                 f"@{e['type']} ({e['venue'][:28]}); verify URL/source by hand"))
+
+    rank = {"HIGH": 0, "MED": 1, "LOW": 2, "INFO": 3}
+    findings.sort(key=lambda f: (rank[f[0]], f[2]))
+
+    if args.json:
+        print(json.dumps([{"severity": s, "verdict": v, "key": k, "detail": d}
+                          for s, v, k, d in findings], indent=2, ensure_ascii=False))
+    else:
+        print(f"Bib audit: {scope}\n" + "=" * 70)
+        for sev, verdict, key, detail in findings:
+            print(f"  [{sev:4}] {verdict:15} {key}")
+            print(f"         {detail}")
+        counts = {s: sum(1 for f in findings if f[0] == s) for s in rank}
+        print("-" * 70)
+        print(f"{len(targets)} checked | HIGH {counts['HIGH']} | MED {counts['MED']} "
+              f"| year-notes {counts['LOW']} | info {counts['INFO']}")
+        if counts["HIGH"]:
+            print("\nHIGH items are possible hallucinations or wrong metadata -- "
+                  "verify each against the source before trusting the entry.")
+    return 1 if any(f[0] == "HIGH" for f in findings) else 0
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -535,6 +740,16 @@ def main():
     p_verify = sub.add_parser("crossref-verify", help="Verify DOIs via Crossref")
     p_verify.add_argument("--candidates", required=True, help="Path to candidates.json")
 
+    # audit-bib
+    p_audit = sub.add_parser(
+        "audit-bib",
+        help="Audit an existing .bib for hallucinated/wrong entries (reports, never edits)")
+    p_audit.add_argument("--bib", required=True, help="Path to the .bib file to audit")
+    p_audit.add_argument("--cited-from", nargs="+", default=None,
+                         help="One or more .tex files; audit only keys cited there "
+                              "(default: audit every entry in the bib)")
+    p_audit.add_argument("--json", action="store_true", help="Emit findings as JSON")
+
     args = parser.parse_args()
     if args.command == "search":
         cmd_search(args)
@@ -544,6 +759,8 @@ def main():
         cmd_fetch_pdfs(args)
     elif args.command == "crossref-verify":
         cmd_crossref_verify(args)
+    elif args.command == "audit-bib":
+        sys.exit(cmd_audit_bib(args))
     else:
         parser.print_help()
 

@@ -14,6 +14,7 @@ Search academic databases, curate relevant papers, and populate a project's
 - `/literature [project-slug] --refresh` — re-run searches, merge with existing candidates
 - `/literature [project-slug] --fetch-pdfs` — only download PDFs for already-curated papers
 - `/literature [project-slug] --cite-graph DOI` — expand candidates via citation graph of a specific paper
+- `/literature [project-slug] --audit` — **audit an existing bib for hallucinated or wrong entries** (see Audit mode below). Reports only; never edits.
 - `/literature [project-slug] --update <citekey> [--artifact <build/path>]` — **surgical single-entry edit**. Update one literature entry's annotation (key findings, relevance note, supersession marker) when a `/next` iteration produced a result that connects to or contradicts that paper. Reads only `CLAUDE.md`, `literature.md`, `paper/*.bib`, and the optional triggering artifact. Does not re-run searches, does not re-walk the bibliography, does not re-curate. Use from `/next` step 5 when a single citation needs a note added or revised. The `<citekey>` is the BibTeX key as used in `literature.md` and `paper/*.bib`.
 
 If no project slug is given, infer from the current working directory.
@@ -307,6 +308,54 @@ the citekey convention.
 **Output:** edited `literature.md` plus a one-paragraph summary of
 what changed. The summary belongs in the `/next` end-of-iteration
 report.
+
+## Audit mode (`--audit` / `audit-bib`)
+
+The discovery pipeline's hallucination guard (step 4, Gotchas) is
+**preventive**: never add a paper the APIs didn't return. Audit mode is the
+**detective** complement — it checks a bib that has *already* accreted entries
+from many sources (coauthors, hand edits, Claude drafting the paper) and flags
+ones whose metadata doesn't match the authoritative record. Run it whenever
+entries were added outside this pipeline, and before submitting a paper.
+
+```bash
+# Audit only the entries actually cited in the paper (the printed reference list):
+python3 $ROOT/research-kit/tools/literature_search.py audit-bib \
+    --bib $PROJECT/paper/references.bib \
+    --cited-from $PROJECT/paper/*.tex
+
+# Audit every entry in the bib:
+python3 $ROOT/research-kit/tools/literature_search.py audit-bib \
+    --bib $PROJECT/paper/references.bib
+
+# Machine-readable:  add --json
+```
+
+What it does, per entry (all verdicts come from a **live Crossref lookup**):
+
+- **has a DOI** → fetch Crossref; compare title, first-author surname, and year.
+  - `TITLE-MISMATCH` (HIGH) — the DOI resolves to a *different* paper (wrong/
+    copy-pasted DOI, or a fabricated title on a real DOI).
+  - `AUTHOR-MISMATCH` (MED) — title matches but the lead author doesn't.
+  - `YEAR-OFF` (LOW) — year matches neither the online nor the print year
+    (online-first vs issue-year ambiguity is accepted, not flagged).
+  - `DOI-UNRESOLVED` (HIGH) — the DOI doesn't exist at Crossref.
+- **no DOI** → Crossref title search.
+  - `DOI-FOUND` (INFO) — a matching DOI exists; consider adding it.
+  - `SUSPECT` (HIGH) — an `@article`/`@inproceedings` with no DOI *and* no
+    Crossref title match: a likely hallucination, verify by hand.
+  - `NO-DOI-MANUAL` (INFO) — `@misc`/`@book`/news/data source that can't be
+    auto-verified; check the URL/source yourself.
+- `MISSING-ENTRY` (HIGH) — a key cited in the `.tex` has no bib entry.
+
+Exits non-zero if any HIGH finding, so it can gate a pre-submission check.
+
+**Cardinal rule:** the tool *reports*, it never rewrites the bib — and it
+never "fixes" an entry from model memory. When acting on a finding, look the
+correct value up (Crossref/SSRN/publisher) and verify before editing. Guessing
+a replacement DOI from memory is how the hallucination got there; a wrong DOI
+that happens to resolve (e.g. `10.1093/pan/mpr014` → a *different* fraud paper)
+will pass a careless "fix" and fail this audit.
 
 ## Gotchas
 
