@@ -763,12 +763,17 @@ offline.
   (2-page original) and
   [`writing_style_refs/weingast_caltech_rules_expanded_2010.pdf`](writing_style_refs/weingast_caltech_rules_expanded_2010.pdf)
   (4-page expansion). The political-science/political-economy counterpart
-  to the econ guides. Source for the one-main-point discipline (§1), the
-  four-part introduction and road-map paragraph (§8,
-  [`writing_style/intro.md`](writing_style/intro.md)), and the rule that
-  each section states its aim at the start (§5, §8). Weingast's section
-  rule is "state the aim," i.e. name the question — *not* announce the
-  conclusion — which is the position §5 codifies.
+  to the econ guides, pitched at paper-level structure. Source for the
+  one-main-point discipline and single organizing question (§1), the
+  four-part introduction with a closing road-map paragraph (§8,
+  [`writing_style/intro.md`](writing_style/intro.md)), self-contained
+  introductions and conclusions with the conclusion's summary differing
+  from the intro's ([`writing_style/conclusion.md`](writing_style/conclusion.md)),
+  and "clarity and conviction" — avoid would/could/might hedging (§7).
+  Weingast works at the paper/part level (Introduction → Theory →
+  Application → Conclusions); the within-section and paragraph ordering
+  rules (triangular as *macro* ordering, no paragraph inversion) come from
+  Cochrane, not Weingast.
 
 Further suggested reading (not vendored): William Zinsser, *On Writing
 Well*; Deirdre McCloskey, *Economical Writing*; William Thomson, *A Guide
