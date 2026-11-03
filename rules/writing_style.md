@@ -730,9 +730,10 @@ your first draft.
 
 ## Sources
 
-The rules above draw on four canonical guides to economics writing.
-Vendored copies live in [`writing_style_refs/`](writing_style_refs/) so
-the references resolve offline.
+The rules above draw on five canonical guides to economics and
+political-science writing. Vendored copies live in
+[`writing_style_refs/`](writing_style_refs/) so the references resolve
+offline.
 
 - **Keith Head, "The Introduction Formula"** —
   [`writing_style_refs/head_intro_formula.md`](writing_style_refs/head_intro_formula.md)
@@ -756,6 +757,18 @@ the references resolve offline.
   Background on the publication process and editor decision-making (most
   rejections happen at the abstract/intro stage — supporting the
   emphasis on the abstract and intro per-type guides).
+- **Barry R. Weingast, "Caltech Rules for Writing Papers" (1995; expanded
+  rev. 2010)** —
+  [`writing_style_refs/weingast_caltech_rules_1995.pdf`](writing_style_refs/weingast_caltech_rules_1995.pdf)
+  (2-page original) and
+  [`writing_style_refs/weingast_caltech_rules_expanded_2010.pdf`](writing_style_refs/weingast_caltech_rules_expanded_2010.pdf)
+  (4-page expansion). The political-science/political-economy counterpart
+  to the econ guides. Source for the one-main-point discipline (§1), the
+  four-part introduction and road-map paragraph (§8,
+  [`writing_style/intro.md`](writing_style/intro.md)), and the rule that
+  each section states its aim at the start (§5, §8). Weingast's section
+  rule is "state the aim," i.e. name the question — *not* announce the
+  conclusion — which is the position §5 codifies.
 
 Further suggested reading (not vendored): William Zinsser, *On Writing
 Well*; Deirdre McCloskey, *Economical Writing*; William Thomson, *A Guide
