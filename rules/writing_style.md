@@ -638,6 +638,12 @@ theory, abstract, intro, conclusion, and appendix inherit only from
 this general baseline. See [`writing_style/README.md`](writing_style/README.md)
 for the inheritance diagram.
 
+An author may also layer a personal *voice pack* (voice spec + annotated
+exemplars of their own prose) on top of all of the above — see
+[`writing_style_author_voice.md`](writing_style_author_voice.md) for the
+convention. It loads only if configured; absent one, this baseline applies
+unchanged.
+
 ## 14. Writing process
 
 Jesse Shapiro's four-step process for producing an applied paper. The
