@@ -74,6 +74,24 @@ structure** of the examples, not their topic. Hard rules:
 Then show the draft. If you deviated from an example's move for a good reason, say so
 in one line.
 
+## Step 6 — Self-lint and hand off
+
+After writing, run the mechanical linter on what you produced to catch AI-tells the
+examples should have ruled out:
+
+```bash
+python3 ~/research/research-kit/tools/style_lint.py <file> --format json --severity warning
+```
+
+(Resolve the path if that location is absent: try `research-kit/tools/style_lint.py`
+or `../../research-kit/tools/style_lint.py`.) Fix any warning-or-higher violations in
+what you just wrote. Then point the user at the deep audit:
+
+> Drafted. For a thorough pass, run `/style-review <file> --section <section>` — it
+> audits against this same voice pack plus the full style guides.
+
+`/voice` drafts; `/style-review` audits. Same voice pack, two modes.
+
 ## Arguments
 
 `$ARGUMENTS` — `<section> [instruction or file path]`. Examples:

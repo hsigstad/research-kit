@@ -1,6 +1,6 @@
 ---
 name: style-review
-description: LLM-based prose review against the empirical-economics writing style guides. Runs the mechanical linter first, then reads the file against the general baseline and any relevant per-type guides. Use when the user invokes /style-review <file>, asks for a "thorough style review", "polish this for submission", "review for clarity", or wants prose feedback on a paper draft / important email / chapter. For fast deterministic AI-tell scanning, use /style-check; for section-scoped pre-submission validation with ledger writes, use /validate-section.
+description: LLM-based prose review against the empirical-economics writing style guides. Runs the mechanical linter first, then reads the file against the general baseline, any relevant per-type guides, and the author's personal voice pack if one exists. Use when the user invokes /style-review <file>, asks for a "thorough style review", "polish this for submission", "review for clarity", or wants prose feedback on a paper draft / important email / chapter. For fast deterministic AI-tell scanning, use /style-check; for section-scoped pre-submission validation with ledger writes, use /validate-section; to DRAFT a section in the author's voice (rather than audit it), use /voice.
 ---
 
 # style-review
@@ -91,6 +91,34 @@ research/rules/writing_style.md
 The per-type files state what's specific to each section type; the
 general baseline states rules that apply everywhere. Apply both.
 
+#### 3b. Load the author voice pack (if present)
+
+If the author keeps a personal voice pack (the convention in
+[`research-kit/rules/writing_style_author_voice.md`](../../rules/writing_style_author_voice.md)),
+load it **on top of** the baseline and per-type rules. Resolve it relative to the
+repo — from a project `../../research/meta/voice/`, from the research repo
+`meta/voice/`:
+
+```
+research/meta/voice/PAPER_VOICE.md          # the voice spec (author-specific rules)
+research/meta/voice/examples/<type>.md      # verbatim exemplars for this section type
+```
+
+If there is no voice pack, skip silently and review against the generic guides
+only. When present, it is additional authority *specific to this author*:
+
+- Review the prose against the **exemplars**, not just the generic rules. Flag prose
+  that is generic-correct but **off-voice**: wrong ordering (e.g. interpretation
+  before evidence), a hedge the author never uses, a move the exemplars never make.
+- Do **not** flag something as a violation when it matches the author's exemplars,
+  even if a generic rule would question it — the voice pack wins for this author.
+- Exception: the voice pack never overrides a correctness rule (citations, honest
+  reporting of nulls, no editorializing of results).
+- Where exemplars conflict, the AER (gold-standard) passages take precedence.
+
+This is the audit counterpart of the `/voice` skill, which *drafts* from the same
+pack. Same knowledge, two modes.
+
 ### 4. LLM review pass
 
 Read the file. For each section, evaluate against the loaded rules.
@@ -114,6 +142,11 @@ Findings to look for:
 - Signposting bloat ("in this section, we will discuss" when the
   heading already says it).
 - Self-categorizing prefaces ("This is a descriptive paper:").
+- **Off-voice (only if a voice pack was loaded in 3b):** prose that satisfies the
+  generic rules but doesn't match the author's exemplars — e.g. interpretation
+  stated before the evidence, a move absent from the exemplars. Cite the exemplar
+  (`examples/<type>.md`) or the voice rule (`PAPER_VOICE.md §…`), not just the
+  generic guide.
 
 **Per section type:** apply the rules from the loaded per-type file.
 Examples:
@@ -180,6 +213,12 @@ were introduced.
 | `/style-review` (this) | file (whole)   | yes (`style_lint.py`)   | yes | no     |
 | `/validate-section`    | one section    | yes (`style_lint.py`)   | yes | yes    |
 | `/style-revise`        | paragraph      | yes (lints its rewrite) | yes | no     |
+
+`/voice <section>` is the generative counterpart — it *drafts/revises* a section
+in the author's voice from the same voice pack this skill audits against. Natural
+pipeline: `/voice results` to draft → `/style-review --section results` for the
+deep audit. (The voice-pack load in 3b is a shared pattern: any review skill in
+this family — `/validate-section`, `/style-revise` — should load it the same way.)
 
 Same patterns underneath. This skill is for whole-document review when
 the document is worth a thorough pass; `/validate-section` is for
