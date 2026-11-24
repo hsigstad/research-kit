@@ -64,6 +64,8 @@ repo/
     references.bib
     tables/          # optional; hand-authored tables only
     figures/         # optional; hand-authored figures only
+    .controlled      # optional; if present, the manuscript is FROZEN (see below)
+    queued_edits.md  # optional; edits proposed while frozen, awaiting a /voice pass
 
   talk/            # presentation slides (optional, version controlled)
     talk.tex
@@ -140,6 +142,17 @@ repo/
   directories don't need to exist. Polish that could be a script should
   be a script: write `source/table/foo_paper.py` → `build/table/foo_paper.tex`
   rather than hand-editing in `paper/`.
+- **Controlled mode (optional manuscript freeze).** A committed
+  `paper/.controlled` marker puts the manuscript under author control: the
+  `pretool_paper_freeze.py` hook then blocks every session from editing the
+  prose `.tex` under `paper/` (Edit/Write and Bash writes; `tables/`,
+  `figures/`, and non-`.tex` files like `queued_edits.md` are exempt) unless the
+  session ran `/voice`, which authorizes it for that session only. A blocked
+  session appends its intended change to `paper/queued_edits.md` (canonical: a
+  running worklist of proposed edits, `## <section> — <what>` / `Why:` /
+  optional draft), which a later `/voice` session applies in the author's voice
+  and clears. Set `.controlled` when you want control over the manuscript;
+  remove it to return to normal editing. Dormant when absent.
 - For arxiv / journal submission, generate a flat bundle with a small
   `paper/flatten.sh` (or equivalent) that follows the `\includegraphics`
   and `\input` references and copies the cited build artifacts into the

@@ -5,10 +5,25 @@ description: "Draft or revise a paper section in the author's voice. Loads that 
 
 # Voice-draft a paper section
 
-Write or revise paper prose in Henrik's voice by loading the matching section's
+Write or revise paper prose in the author's voice by loading the matching section's
 **examples** and **rules** before drafting — never draft a section without reading
 its examples first. This is the whole point of the skill: the examples must be in
 context before you write a word of that section.
+
+## Step 0 — Authorize this session (manuscript freeze)
+
+A manuscript in **controlled mode** (a `paper/.controlled` marker) is frozen to every
+session except one that ran `/voice`. Running `/voice` *is* the author's explicit OK
+to edit, so claim it immediately:
+
+```bash
+mkdir -p ~/.claude/state && : > ~/.claude/state/paper_unlock_${CLAUDE_CODE_SESSION_ID}
+```
+
+This unlocks manuscript edits for **this session only** (session-keyed; it never
+unlocks a concurrent session and auto-expires). Do it once, first, before any edit.
+If the paper is not in controlled mode the marker is harmless. (Enforced by
+`research-kit/tools/hooks/pretool_paper_freeze.py`.)
 
 ## Step 1 — Resolve the voice pack
 
