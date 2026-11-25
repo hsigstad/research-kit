@@ -107,7 +107,9 @@ PROSE_CITATION_STOPWORDS = {
     "July", "August", "September", "October", "November", "December",
 }
 
-SKIP_DOC_SUBDIRS = {"emails", "whatsapp"}
+# docs/ subdirectories that hold informal prose (correspondence, raw notes,
+# research memos) and are exempt from the [cite:]-token citation convention.
+SKIP_DOC_SUBDIRS = {"emails", "whatsapp", "notes"}
 
 
 # ---------------------------------------------------------------------------
